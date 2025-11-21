@@ -1,6 +1,7 @@
 package com.mediflow.emr.util;
 
-
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
@@ -38,6 +39,38 @@ public class CookieUtil {
         ResponseCookie cookie = buildCookie(props.getRefreshTokenName(), token, props.getRefreshMaxAge());
         setCookieHeader(response, cookie);
     }
+
+    /**
+     * 요청에서 특정 이름의 쿠키 값을 조회
+     * @param request 요청 객체
+     * @param name    쿠키 이름
+     * @return 쿠키 값 또는 null (존재하지 않을 경우)
+     */
+    public String readCookie(HttpServletRequest request, String name) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) return null;
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 요청에서 Access Token 쿠키 값을 조회
+     */
+    public String readAccessToken(HttpServletRequest request) {
+        return readCookie(request, props.getAccessTokenName());
+    }
+
+    /**
+     * 요청에서 Refresh Token 쿠키 값을 조회
+     */
+    public String readRefreshToken(HttpServletRequest request) {
+        return readCookie(request, props.getRefreshTokenName());
+    }
+
 
     /**
      * Access Token 쿠키를 삭제
