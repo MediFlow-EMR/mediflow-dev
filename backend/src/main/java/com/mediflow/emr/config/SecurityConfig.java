@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -38,7 +39,8 @@ public class SecurityConfig {
      * @throws Exception 보안 필터 체인 구성 중 오류 발생 시
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http
+            , JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 // 프론트엔드 도메인에서의 요청을 허용하는 CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -60,7 +62,10 @@ public class SecurityConfig {
                 // 인증되지 않은 접근에 대해 401 상태 코드 반환
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401))
-                );
+                )
+                // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 전에 추가
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
@@ -70,6 +75,7 @@ public class SecurityConfig {
      * - 특정 오리진에서의 요청 허용
      * - 허용된 HTTP 메서드 및 헤더 설정
      * - 자격 증명(쿠키, 인증 헤더 등) 포함 허용
+     * 운영 배포 시, 실제 프론트엔드 도메인(예: https://app.example.com)을 추가
      * @return CORS 구성 소스
      */
     @Bean
