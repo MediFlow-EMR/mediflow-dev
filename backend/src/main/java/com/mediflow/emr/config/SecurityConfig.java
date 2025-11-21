@@ -56,9 +56,11 @@ public class SecurityConfig {
                 // 엔드포인트별 권한 정책 설정
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/health", "/", "/h2-console/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // OAuth2 로그인 설정
+                .oauth2Login(oauth -> {})
                 // 인증되지 않은 접근에 대해 401 상태 코드 반환
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401))
