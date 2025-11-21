@@ -26,6 +26,7 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     /**
      * 애플리케이션의 보안 필터 체인을 구성
@@ -64,10 +65,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                // OAuth2 로그인 활성화 및 사용자 정보 서비스 연결
-                .oauth2Login(oauth ->
-                        oauth.userInfoEndpoint(userInfo ->
-                                userInfo.userService(customOAuth2UserService)))
+                // OAuth2 로그인 활성화 및 사용자 정보 서비스/성공 핸들러 연결
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
                 // 인증되지 않은 접근에 대해 401 상태 코드 반환
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401))
