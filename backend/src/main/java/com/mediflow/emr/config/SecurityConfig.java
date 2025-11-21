@@ -1,5 +1,6 @@
 package com.mediflow.emr.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import com.mediflow.emr.service.CustomOAuth2UserService;
 
 import java.util.Arrays;
 
@@ -20,7 +22,10 @@ import java.util.Arrays;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     /**
      * 애플리케이션의 보안 필터 체인을 구성
@@ -59,8 +64,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                // OAuth2 로그인 설정
-                .oauth2Login(oauth -> {})
+                // OAuth2 로그인 활성화 및 사용자 정보 서비스 연결
+                .oauth2Login(oauth ->
+                        oauth.userInfoEndpoint(userInfo ->
+                                userInfo.userService(customOAuth2UserService)))
                 // 인증되지 않은 접근에 대해 401 상태 코드 반환
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(401))

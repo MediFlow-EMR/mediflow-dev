@@ -77,6 +77,21 @@ public class User extends BaseTimeEntity {
         }
         this.profileImageUrl = profileImageUrl;
     }
+    /**
+     * 현재 이메일이 공급자 placeholder 도메인으로 저장된 경우, 실제 이메일로 교체합니다.
+     * 예: "@kakao.local"로 끝나는 임시 이메일을 실제 이메일로 교체
+     *
+     * @param realEmail         실제 이메일 주소
+     * @param placeholderSuffix 공급자별 placeholder 도메인 접미사 (예: "@kakao.local")
+     */
+    public void updateEmailIfPlaceholder(String realEmail, String placeholderSuffix) {
+        if (realEmail == null || realEmail.isBlank()) {
+            return;
+        }
+        if (this.email != null && placeholderSuffix != null && this.email.endsWith(placeholderSuffix)) {
+            this.email = realEmail;
+        }
+    }
 
     /**
      * 사용자의 역할을 변경합니다.
