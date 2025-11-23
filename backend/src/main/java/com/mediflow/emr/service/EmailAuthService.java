@@ -156,12 +156,38 @@ public class EmailAuthService {
 
             // 인증 완료 처리
             verification.verify();
+
+            // User 엔티티의 이메일 인증 완료 처리
+            User user = verification.getUser();
+            if (user != null) {
+                user.completeVerifying();
+                log.info("사용자 이메일 인증 완료. userId={}, email={}", user.getId(), email);
+            }
+
             log.info("인증 코드 검증 성공. email={}", email);
             return true;
         }
 
-        log.warn("인증 코드 검증 실패. email={}, inputCode={}", email, code);
+        // 인증코드가 틀렸거나 만료된 경우 자동으로 인증코드를 재발송
+        log.warn("인증 코드 검증 실패. email={}, inputCode={} - 새 인증 코드 발송", email, code);
+        updateVerificationCode(email, verification);
         return false;
+    }
+
+    /**
+     * 인증코드 재발급 처리
+     *
+     * @param email 사용자 이메일
+     * @param verification 기존 인증 정보
+     */
+    private void updateVerificationCode(String email, EmailVerification verification) {
+        // 1. 새 인증코드를 생성하고 메일을 재발송
+        String newCode = sendVerificationEmail(email);
+
+        // 2. 데이터베이스에 인증코드와 만료시간을 갱신
+        verification.updateNewCode(newCode);
+
+        log.info("인증 코드 재발급 완료. email={}", email);
     }
 
     /**

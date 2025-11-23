@@ -64,4 +64,14 @@ public class EmailVerification extends BaseTimeEntity {
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);
     }
+
+    /**
+     * 인증 코드 재발급 (새 코드와 만료시간 갱신)
+     * @param newCode 새로운 인증 코드
+     */
+    public void updateNewCode(String newCode) {
+        this.verificationCode = newCode;
+        this.expiryDate = LocalDateTime.now().plusMinutes(5);
+        this.isVerified = false;
+    }
 }

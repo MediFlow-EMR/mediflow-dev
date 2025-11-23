@@ -151,6 +151,13 @@ public class User extends BaseTimeEntity {
     }
 
     /**
+     * 이메일 인증을 완료합니다.
+     */
+    public void completeVerifying() {
+        this.emailVerified = true;
+    }
+
+    /**
      * 이메일 인증 완료 여부를 업데이트합니다.
      */
     @Column(nullable = false)
