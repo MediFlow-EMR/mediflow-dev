@@ -20,6 +20,10 @@ export const router = createBrowserRouter([
         element: <RegisterPage />, // 이메일 회원가입
     },
     {
+        path: '/sign-up',
+        element: <RegisterPage />, // 이메일 회원가입 (별칭)
+    },
+    {
         path: '/app',
         element: <AppLayout />,
         children: [{ index: true, element: <App /> }],
