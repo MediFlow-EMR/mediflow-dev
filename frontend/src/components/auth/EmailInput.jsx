@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import styles from './EmailInput.module.scss';
 
@@ -11,6 +12,7 @@ const EmailInput = ({ onSuccess }) => {
     const [email, setEmail] = useState('');
     const [isChecking, setIsChecking] = useState(false);
     const [isEmailValid, setIsEmailValid] = useState(false);
+    const [isDuplicate, setIsDuplicate] = useState(false);
 
     // 화면이 렌더링되자마자 입력창에 포커싱
     useEffect(() => {
@@ -36,14 +38,17 @@ const EmailInput = ({ onSuccess }) => {
             if (isDuplicate) {
                 setError(message || '이미 사용 중인 이메일입니다.');
                 setIsEmailValid(false);
+                setIsDuplicate(true);
             } else {
                 setError('');
                 setIsEmailValid(true);
+                setIsDuplicate(false);
             }
         } catch (err) {
             console.error('이메일 중복 확인 실패:', err);
             setError('이메일 중복 확인에 실패했습니다.');
             setIsEmailValid(false);
+            setIsDuplicate(false);
         } finally {
             setIsChecking(false);
         }
@@ -120,7 +125,18 @@ const EmailInput = ({ onSuccess }) => {
                     value={email}
                     onChange={handleEmail}
                 />
-                {error && <p className={styles.errorMessage}>{error}</p>}
+                {error && isDuplicate ? (
+                    <Link to="/login" className={styles.errorMessageLink}>
+                        {error.split('\n').map((line, index) => (
+                            <span key={index}>
+                                {line}
+                                {index < error.split('\n').length - 1 && <br />}
+                            </span>
+                        ))}
+                    </Link>
+                ) : error ? (
+                    <p className={styles.errorMessage}>{error}</p>
+                ) : null}
             </div>
             
             <button

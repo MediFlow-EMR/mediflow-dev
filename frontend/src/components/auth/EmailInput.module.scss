@@ -54,10 +54,50 @@
   }
 }
 
+.errorWrapper {
+  margin-top: 0.5rem;
+}
+
 .errorMessage {
   color: #ef4444;
   font-size: 0.875rem;
-  margin-top: 0.25rem;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.5;
+}
+
+.errorMessageLink {
+  display: block;
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0 0;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+
+  &:hover {
+    color: #dc2626;
+    text-decoration: underline;
+  }
+
+  &:active {
+    color: #b91c1c;
+  }
+}
+
+.loginLink {
+  display: inline-block;
+  font-size: 0.875rem;
+  color: #0ea5e9;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-weight: 500;
+
+  &:hover {
+    color: #0284c7;
+  }
 }
 
 .submitButton {

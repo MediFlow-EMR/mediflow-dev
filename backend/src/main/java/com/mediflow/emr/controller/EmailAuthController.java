@@ -35,8 +35,7 @@ public class EmailAuthController {
         log.info("이메일 중복 확인 요청: {}", email);
 
         boolean isDuplicate = emailAuthService.checkEmailDuplicate(email);
-        String message = isDuplicate ? "계정 정보를 확인해주세요. \n" +
-                "이미 가입하셨다면 로그인을 이용해주세요." : "사용 가능한 이메일입니다.";
+        String message = isDuplicate ? "이메일이 중복되었습니다.\n이미 가입하셨다면 로그인을 이용해주세요." : "사용 가능한 이메일입니다.";
 
         log.info("이메일 중복 확인 결과: {}, message={}", isDuplicate, message);
 
