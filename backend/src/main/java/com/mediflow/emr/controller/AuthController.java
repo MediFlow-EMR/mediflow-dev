@@ -1,7 +1,5 @@
 package com.mediflow.emr.controller;
 
-
-import com.mediflow.emr.service.UsersService;
 import com.mediflow.emr.util.CookieUtil;
 import com.mediflow.emr.util.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
@@ -11,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,8 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * 인증 관련 API 컨트롤러
- * - JWT Refresh Token을 검증하고 새 Access Token을 발급하는 엔드포인트 제공
+ * OAuth2 인증 관련 API 컨트롤러
+ * - JWT 토큰 관리 (갱신/로그아웃)
+ * - Google, Kakao 소셜 로그인 지원
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -30,7 +28,6 @@ public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CookieUtil cookieUtil;
-    private final UsersService usersService;
 
     /**
      * Refresh Token을 검증하고 새 Access Token을 발급
@@ -48,24 +45,26 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         log.debug("[AuthController] /api/auth/refresh called, remoteAddr={}", request.getRemoteAddr());
+
         // 1) 쿠키에서 Refresh Token 조회
         String refreshToken = cookieUtil.readRefreshToken(request);
+
         // 2) 토큰 유효성 검증
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) { // 유효성 체크 실패
+        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
             log.warn("[AuthController] Refresh token missing or invalid");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 반환
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         // 3) 유효한 토큰이면 동일 subject로 새 Access Token 생성
         Claims claims = jwtTokenProvider.getClaims(refreshToken);
-        // 토큰에서 클레임 추출
-        String subject = claims.getSubject(); // 사용자 식별자(subject)
+        String subject = claims.getSubject();
 
         // 4) 새 Access Token 생성 및 쿠키로 설정
         String newAccessToken = jwtTokenProvider.createAccessToken(subject, Map.of());
-        cookieUtil.addAccessTokenCookie(response, newAccessToken); // Access Token 쿠키로 설정
+        cookieUtil.addAccessTokenCookie(response, newAccessToken);
+
         log.info("[AuthController] Access token reissued for subject={}", subject);
-        return ResponseEntity.noContent().build(); // 204 No Content 반환
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -79,26 +78,9 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletResponse response) {
         cookieUtil.deleteAccessTokenCookie(response);
         cookieUtil.deleteRefreshTokenCookie(response);
+
         log.info("[AuthController] Logged out: cleared auth cookies");
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 이메일 중복 검사 API
-     *
-     * @param email 검사할 이메일 주소
-     * @return 중복 여부 및 메시지
-     */
-    @GetMapping("/check-email")
-    public ResponseEntity<?> checkEmail(String email) {
-        boolean isDuplicate = usersService.checkEmailDuplicate(email);
-        String message = isDuplicate ? "이메일이 중복되었습니다." : "사용 가능한 이메일입니다.";
-
-        return ResponseEntity.ok().body(Map.of(
-                "isDuplicate", isDuplicate,
-                "message", message
-        ));
-    }
-
 }
-
