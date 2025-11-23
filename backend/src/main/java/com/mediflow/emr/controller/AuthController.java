@@ -115,7 +115,7 @@ public class AuthController {
      *
      * @param dto 이메일과 비밀번호를 포함한 로그인 요청
      * @param response HTTP 응답 (쿠키 설정용)
-     * @return 200 OK with success message
+     * @return 200 OK with token, user info, and redirect URL
      */
     @PostMapping("/email/login")
     public ResponseEntity<?> emailLogin(@RequestBody EmailLoginRequest dto, HttpServletResponse response) {
@@ -133,10 +133,15 @@ public class AuthController {
         cookieUtil.addAccessTokenCookie(response, accessToken);
         cookieUtil.addRefreshTokenCookie(response, refreshToken);
 
-        log.info("[AuthController] 이메일 로그인 성공: email={}, userId={}", dto.email(), user.getId());
+        log.info("[AuthController] 이메일 로그인 성공: email={}, userId={}, role={}",
+                dto.email(), user.getId(), user.getRole());
 
+        // 4. 응답 데이터 반환 (토큰, 사용자 정보 포함)
         return ResponseEntity.ok().body(Map.of(
-                "message", "로그인 성공",
+                "token", accessToken,
+                "message", "로그인에 성공했습니다.",
+                "email", user.getEmail(),
+                "role", user.getRole().toString(),
                 "redirectUrl", "/app"
         ));
     }
