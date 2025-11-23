@@ -115,8 +115,8 @@ public class UsersService {
             return code;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("메일 발송에 실패했습니다.");
+            log.error("메일 발송 실패: {}", email, e);
+            throw new RuntimeException("메일 발송에 실패했습니다.", e);
         }
 
     }

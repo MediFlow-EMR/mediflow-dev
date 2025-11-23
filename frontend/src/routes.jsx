@@ -2,12 +2,17 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import EmailLoginPage from './pages/EmailLoginPage.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 
 export const router = createBrowserRouter([
     {
         path: '/',
         element: <LoginPage />, // 최초 진입은 로그인 화면
+    },
+    {
+        path: '/login',
+        element: <EmailLoginPage />, // 이메일 로그인 폼
     },
     {
         path: '/app',
