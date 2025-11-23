@@ -2,6 +2,7 @@ package com.mediflow.emr.service;
 
 import com.mediflow.emr.dto.UserResponseDto;
 import com.mediflow.emr.entity.EmailVerification;
+import com.mediflow.emr.entity.Provider;
 import com.mediflow.emr.entity.User;
 import com.mediflow.emr.exception.BusinessException;
 import com.mediflow.emr.exception.ErrorCode;
@@ -62,9 +63,12 @@ public class UsersService {
     // 인증 코드를 발송할 때 사용할 임시 회원가입 로직
     // 인증코드를 데이터베이스에 저장하려면 회원정보가 필요
     private void processSignup(String email) {
-        // 1. 임시 회원가입
+        // 1. 임시 회원가입 (필수 필드를 모두 채워서 저장)
         User tempUser = User.builder()
                 .email(email)
+                .nickname("임시회원") // 임시 닉네임
+                .provider(Provider.LOCAL) // 로컬 가입
+                .providerId(email) // 이메일을 providerId로 사용
                 .build();
 
         User savedUser = userRepository.save(tempUser);
@@ -74,6 +78,7 @@ public class UsersService {
 
         // 3. 인증 코드와 만료시간을 DB에 저장
         EmailVerification verification = EmailVerification.builder()
+                .email(email)
                 .verificationCode(code)
                 .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료시간 5분 설정
                 .user(savedUser) // FK 설정
