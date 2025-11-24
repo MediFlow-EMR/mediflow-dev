@@ -33,7 +33,7 @@ public class IntakeOutput extends BaseTimeEntity {
     /** 기록 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 경구 섭취량 (mL) */
     @Column(name = "intake_oral")

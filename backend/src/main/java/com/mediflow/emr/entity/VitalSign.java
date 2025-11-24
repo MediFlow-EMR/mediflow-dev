@@ -33,7 +33,7 @@ public class VitalSign extends BaseTimeEntity {
     /** 측정 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 수축기 혈압 (mmHg) */
     @Column(name = "systolic_bp")

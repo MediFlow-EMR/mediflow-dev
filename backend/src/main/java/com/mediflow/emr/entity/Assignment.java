@@ -28,7 +28,7 @@ public class Assignment extends BaseTimeEntity {
     /** 배정된 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 배정된 환자 */
     @ManyToOne(fetch = FetchType.LAZY)

@@ -38,8 +38,20 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String nickname;
 
+    /** 실명 (EMR 사용자용) */
+    @Column(length = 100)
+    private String name;
+
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
+
+    /** 연락처 (EMR 사용자용) */
+    @Column(length = 20)
+    private String phone;
+
+    /** 입사일 (EMR 사용자용) */
+    @Column(name = "hire_date")
+    private java.time.LocalDate hireDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

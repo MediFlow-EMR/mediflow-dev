@@ -34,7 +34,7 @@ public class Medication extends BaseTimeEntity {
     /** 투약 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 약물명 */
     @Column(nullable = false, name = "drug_name", length = 200)

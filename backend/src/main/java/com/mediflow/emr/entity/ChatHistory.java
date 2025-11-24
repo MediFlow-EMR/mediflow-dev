@@ -26,7 +26,7 @@ public class ChatHistory extends BaseTimeEntity {
     /** 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 사용자 메시지 */
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -32,7 +32,7 @@ public class NursingNote extends BaseTimeEntity {
     /** 작성 간호사 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "nurse_id", nullable = false)
-    private NurseUser nurse;
+    private User nurse;
 
     /** 기록 내용 (Quill HTML) */
     @Column(nullable = false, columnDefinition = "TEXT")

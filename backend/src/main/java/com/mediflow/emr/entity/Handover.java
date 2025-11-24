@@ -55,5 +55,5 @@ public class Handover extends BaseTimeEntity {
     /** 작성자 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    private NurseUser createdBy;
+    private User createdBy;
 }
