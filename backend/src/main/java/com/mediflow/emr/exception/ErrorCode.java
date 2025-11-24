@@ -31,7 +31,10 @@ public enum ErrorCode {
     PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "patient not found"),
 
     // 바이탈 관련 에러 코드
-    VITAL_NOT_FOUND(HttpStatus.NOT_FOUND, "vital sign not found");
+    VITAL_NOT_FOUND(HttpStatus.NOT_FOUND, "vital sign not found"),
+
+    // 섭취배설량 관련 에러 코드
+    IO_NOT_FOUND(HttpStatus.NOT_FOUND, "intake/output record not found");
 
     private final HttpStatus status;
     private final String defaultMessage;

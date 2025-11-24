@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import VitalTab from '../patient/VitalTab';
+import IntakeOutputTab from '../patient/IntakeOutputTab';
 import styles from './PatientDetail.module.scss';
 
 /**
@@ -51,7 +52,8 @@ const PatientDetail = ({ patient }) => {
 
       <div className={styles.content}>
         {activeTab === 'vitals' && <VitalTab patientId={patient.patientId} />}
-        {activeTab !== 'vitals' && (
+        {activeTab === 'io' && <IntakeOutputTab patientId={patient.patientId} />}
+        {activeTab !== 'vitals' && activeTab !== 'io' && (
           <div className={styles.comingSoon}>
             {tabs.find((t) => t.id === activeTab)?.label} 기능은 곧 추가됩니다.
           </div>

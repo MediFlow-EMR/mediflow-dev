@@ -32,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final ShiftRepository shiftRepository;
     private final AssignmentRepository assignmentRepository;
     private final VitalSignRepository vitalSignRepository;
+    private final IntakeOutputRepository intakeOutputRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
 
@@ -69,6 +70,10 @@ public class DataInitializer implements CommandLineRunner {
         // 7. 바이탈 사인 생성
         List<VitalSign> vitals = createVitalSigns(nurses, patients);
         log.info("✅ 바이탈 사인 {} 건 생성 완료", vitals.size());
+
+        // 8. 섭취배설량 생성
+        List<IntakeOutput> ioRecords = createIntakeOutputs(nurses, patients);
+        log.info("✅ 섭취배설량 {} 건 생성 완료", ioRecords.size());
 
         log.info("========================================");
         log.info("초기 데이터 생성 완료!");
@@ -401,6 +406,76 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         return vitalSignRepository.saveAll(vitals);
+    }
+
+    /**
+     * 섭취배설량 생성 (입원 환자 대상, 과거 3일간 데이터)
+     */
+    private List<IntakeOutput> createIntakeOutputs(List<User> nurses, List<Patient> patients) {
+        List<IntakeOutput> ioRecords = new ArrayList<>();
+        
+        // 입원 환자만 필터링
+        List<Patient> admittedPatients = patients.stream()
+                .filter(Patient::getIsAdmitted)
+                .toList();
+
+        for (Patient patient : admittedPatients) {
+            // 같은 부서의 간호사 찾기
+            List<User> deptNurses = nurses.stream()
+                    .filter(n -> n.getDepartment() != null)
+                    .filter(n -> patient.getDepartment() != null)
+                    .filter(n -> n.getDepartment().getId().equals(patient.getDepartment().getId()))
+                    .toList();
+
+            if (deptNurses.isEmpty()) continue;
+
+            // 과거 3일간 하루 3-5회 I/O 기록 (4시간 간격)
+            for (int day = 1; day <= 3; day++) {
+                int recordsPerDay = 3 + random.nextInt(3); // 3-5회
+                
+                for (int i = 0; i < recordsPerDay; i++) {
+                    User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    
+                    // 기록 시간 (과거 day일, 4시간 간격: 8시, 12시, 16시, 20시, 24시)
+                    int[] hours = {8, 12, 16, 20, 0};
+                    int hourIndex = i % hours.length;
+                    int hour = hours[hourIndex];
+                    
+                    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                    java.time.LocalDateTime recordedAt = now
+                            .minusDays(day)
+                            .withHour(hour)
+                            .withMinute(0)
+                            .withSecond(0)
+                            .withNano(0);
+
+                    // 미래 시간이면 하루 더 과거로
+                    if (recordedAt.isAfter(now)) {
+                        recordedAt = recordedAt.minusDays(1);
+                    }
+
+                    // 정상 범위 기준으로 랜덤 I/O 생성
+                    // 섭취: 경구 100-500mL, 정맥 500-1500mL
+                    // 배설: 소변 200-400mL, 배액 0-100mL
+                    int intakeOral = 100 + random.nextInt(401);  // 100-500
+                    int intakeIv = 500 + random.nextInt(1001);   // 500-1500
+                    int outputUrine = 200 + random.nextInt(201); // 200-400
+                    int outputDrain = random.nextBoolean() ? random.nextInt(101) : 0; // 0-100 또는 0
+
+                    ioRecords.add(IntakeOutput.builder()
+                            .patient(patient)
+                            .nurse(nurse)
+                            .intakeOral(intakeOral)
+                            .intakeIv(intakeIv)
+                            .outputUrine(outputUrine)
+                            .outputDrain(outputDrain)
+                            .recordedAt(recordedAt)
+                            .build());
+                }
+            }
+        }
+
+        return intakeOutputRepository.saveAll(ioRecords);
     }
 
     /**

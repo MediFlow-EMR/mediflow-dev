@@ -54,4 +54,39 @@ public class IntakeOutput extends BaseTimeEntity {
     /** 기록 시간 */
     @Column(nullable = false, name = "recorded_at")
     private LocalDateTime recordedAt;
+
+    /**
+     * 섭취배설량 수정
+     */
+    public void update(Integer intakeOral, Integer intakeIv, Integer outputUrine,
+                      Integer outputDrain, LocalDateTime recordedAt) {
+        this.intakeOral = intakeOral;
+        this.intakeIv = intakeIv;
+        this.outputUrine = outputUrine;
+        this.outputDrain = outputDrain;
+        if (recordedAt != null) {
+            this.recordedAt = recordedAt;
+        }
+    }
+
+    /**
+     * 섭취 총량 계산
+     */
+    public int getIntakeTotal() {
+        int total = 0;
+        if (intakeOral != null) total += intakeOral;
+        if (intakeIv != null) total += intakeIv;
+        return total;
+    }
+
+    /**
+     * 배설 총량 계산
+     */
+    public int getOutputTotal() {
+        int total = 0;
+        if (outputUrine != null) total += outputUrine;
+        if (outputDrain != null) total += outputDrain;
+        return total;
+    }
 }
+
