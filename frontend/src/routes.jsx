@@ -6,38 +6,67 @@ import EmailLoginPage from './pages/EmailLoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
+import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
+import PublicRoute from './components/auth/PublicRoute.jsx';
 
 export const router = createBrowserRouter([
     {
         path: '/',
-        element: <LoginPage />, // 최초 진입은 로그인 화면
+        element: (
+            <PublicRoute>
+                <LoginPage />
+            </PublicRoute>
+        ),
     },
     {
         path: '/login',
-        element: <EmailLoginPage />, // 이메일 로그인 폼
+        element: (
+            <PublicRoute>
+                <EmailLoginPage />
+            </PublicRoute>
+        ),
     },
     {
         path: '/register',
-        element: <RegisterPage />, // 이메일 회원가입
+        element: (
+            <PublicRoute>
+                <RegisterPage />
+            </PublicRoute>
+        ),
     },
     {
         path: '/sign-up',
-        element: <RegisterPage />, // 이메일 회원가입 (별칭)
+        element: (
+            <PublicRoute>
+                <RegisterPage />
+            </PublicRoute>
+        ),
     },
     {
         path: '/terms',
-        element: <TermsOfServicePage />, // 이용약관
+        element: <TermsOfServicePage />,
     },
     {
         path: '/privacy',
-        element: <PrivacyPolicyPage />, // 개인정보처리방침
+        element: <PrivacyPolicyPage />,
     },
     {
         path: '/app',
-        element: <AppLayout />,
-        children: [{ index: true, element: <App /> }],
+        element: (
+            <ProtectedRoute>
+                <AppLayout />
+            </ProtectedRoute>
+        ),
+        children: [
+            {
+                index: true,
+                element: <DashboardPage />,
+            },
+        ],
     },
+
 ]);
 
 export default router;
