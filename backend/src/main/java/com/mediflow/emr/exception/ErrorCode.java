@@ -25,7 +25,13 @@ public enum ErrorCode {
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "email not verified"),
 
     // 부서 관련 에러 코드
-    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "department not found");
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "department not found"),
+
+    // 환자 관련 에러 코드
+    PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "patient not found"),
+
+    // 바이탈 관련 에러 코드
+    VITAL_NOT_FOUND(HttpStatus.NOT_FOUND, "vital sign not found");
 
     private final HttpStatus status;
     private final String defaultMessage;

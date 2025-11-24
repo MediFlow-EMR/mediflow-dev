@@ -31,6 +31,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PatientRepository patientRepository;
     private final ShiftRepository shiftRepository;
     private final AssignmentRepository assignmentRepository;
+    private final VitalSignRepository vitalSignRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
 
@@ -61,9 +62,13 @@ public class DataInitializer implements CommandLineRunner {
         List<Shift> shifts = createShifts();
         log.info("✅ 근무조 {} 개 생성 완료", shifts.size());
 
-        // 6. 간호사-환자 배정 (주간조 기준)
+        // 6. 간호사-환자 배정 (모든 근무조)
         List<Assignment> assignments = createAssignments(nurses, patients, shifts);
         log.info("✅ 배정 {} 건 생성 완료", assignments.size());
+
+        // 7. 바이탈 사인 생성
+        List<VitalSign> vitals = createVitalSigns(nurses, patients);
+        log.info("✅ 바이탈 사인 {} 건 생성 완료", vitals.size());
 
         log.info("========================================");
         log.info("초기 데이터 생성 완료!");
@@ -329,6 +334,73 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         return assignmentRepository.saveAll(assignments);
+    }
+
+    /**
+     * 바이탈 사인 생성 (입원 환자 대상, 최근 3일간 데이터)
+     */
+    private List<VitalSign> createVitalSigns(List<User> nurses, List<Patient> patients) {
+        List<VitalSign> vitals = new ArrayList<>();
+        
+        // 입원 환자만 필터링
+        List<Patient> admittedPatients = patients.stream()
+                .filter(Patient::getIsAdmitted)
+                .toList();
+
+        for (Patient patient : admittedPatients) {
+            // 같은 부서의 간호사 찾기
+            List<User> deptNurses = nurses.stream()
+                    .filter(n -> n.getDepartment() != null)
+                    .filter(n -> patient.getDepartment() != null)
+                    .filter(n -> n.getDepartment().getId().equals(patient.getDepartment().getId()))
+                    .toList();
+
+            if (deptNurses.isEmpty()) continue;
+
+            // 과거 3일간 하루 2-4회 바이탈 측정 (30분 단위)
+            for (int day = 1; day <= 3; day++) {
+                int measurementsPerDay = 2 + random.nextInt(3);
+                
+                for (int i = 0; i < measurementsPerDay; i++) {
+                    User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    
+                    // 측정 시간 (과거 day일, 8시~20시 사이, 30분 단위)
+                    int hour = 8 + random.nextInt(13); // 8~20시
+                    int minute = random.nextBoolean() ? 0 : 30; // 0분 또는 30분
+                    
+                    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                    java.time.LocalDateTime measuredAt = now
+                            .minusDays(day)
+                            .withHour(hour)
+                            .withMinute(minute)
+                            .withSecond(0)
+                            .withNano(0);
+
+                    // 미래 시간이면 하루 더 과거로 (안전장치)
+                    if (measuredAt.isAfter(now)) {
+                        measuredAt = measuredAt.minusDays(1);
+                    }
+
+                    // 정상 범위 기준으로 랜덤 바이탈 생성
+                    // 체온: 36.0 ~ 37.5°C (소수점 한자리)
+                    double bodyTemp = 36.0 + (random.nextInt(16) / 10.0); // 36.0, 36.1, 36.2, ..., 37.5
+
+                    vitals.add(VitalSign.builder()
+                            .patient(patient)
+                            .nurse(nurse)
+                            .systolicBp(110 + random.nextInt(30))  // 110-140
+                            .diastolicBp(70 + random.nextInt(20))  // 70-90
+                            .heartRate(65 + random.nextInt(30))    // 65-95
+                            .bodyTemp(bodyTemp)  // 36.0-37.5 (소수점 한자리)
+                            .respiratoryRate(14 + random.nextInt(6))  // 14-20
+                            .spo2(96 + random.nextInt(5))  // 96-100
+                            .measuredAt(measuredAt)
+                            .build());
+                }
+            }
+        }
+
+        return vitalSignRepository.saveAll(vitals);
     }
 
     /**

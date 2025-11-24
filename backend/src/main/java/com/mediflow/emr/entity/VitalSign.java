@@ -20,6 +20,23 @@ import java.time.LocalDateTime;
 @Builder
 public class VitalSign extends BaseTimeEntity {
 
+    /**
+     * 바이탈 사인 수정
+     */
+    public void update(Integer systolicBp, Integer diastolicBp, Integer heartRate,
+                      Double bodyTemp, Integer respiratoryRate, Integer spo2,
+                      LocalDateTime measuredAt) {
+        this.systolicBp = systolicBp;
+        this.diastolicBp = diastolicBp;
+        this.heartRate = heartRate;
+        this.bodyTemp = bodyTemp;
+        this.respiratoryRate = respiratoryRate;
+        this.spo2 = spo2;
+        if (measuredAt != null) {
+            this.measuredAt = measuredAt;
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vital_sign_id")

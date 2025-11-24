@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import VitalTab from '../patient/VitalTab';
 import styles from './PatientDetail.module.scss';
 
 /**
@@ -49,9 +50,12 @@ const PatientDetail = ({ patient }) => {
       </div>
 
       <div className={styles.content}>
-        <div className={styles.comingSoon}>
-          {tabs.find((t) => t.id === activeTab)?.label} 기능은 곧 추가됩니다.
-        </div>
+        {activeTab === 'vitals' && <VitalTab patientId={patient.patientId} />}
+        {activeTab !== 'vitals' && (
+          <div className={styles.comingSoon}>
+            {tabs.find((t) => t.id === activeTab)?.label} 기능은 곧 추가됩니다.
+          </div>
+        )}
       </div>
     </div>
   );

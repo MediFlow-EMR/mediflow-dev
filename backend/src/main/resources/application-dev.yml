@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mediflowdb}
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:mediflowdb}?serverTimezone=Asia/Seoul
     driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD}
@@ -12,6 +12,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MariaDBDialect
+        jdbc:
+          time_zone: Asia/Seoul
 
   # 이메일 설정 (Naver 기준)
   mail:
