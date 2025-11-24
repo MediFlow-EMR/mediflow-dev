@@ -22,7 +22,10 @@ public enum ErrorCode {
     VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "verification not found"),
     VERIFICATION_EXPIRED(HttpStatus.BAD_REQUEST, "verification code expired"),
     VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "verification code invalid"),
-    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "email not verified");
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "email not verified"),
+
+    // 부서 관련 에러 코드
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "department not found");
 
     private final HttpStatus status;
     private final String defaultMessage;
