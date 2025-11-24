@@ -56,4 +56,14 @@ public class NursingNote extends BaseTimeEntity {
     @Column(nullable = false, name = "ai_suggested")
     @Builder.Default
     private Boolean aiSuggested = false;
+
+    /**
+     * 간호기록 수정
+     */
+    public void update(String content, String plainText, NoteCategory category, Boolean isImportant) {
+        this.content = content;
+        this.plainText = plainText;
+        this.category = category;
+        this.isImportant = isImportant;
+    }
 }

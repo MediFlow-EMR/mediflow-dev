@@ -1,0 +1,371 @@
+.noteTab {
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+}
+
+.addButton {
+  padding: 0.5rem 1rem;
+  background: #0284c7;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+
+  &:hover {
+    background: #0369a1;
+    box-shadow: 0 4px 8px rgba(2, 132, 199, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* 간호기록 입력 폼 */
+.form {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+  }
+}
+
+.formHeader {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+
+  &:first-child {
+    flex: 1;
+  }
+}
+
+.select {
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #1f2937;
+
+  &:hover {
+    border-color: #d1d5db;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+  }
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.625rem 1rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+  }
+
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    accent-color: #0284c7;
+  }
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.submitButton {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: #0284c7;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+
+  &:hover {
+    background: #0369a1;
+    box-shadow: 0 4px 8px rgba(2, 132, 199, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+
+  &:hover {
+    background: #4b5563;
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* 간호기록 이력 목록 */
+.noteList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.noteItem {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    border-color: #0284c7;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);
+    transform: translateY(-2px);
+  }
+}
+
+.noteHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.noteHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.category {
+  padding: 0.25rem 0.75rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.importantBadge {
+  padding: 0.25rem 0.75rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.aiBadge {
+  padding: 0.25rem 0.75rem;
+  background: #e0e7ff;
+  color: #4338ca;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.noteHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.time {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.nurse {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  padding: 0.25rem 0.5rem;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.editButton {
+  padding: 0.375rem 0.75rem;
+  background: #0284c7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #0369a1;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.noteContent {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #1f2937;
+  word-break: break-word;
+
+  // 에디터에서 적용된 스타일 유지
+  strong, b {
+    font-weight: 600;
+  }
+
+  u {
+    text-decoration: underline;
+  }
+
+  p {
+    margin: 0.5rem 0;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // 형광펜 스타일
+  span[style*="background-color"] {
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.125rem;
+  }
+}
+
+.noteFooter {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.updated {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .formHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .noteHeaderRight {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+}
