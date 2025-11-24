@@ -286,45 +286,45 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     /**
-     * 간호사-환자 배정 (주간조 기준)
+     * 간호사-환자 배정 (모든 근무조에 배정)
      */
     private List<Assignment> createAssignments(List<User> nurses, 
                                                  List<Patient> patients, 
                                                  List<Shift> shifts) {
         List<Assignment> assignments = new ArrayList<>();
-        Shift dayShift = shifts.stream()
-                .filter(s -> s.getType() == ShiftType.DAY)
-                .findFirst()
-                .orElseThrow();
-
         LocalDate today = LocalDate.now();
 
-        // 부서별로 간호사와 환자를 그룹화하여 배정
-        for (User nurse : nurses) {
-            if (nurse.getDepartment() == null) continue;
+        // 각 근무조별로 배정
+        for (Shift shift : shifts) {
+            // 부서별로 간호사와 환자를 그룹화하여 배정
+            for (User nurse : nurses) {
+                if (nurse.getDepartment() == null) continue;
 
-            // 같은 부서의 입원 환자만 필터링
-            List<Patient> deptPatients = patients.stream()
-                    .filter(p -> p.getDepartment() != null)
-                    .filter(p -> p.getDepartment().getId().equals(nurse.getDepartment().getId()))
-                    .filter(Patient::getIsAdmitted)
-                    .toList();
+                // 같은 부서의 입원 환자만 필터링
+                List<Patient> deptPatients = patients.stream()
+                        .filter(p -> p.getDepartment() != null)
+                        .filter(p -> p.getDepartment().getId().equals(nurse.getDepartment().getId()))
+                        .filter(Patient::getIsAdmitted)
+                        .toList();
 
-            // 간호사당 2-4명 환자 배정
-            int patientsPerNurse = 2 + random.nextInt(3);
-            int startIdx = assignments.size() % Math.max(1, deptPatients.size());
+                if (deptPatients.isEmpty()) continue;
 
-            for (int i = 0; i < Math.min(patientsPerNurse, deptPatients.size()); i++) {
-                int patientIdx = (startIdx + i) % deptPatients.size();
-                Patient patient = deptPatients.get(patientIdx);
+                // 간호사당 2-4명 환자 배정
+                int patientsPerNurse = 2 + random.nextInt(3);
+                int startIdx = (assignments.size() + shift.getId().intValue()) % deptPatients.size();
 
-                assignments.add(Assignment.builder()
-                        .nurse(nurse)
-                        .patient(patient)
-                        .shift(dayShift)
-                        .assignedDate(today)
-                        .isPrimary(i == 0) // 첫 번째 환자는 주담당
-                        .build());
+                for (int i = 0; i < Math.min(patientsPerNurse, deptPatients.size()); i++) {
+                    int patientIdx = (startIdx + i) % deptPatients.size();
+                    Patient patient = deptPatients.get(patientIdx);
+
+                    assignments.add(Assignment.builder()
+                            .nurse(nurse)
+                            .patient(patient)
+                            .shift(shift)
+                            .assignedDate(today)
+                            .isPrimary(i == 0) // 첫 번째 환자는 주담당
+                            .build());
+                }
             }
         }
 
