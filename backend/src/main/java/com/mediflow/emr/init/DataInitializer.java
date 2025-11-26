@@ -37,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     private final MedicationRepository medicationRepository;
     private final NursingNoteRepository nursingNoteRepository;
     private final TestResultRepository testResultRepository;
+    private final HandoverRepository handoverRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
 
@@ -94,6 +95,10 @@ public class DataInitializer implements CommandLineRunner {
         // 12. 검사 결과 생성
         List<TestResult> testResults = createTestResults(nurses, patients);
         log.info("✅ 검사 결과 {} 건 생성 완료", testResults.size());
+
+        // 13. 인수인계 생성
+        List<Handover> handovers = createHandovers(departments, shifts, nurses);
+        log.info("✅ 인수인계 {} 건 생성 완료", handovers.size());
 
         log.info("========================================");
         log.info("초기 데이터 생성 완료!");
@@ -877,5 +882,75 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             return refRange;
         }
+    }
+
+    /**
+     * 인수인계 생성 (과거 5일간, 부서별 근무조 교대마다)
+     */
+    private List<Handover> createHandovers(List<DepartmentEntity> departments, 
+                                            List<Shift> shifts, 
+                                            List<User> nurses) {
+        List<Handover> handovers = new ArrayList<>();
+        
+        // 응급실과 중환자실만 인수인계 생성 (입원 부서)
+        List<DepartmentEntity> targetDepts = departments.stream()
+                .filter(d -> d.getCode().equals("ER") || d.getCode().equals("ICU") || 
+                            d.getCode().equals("MW") || d.getCode().equals("SW"))
+                .toList();
+
+        String[] summaryTemplates = {
+                "[환자001 (C001001, 45세/남)]\n- 주요 변화: 활력징후 안정적, 통증 완화됨\n- 수행한 처치: 진통제 투여, 드레싱 교환\n- 지속 관찰 사항: 수술 후 상태 모니터링 필요\n\n[환자002 (C001002, 62세/여)]\n- 주요 변화: 혈압 상승 경향, 식사 섭취량 증가\n- 수행한 처치: 혈압약 투여, 바이탈 체크\n- 지속 관찰 사항: 혈압 변화 추이 관찰",
+                
+                "[환자003 (C001003, 38세/남)]\n- 주요 변화: 발열 38.2도, 기침 증상 지속\n- 수행한 처치: 해열제 투여, 수액 공급\n- 지속 관찰 사항: 체온 변화 모니터링, 호흡 상태 관찰\n\n[환자004 (C001004, 55세/여)]\n- 주요 변화: 수면 양호, 통증 호소 없음\n- 수행한 처치: 정기 투약, 활력징후 측정\n- 지속 관찰 사항: 특이사항 없음",
+                
+                "[환자005 (C001005, 71세/남)]\n- 주요 변화: 의식 명료, 식사 70% 섭취\n- 수행한 처치: 인슐린 투여, 혈당 체크\n- 지속 관찰 사항: 혈당 조절 상태 확인\n\n[환자006 (C001006, 49세/여)]\n- 주요 변화: 배액량 감소, 상처 치유 양호\n- 수행한 처치: 드레싱 교환, 항생제 투여\n- 지속 관찰 사항: 감염 징후 관찰",
+                
+                "[환자007 (C001007, 33세/남)]\n- 주요 변화: 통증 VAS 7→4로 감소\n- 수행한 처치: 진통제 투여, 냉찜질 적용\n- 지속 관찰 사항: 통증 재평가 필요\n\n[환자008 (C001008, 58세/여)]\n- 주요 변화: 호흡곤란 호소, SpO2 92%\n- 수행한 처치: 산소 공급 2L/min, 주치의 보고\n- 지속 관찰 사항: 호흡 상태 집중 관찰 필요",
+                
+                "[환자009 (C001009, 66세/남)]\n- 주요 변화: 배뇨 정상, 부종 감소\n- 수행한 처치: 이뇨제 투여, I/O 체크\n- 지속 관찰 사항: 수분 균형 모니터링\n\n[환자010 (C001010, 42세/여)]\n- 주요 변화: 오심 증상 완화, 식사 가능\n- 수행한 처치: 항구토제 투여, 식이 조절\n- 지속 관찰 사항: 소화 상태 관찰"
+        };
+
+        // 과거 5일간 데이터 생성
+        for (int day = 1; day <= 5; day++) {
+            LocalDate handoverDate = LocalDate.now().minusDays(day);
+            
+            for (DepartmentEntity dept : targetDepts) {
+                // 해당 부서의 간호사 찾기
+                List<User> deptNurses = nurses.stream()
+                        .filter(n -> n.getDepartment() != null)
+                        .filter(n -> n.getDepartment().getId().equals(dept.getId()))
+                        .toList();
+
+                if (deptNurses.isEmpty()) continue;
+
+                // DAY → EVENING 인수인계
+                if (shifts.size() >= 2) {
+                    User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    handovers.add(Handover.builder()
+                            .department(dept)
+                            .fromShift(shifts.get(0)) // DAY
+                            .toShift(shifts.get(1))   // EVENING
+                            .handoverDate(handoverDate)
+                            .aiSummary(summaryTemplates[random.nextInt(summaryTemplates.length)])
+                            .createdBy(nurse)
+                            .build());
+                }
+
+                // EVENING → NIGHT 인수인계
+                if (shifts.size() >= 3) {
+                    User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    handovers.add(Handover.builder()
+                            .department(dept)
+                            .fromShift(shifts.get(1)) // EVENING
+                            .toShift(shifts.get(2))   // NIGHT
+                            .handoverDate(handoverDate)
+                            .aiSummary(summaryTemplates[random.nextInt(summaryTemplates.length)])
+                            .createdBy(nurse)
+                            .build());
+                }
+            }
+        }
+
+        return handoverRepository.saveAll(handovers);
     }
 }
