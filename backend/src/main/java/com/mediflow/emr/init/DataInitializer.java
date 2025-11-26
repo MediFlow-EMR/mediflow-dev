@@ -531,8 +531,9 @@ public class DataInitializer implements CommandLineRunner {
                 {"게보린", null, "1정", "PO", "1일 3회"},
                 {"판피린", null, "1정", "PO", "1일 3회"},
                 {"부루펜", null, "200mg", "PO", "1일 3회"},
-                {"박트로반", null, "적당량", "TOPICAL", "1일 2회"},
-                {"후시딘", null, "적당량", "TOPICAL", "1일 2회"}
+                {"후시딘", null, "적당량", "TOPICAL", "1일 2회"},
+                {"베아제", null, "1정", "PO", "1일 3회"},
+                {"가스활명수", null, "1포", "PO", "필요시"}
         };
 
         for (Patient patient : admittedPatients) {
@@ -601,8 +602,9 @@ public class DataInitializer implements CommandLineRunner {
                 {"게보린", null, "1정", MedicationRoute.PO, "1일 3회"},
                 {"판피린", null, "1정", MedicationRoute.PO, "1일 3회"},
                 {"부루펜", null, "200mg", MedicationRoute.PO, "1일 3회"},
-                {"박트로반", null, "적당량", MedicationRoute.TOPICAL, "1일 2회"},
-                {"후시딘", null, "적당량", MedicationRoute.TOPICAL, "1일 2회"}
+                {"후시딘", null, "적당량", MedicationRoute.TOPICAL, "1일 2회"},
+                {"베아제", null, "1정", MedicationRoute.PO, "1일 3회"},
+                {"가스활명수", null, "1포", MedicationRoute.PO, "필요시"}
         };
 
         for (Patient patient : admittedPatients) {

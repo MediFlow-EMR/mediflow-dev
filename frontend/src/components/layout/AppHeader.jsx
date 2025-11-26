@@ -13,6 +13,15 @@ const AppHeader = () => {
     const { clear } = useAuthStore();
     const [selectedDate, setSelectedDate] = useState(new Date());
 
+    const handleLogoClick = () => {
+        // /app 경로가 아닌 페이지에서만 navigate 실행
+        if (location.pathname !== '/app') {
+            navigate('/app');
+        }
+        // /app 경로에서는 탭을 'my'로 변경
+        useDashboardStore.getState().setActiveTab('my');
+    };
+
     const handleLogout = async () => {
         try {
             await AuthService.logout();
@@ -33,7 +42,7 @@ const AppHeader = () => {
     return (
         <header className={styles.header}>
             <div className={styles.left}>
-                <div className={styles.logo} onClick={() => navigate('/app')}>
+                <div className={styles.logo} onClick={handleLogoClick}>
                     MediFlow
                 </div>
                 <div className={styles.hospitalInfo}>

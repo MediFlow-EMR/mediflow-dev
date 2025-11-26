@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import useDashboardStore from '../stores/useDashboardStore';
 import PatientCard from '../components/dashboard/PatientCard';
 import PatientDetail from '../components/dashboard/PatientDetail';
@@ -31,18 +31,17 @@ import styles from './DashboardPage.module.scss';
  * ===================================================================
  */
 const DashboardPage = () => {
-  // 탭 상태: 'my' (내 담당) or 'all' (전체 환자)
-  const [activeTab, setActiveTab] = useState('my');
-
   const {
     myPatients,
     allPatients,
     selectedPatient,
     loading,
     error,
+    activeTab,
     fetchMyPatients,
     fetchAllPatients,
     selectPatient,
+    setActiveTab,
   } = useDashboardStore();
 
   // ===================================================================

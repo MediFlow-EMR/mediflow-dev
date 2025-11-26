@@ -11,6 +11,7 @@ const useDashboardStore = create((set) => ({
   selectedPatient: null,
   loading: false,
   error: null,
+  activeTab: 'my', // 현재 활성화된 탭 ('my', 'all', 'handover')
 
   // 내 담당 환자 목록 조회
   fetchMyPatients: async () => {
@@ -54,6 +55,11 @@ const useDashboardStore = create((set) => ({
     set({ selectedPatient: patient });
   },
 
+  // 탭 변경
+  setActiveTab: (tab) => {
+    set({ activeTab: tab });
+  },
+
   // 상태 초기화
   reset: () => {
     set({
@@ -62,6 +68,7 @@ const useDashboardStore = create((set) => ({
       selectedPatient: null,
       loading: false,
       error: null,
+      activeTab: 'my',
     });
   },
 }));
