@@ -80,3 +80,10 @@ app:
 drug-api:
   base-url: https://apis.data.go.kr/1471000/DrbEasyDrugInfoService
   service-key: ${DRUG_API_SERVICE_KEY}
+
+# Gemini API 설정
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-2.0-flash-exp
+  base-url: https://generativelanguage.googleapis.com/v1beta
+
