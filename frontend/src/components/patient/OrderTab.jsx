@@ -12,6 +12,7 @@ const OrderTab = ({ patientId }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDrugInfo, setShowDrugInfo] = useState(false);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [loadingDrugInfo, setLoadingDrugInfo] = useState(false);
 
   // 투약 경로 매핑
   const routeLabels = {
@@ -40,21 +41,23 @@ const OrderTab = ({ patientId }) => {
 
   // 오더 목록 조회
   const fetchOrders = async () => {
-    setLoading(true);
+    if (!patientId) return;
+    
     setError(null);
     try {
       const response = await apiClient.get(`/orders/patient/${patientId}`);
       setOrders(response.data.data || []);
+      setLoading(false);
     } catch (err) {
       console.error('오더 목록 조회 실패:', err);
       setError('오더 목록을 불러올 수 없습니다');
-    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     if (patientId) {
+      setLoading(true);
       fetchOrders();
     }
   }, [patientId]);
@@ -74,9 +77,33 @@ const OrderTab = ({ patientId }) => {
   };
 
   // 약품 상세 정보 보기
-  const handleViewDrugInfo = (order) => {
+  const handleViewDrugInfo = async (order) => {
     setSelectedOrder(order);
     setShowDrugInfo(true);
+    
+    // 약품 정보가 없으면 API 호출
+    if (!order.drugInfo) {
+      setLoadingDrugInfo(true);
+      try {
+        const response = await apiClient.get(`/orders/${order.id}/drug-detail`);
+        const drugInfo = response.data.data;
+        
+        // 오더 목록에서 해당 오더의 drugInfo 업데이트
+        setOrders(prevOrders => 
+          prevOrders.map(o => 
+            o.id === order.id ? { ...o, drugInfo } : o
+          )
+        );
+        
+        // 선택된 오더도 업데이트
+        setSelectedOrder({ ...order, drugInfo });
+      } catch (err) {
+        console.error('약품 상세 정보 조회 실패:', err);
+        setSelectedOrder({ ...order, drugInfo: null });
+      } finally {
+        setLoadingDrugInfo(false);
+      }
+    }
   };
 
   // 시간 포맷
@@ -97,10 +124,6 @@ const OrderTab = ({ patientId }) => {
   const filteredOrders = filterStatus === 'ALL' 
     ? orders 
     : orders.filter(order => order.status === filterStatus);
-
-  if (loading && orders.length === 0) {
-    return <div className={styles.loading}>오더 정보를 불러오는 중...</div>;
-  }
 
   return (
     <div className={styles.orderTab}>
@@ -138,6 +161,9 @@ const OrderTab = ({ patientId }) => {
 
       {/* 오더 목록 */}
       <div className={styles.orderList}>
+        {loading && orders.length === 0 && (
+          <div className={styles.loading}>오더 정보를 불러오는 중...</div>
+        )}
         {filteredOrders.length === 0 ? (
           <div className={styles.empty}>
             {filterStatus === 'ALL' ? '등록된 오더가 없습니다' : `${statusLabels[filterStatus]} 오더가 없습니다`}
@@ -231,7 +257,12 @@ const OrderTab = ({ patientId }) => {
               </button>
             </div>
             <div className={styles.modalBody}>
-              {selectedOrder.drugInfo ? (
+              {loadingDrugInfo ? (
+                <div className={styles.loadingSpinner}>
+                  <div className={styles.spinner}></div>
+                  <p>약품 정보를 불러오는 중...</p>
+                </div>
+              ) : selectedOrder.drugInfo ? (
                 <>
                   <div className={styles.drugInfoSection}>
                     <h4>기본 정보</h4>
