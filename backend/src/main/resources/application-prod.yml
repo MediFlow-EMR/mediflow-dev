@@ -87,8 +87,8 @@ cookie:
 
 app:
   # EC2 .env에 있는 프론트엔드 주소 사용
-  oauth2-success-redirect-url: ${OAUTH2_SUCCESS_URL}
-  oauth2-failure-redirect-url: ${OAUTH2_FAILURE_URL}
+  oauth2-success-redirect-url: https://mediflow-emr.cloud/app
+  oauth2-failure-redirect-url: https://mediflow-emr.cloud?from=oauth2
 
 # 식약처 API
 drug-api:
