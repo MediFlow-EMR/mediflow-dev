@@ -44,6 +44,11 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        if (departmentRepository.count() > 0) {
+            log.info("========================================");
+            log.info("데이터가 이미 존재합니다. 초기화를 건너뜁니다.");
+            return;  // 여기서 종료
+        }
         log.info("========================================");
         log.info("개발 환경 초기 데이터 생성 시작");
         log.info("========================================");
@@ -103,6 +108,7 @@ public class DataInitializer implements CommandLineRunner {
         log.info("========================================");
         log.info("초기 데이터 생성 완료!");
         log.info("========================================");
+
     }
 
     /**
