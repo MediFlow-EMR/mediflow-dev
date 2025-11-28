@@ -104,10 +104,10 @@ public class CookieUtil {
     private ResponseCookie buildCookie(String name, String value, int maxAgeSeconds) {
         return ResponseCookie.from(name, value)
                 .httpOnly(props.isHttpOnly())
-                .secure(props.isSecure())
+                .secure(true)
                 .domain(props.getDomain())
                 .path("/")
-                .sameSite(props.getSameSite())
+                .sameSite("None")
                 .maxAge(maxAgeSeconds)
                 .build();
     }

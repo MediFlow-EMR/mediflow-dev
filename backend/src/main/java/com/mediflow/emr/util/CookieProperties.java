@@ -14,7 +14,6 @@ public class CookieProperties {
     private String domain; // application-dev.yml: cookie.domain
     private boolean secure;
     private boolean httpOnly; // 자바스크립트에서 쿠키 접근 불가, XSS 공격 방어
-    private String sameSite; // Lax, Strict, None, CSRF 공격 방어
     private String accessTokenName;
     private String refreshTokenName;
     private int accessMaxAge; // seconds
