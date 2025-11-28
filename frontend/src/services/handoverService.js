@@ -3,7 +3,7 @@ import apiClient from "./apiClient.js";
 export const HandoverService = {
   generateAiSummary: async ({ departmentId, fromShiftId }) => {
     const response = await apiClient.post(
-        `/api/handovers/ai-summary`,
+        `/handovers/ai-summary`,
       null,
       {
         params: { departmentId, fromShiftId },
@@ -15,7 +15,7 @@ export const HandoverService = {
 
   saveHandover: async ({ departmentId, fromShiftId, toShiftId, aiSummary }) => {
     const response = await apiClient.post(
-      `/api/handovers`,
+      `/handovers`,
       aiSummary,
       {
         params: { departmentId, fromShiftId, toShiftId },
@@ -28,7 +28,7 @@ export const HandoverService = {
 
   getHandoversByDepartment: async (departmentId) => {
     const response = await apiClient.get(
-      `/api/handovers/department/${departmentId}`,
+      `/handovers/department/${departmentId}`,
       { withCredentials: true }
     );
     return { success: true, data: response.data.data };
@@ -36,7 +36,7 @@ export const HandoverService = {
 
   deleteHandover: async (handoverId) => {
     const response = await apiClient.delete(
-      `/api/handovers/${handoverId}`,
+      `/handovers/${handoverId}`,
       { withCredentials: true }
     );
     return { success: true, message: response.data.message };
