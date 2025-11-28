@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
     const checkAuth = async () => {
       try {
         // 쿠키가 유효한지 간단한 API 호출로 확인
-        await apiClient.get('/api/users/me');
+        await apiClient.get('/users/me');
         
         // API 호출 성공하면 쿠키가 유효함
         setAuth(null, null, {});

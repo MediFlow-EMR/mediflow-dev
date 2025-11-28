@@ -11,7 +11,9 @@ const apiClient = axios.create({
     // baseURL을 환경에 따라 동적으로 설정
     // 배포 환경이면 .env.production의 전체 주소(https://api...)를 사용하고,
     // 로컬 환경이면 '/api' (Vite Proxy)를 사용합니다.
-    baseURL: isProduction ? import.meta.env.VITE_API_BASE_URL : '/api',
+    baseURL: isProduction
+        ? import.meta.env.VITE_API_BASE_URL + '/api'
+        : '/api',
     withCredentials: true,
 });
 
