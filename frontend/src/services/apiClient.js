@@ -1,11 +1,17 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
+// 현재 환경이 production인지 확인하는 플래그를 만듭니다.
+const isProduction = import.meta.env.PROD;
+
 // axios 인스턴스 만들기
-// - baseURL: 프론트에서는 /api 로 호출 → vite 프록시가 백엔드로 전달
+// - baseURL: 로컬(dev)에서는 /api (Vite Proxy), 배포(prod)에서는 전체 URL을 사용합니다.
 // - withCredentials: HTTP-Only 쿠키를 자동으로 포함/수신
 const apiClient = axios.create({
-    baseURL: '/api',
+    // baseURL을 환경에 따라 동적으로 설정
+    // 배포 환경이면 .env.production의 전체 주소(https://api...)를 사용하고,
+    // 로컬 환경이면 '/api' (Vite Proxy)를 사용합니다.
+    baseURL: isProduction ? import.meta.env.VITE_API_BASE_URL : '/api',
     withCredentials: true,
 });
 

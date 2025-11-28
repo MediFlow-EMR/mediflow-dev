@@ -1,11 +1,9 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9005';
+import apiClient from "./apiClient.js";
 
 export const HandoverService = {
   generateAiSummary: async ({ departmentId, fromShiftId }) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/handovers/ai-summary`,
+    const response = await apiClient.post(
+        `/api/handovers/ai-summary`,
       null,
       {
         params: { departmentId, fromShiftId },
@@ -16,8 +14,8 @@ export const HandoverService = {
   },
 
   saveHandover: async ({ departmentId, fromShiftId, toShiftId, aiSummary }) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/handovers`,
+    const response = await apiClient.post(
+      `/api/handovers`,
       aiSummary,
       {
         params: { departmentId, fromShiftId, toShiftId },
@@ -29,16 +27,16 @@ export const HandoverService = {
   },
 
   getHandoversByDepartment: async (departmentId) => {
-    const response = await axios.get(
-      `${API_BASE_URL}/api/handovers/department/${departmentId}`,
+    const response = await apiClient.get(
+      `/api/handovers/department/${departmentId}`,
       { withCredentials: true }
     );
     return { success: true, data: response.data.data };
   },
 
   deleteHandover: async (handoverId) => {
-    const response = await axios.delete(
-      `${API_BASE_URL}/api/handovers/${handoverId}`,
+    const response = await apiClient.delete(
+      `/api/handovers/${handoverId}`,
       { withCredentials: true }
     );
     return { success: true, message: response.data.message };
