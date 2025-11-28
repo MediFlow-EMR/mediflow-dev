@@ -54,12 +54,12 @@ const AppHeader = () => {
             </div>
 
             <div className={styles.right}>
-                <button
+                {/*<button
                     className={styles.aiTestBtn}
                     onClick={() => navigate('/app/ai-test')}
                 >
                     🤖 AI 테스트
-                </button>
+                </button>*/}
                 <div className={styles.userInfo}>
                     <div className={styles.nurseName}>
                         {departmentSummary?.nurseName || '사용자'}

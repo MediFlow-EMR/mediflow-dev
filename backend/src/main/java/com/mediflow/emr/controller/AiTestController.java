@@ -11,10 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * AI 테스트 컨트롤러
+ * AI 테스트 컨트롤러 (개발용 - 운영 환경에서는 비활성화)
  */
 @Slf4j
-@RestController
+// @RestController  // 운영 환경에서는 주석 처리하여 비활성화
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 public class AiTestController {

@@ -65,10 +65,11 @@ export const router = createBrowserRouter([
                 index: true,
                 element: <DashboardPage />,
             },
-            {
-                path: 'ai-test',
-                element: <AiTestPage />,
-            },
+            // AI 테스트 페이지 - 개발용으로 주석 처리
+            // {
+            //     path: 'ai-test',
+            //     element: <AiTestPage />,
+            // },
         ],
     },
 
