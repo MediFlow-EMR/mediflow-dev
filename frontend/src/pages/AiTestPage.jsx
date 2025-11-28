@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import styles from './AiTestPage.module.scss';
+import apiClient from '../services/apiClient';
 
 /**
  * AI 테스트 페이지
@@ -21,16 +22,9 @@ const AiTestPage = () => {
     setAnswer('');
 
     try {
-      const response = await fetch('/api/ai/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ question }),
-      });
+      const response = await apiClient.post('/ai/ask', { question });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         setAnswer(data.data.answer);
