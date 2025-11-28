@@ -40,18 +40,12 @@ public class HandoverService {
 
         LocalDate today = LocalDate.now();
 
-        // 오늘 날짜 + 해당 근무조에 배정된 환자만 조회
-        List<Assignment> allAssignments = assignmentRepository.findByNurseIdAndShiftId(nurseId, fromShiftId);
-        log.info("전체 배정 수: {}, 조회 조건 - nurseId: {}, shiftId: {}", allAssignments.size(), nurseId, fromShiftId);
-        
-        List<Assignment> assignments = allAssignments.stream()
-            .filter(a -> a.getAssignedDate().equals(today))
-            .collect(Collectors.toList());
-        
-        log.info("오늘({}) 배정 수: {}", today, assignments.size());
+        // 해당 근무조에 배정된 환자 조회
+        List<Assignment> assignments = assignmentRepository.findByNurseIdAndShiftId(nurseId, fromShiftId);
+        log.info("배정 수: {}, 조회 조건 - nurseId: {}, shiftId: {}", assignments.size(), nurseId, fromShiftId);
         
         if (assignments.isEmpty()) {
-            log.warn("오늘({}) 근무조({})에 배정된 환자가 없습니다 - nurseId: {}", today, fromShiftId, nurseId);
+            log.warn("근무조({})에 배정된 환자가 없습니다 - nurseId: {}", fromShiftId, nurseId);
             return "현재 근무조에 배정된 환자가 없습니다.";
         }
 
