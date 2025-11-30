@@ -1,0 +1,1758 @@
+openapi: 3.0.3
+info:
+  title: MediFlow EMR API
+  version: 1.0.0
+  description: |
+    전자의무기록(EMR) 시스템을 위한 RESTful API 문서입니다.
+    간호사가 환자의 바이탈 사인, 간호기록, 투약 기록 등을 관리하고,
+    AI 기반 인수인계 요약 기능을 제공합니다.
+  contact:
+    name: MediFlow Team
+    email: support@mediflow.com
+
+servers:
+  - url: http://localhost:8080
+    description: 로컬 개발 서버
+  - url: https://api.mediflow.com
+    description: 프로덕션 서버
+
+tags:
+  - name: Auth
+    description: 인증 및 회원가입 관련 API
+  - name: Users
+    description: 사용자 정보 관련 API
+  - name: Dashboard
+    description: 대시보드 및 환자 목록 조회 API
+  - name: Vital Signs
+    description: 바이탈 사인(활력징후) 관리 API
+  - name: Nursing Notes
+    description: 간호기록 관리 API
+  - name: Medications
+    description: 투약 기록 관리 API
+  - name: Handovers
+    description: AI 기반 인수인계 관리 API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/auth/join:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 회원가입
+      description: 이메일과 비밀번호로 새로운 계정을 생성합니다.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailSignupRequest'
+            example:
+              email: nurse@mediflow.com
+              password: password123!
+      responses:
+        '200':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 회원가입이 완료되었습니다.
+        '400':
+          description: 잘못된 요청 (이메일 형식 오류, 비밀번호 조건 미충족 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 이미 존재하는 이메일
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/email/login:
+    post:
+      tags:
+        - Auth
+      summary: 이메일 로그인
+      description: 이메일과 비밀번호로 로그인하고 JWT 토큰을 발급받습니다.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailLoginRequest'
+            example:
+              email: nurse@mediflow.com
+              password: password123!
+      responses:
+        '200':
+          description: 로그인 성공
+          headers:
+            Set-Cookie:
+              description: JWT Access Token 및 Refresh Token
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT Access Token
+                  message:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  redirectUrl:
+                    type: string
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                message: 로그인에 성공했습니다.
+                email: nurse@mediflow.com
+                role: NURSE
+                redirectUrl: /app
+        '401':
+          description: 인증 실패 (이메일 또는 비밀번호 오류)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Access Token 갱신
+      description: Refresh Token을 사용하여 새로운 Access Token을 발급받습니다.
+      security: []
+      responses:
+        '204':
+          description: 토큰 갱신 성공
+          headers:
+            Set-Cookie:
+              description: 새로운 JWT Access Token
+              schema:
+                type: string
+        '401':
+          description: Refresh Token이 유효하지 않음
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: 로그아웃
+      description: 현재 세션을 종료하고 인증 쿠키를 삭제합니다.
+      responses:
+        '204':
+          description: 로그아웃 성공
+
+  /api/users/me:
+    get:
+      tags:
+        - Users
+      summary: 현재 사용자 정보 조회
+      description: 인증된 사용자의 프로필 정보를 조회합니다.
+      responses:
+        '200':
+          description: 사용자 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  id: 1
+                  email: nurse@mediflow.com
+                  nickname: 김간호
+                  profileImageUrl: https://example.com/profile.jpg
+                  provider: LOCAL
+                message: null
+        '401':
+          description: 인증되지 않은 사용자
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dashboard/my-patients:
+    get:
+      tags:
+        - Dashboard
+      summary: 내 담당 환자 목록 조회
+      description: 현재 로그인한 간호사에게 배정된 환자 목록을 조회합니다.
+      responses:
+        '200':
+          description: 담당 환자 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MyPatientResponse'
+              example:
+                success: true
+                data:
+                  - patientId: 1
+                    chartNumber: P2024001
+                    name: 홍길동
+                    age: 45
+                    gender: M
+                    diagnosis: 급성 심근경색
+                    allergies: 페니실린
+                    triageLevel: 2
+                    isPrimary: true
+                    systolicBp: 120
+                    diastolicBp: 80
+                    heartRate: 75
+                    bodyTemp: 36.5
+                    spo2: 98
+                    lastVitalTime: 2024-11-30T10:30:00
+                    departmentName: 응급실
+                    departmentCode: ER
+                message: null
+        '401':
+          description: 인증되지 않은 사용자
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/dashboard/all-patients:
+    get:
+      tags:
+        - Dashboard
+      summary: 전체 환자 목록 조회
+      description: 간호사가 속한 부서의 모든 입원 환자 목록을 조회합니다.
+      responses:
+        '200':
+          description: 전체 환자 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MyPatientResponse'
+        '401':
+          description: 인증되지 않은 사용자
+
+  /api/dashboard/department-summary:
+    get:
+      tags:
+        - Dashboard
+      summary: 부서 요약 정보 조회
+      description: 현재 부서의 환자 수, 담당 환자 수 등 요약 정보를 조회합니다.
+      responses:
+        '200':
+          description: 부서 요약 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DepartmentSummaryResponse'
+              example:
+                success: true
+                data:
+                  departmentName: 응급실
+                  departmentCode: ER
+                  totalPatients: 25
+                  myPatients: 8
+                  nurseName: 김간호
+                  shiftType: DAY
+                message: null
+        '401':
+          description: 인증되지 않은 사용자
+
+  /api/vitals:
+    post:
+      tags:
+        - Vital Signs
+      summary: 바이탈 사인 등록
+      description: 환자의 활력징후(혈압, 심박수, 체온 등)를 기록합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VitalSignRequest'
+            example:
+              patientId: 1
+              systolicBp: 120
+              diastolicBp: 80
+              heartRate: 75
+              bodyTemp: 36.5
+              respiratoryRate: 18
+              spo2: 98
+              measuredAt: 2024-11-30T10:30:00
+      responses:
+        '200':
+          description: 바이탈 사인 등록 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/VitalSignResponse'
+              example:
+                success: true
+                data:
+                  id: 1
+                  patientId: 1
+                  patientName: 홍길동
+                  nurseId: 1
+                  nurseName: 김간호
+                  systolicBp: 120
+                  diastolicBp: 80
+                  heartRate: 75
+                  bodyTemp: 36.5
+                  respiratoryRate: 18
+                  spo2: 98
+                  measuredAt: 2024-11-30T10:30:00
+                  createdAt: 2024-11-30T10:30:00
+                  canEdit: true
+                message: 바이탈 사인이 등록되었습니다
+        '400':
+          description: 잘못된 요청 (유효성 검증 실패)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/vitals/patient/{patientId}:
+    get:
+      tags:
+        - Vital Signs
+      summary: 환자의 바이탈 사인 목록 조회
+      description: 특정 환자의 모든 바이탈 사인 기록을 조회합니다.
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: 환자 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 바이탈 사인 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/VitalSignResponse'
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 접근 권한 없음
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/vitals/patient/{patientId}/latest:
+    get:
+      tags:
+        - Vital Signs
+      summary: 환자의 최근 바이탈 사인 조회
+      description: 특정 환자의 가장 최근 바이탈 사인 기록을 조회합니다.
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: 환자 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 최근 바이탈 사인 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/VitalSignResponse'
+        '404':
+          description: 바이탈 사인 기록이 없음
+
+  /api/vitals/{vitalId}:
+    put:
+      tags:
+        - Vital Signs
+      summary: 바이탈 사인 수정
+      description: 기존 바이탈 사인 기록을 수정합니다.
+      parameters:
+        - name: vitalId
+          in: path
+          required: true
+          description: 바이탈 사인 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VitalSignRequest'
+      responses:
+        '200':
+          description: 바이탈 사인 수정 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/VitalSignResponse'
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 수정 권한 없음
+        '404':
+          description: 바이탈 사인을 찾을 수 없음
+
+    delete:
+      tags:
+        - Vital Signs
+      summary: 바이탈 사인 삭제
+      description: 바이탈 사인 기록을 삭제합니다.
+      parameters:
+        - name: vitalId
+          in: path
+          required: true
+          description: 바이탈 사인 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 바이탈 사인 삭제 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                success: true
+                data: null
+                message: 바이탈 사인이 삭제되었습니다
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 삭제 권한 없음
+        '404':
+          description: 바이탈 사인을 찾을 수 없음
+
+  /api/nursing-notes:
+    post:
+      tags:
+        - Nursing Notes
+      summary: 간호기록 등록
+      description: 환자에 대한 간호기록을 작성합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NursingNoteRequest'
+            example:
+              patientId: 1
+              content: <p>환자 상태 양호, 통증 호소 없음</p>
+              plainText: 환자 상태 양호, 통증 호소 없음
+              category: OBSERVATION
+              isImportant: false
+      responses:
+        '200':
+          description: 간호기록 등록 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NursingNoteResponse'
+              example:
+                success: true
+                data:
+                  id: 1
+                  patientId: 1
+                  patientName: 홍길동
+                  nurseId: 1
+                  nurseName: 김간호
+                  content: <p>환자 상태 양호, 통증 호소 없음</p>
+                  plainText: 환자 상태 양호, 통증 호소 없음
+                  category: OBSERVATION
+                  isImportant: false
+                  aiSuggested: false
+                  createdAt: 2024-11-30T10:30:00
+                  updatedAt: 2024-11-30T10:30:00
+                  canEdit: true
+                message: 간호기록이 등록되었습니다
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/nursing-notes/patient/{patientId}:
+    get:
+      tags:
+        - Nursing Notes
+      summary: 환자의 간호기록 목록 조회
+      description: 특정 환자의 모든 간호기록을 조회합니다.
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: 환자 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 간호기록 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/NursingNoteResponse'
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 접근 권한 없음
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/nursing-notes/{noteId}:
+    put:
+      tags:
+        - Nursing Notes
+      summary: 간호기록 수정
+      description: 기존 간호기록을 수정합니다.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          description: 간호기록 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NursingNoteRequest'
+      responses:
+        '200':
+          description: 간호기록 수정 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/NursingNoteResponse'
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 수정 권한 없음
+        '404':
+          description: 간호기록을 찾을 수 없음
+
+    delete:
+      tags:
+        - Nursing Notes
+      summary: 간호기록 삭제
+      description: 간호기록을 삭제합니다.
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          description: 간호기록 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 간호기록 삭제 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                success: true
+                data: null
+                message: 간호기록이 삭제되었습니다
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 삭제 권한 없음
+        '404':
+          description: 간호기록을 찾을 수 없음
+
+  /api/medications:
+    post:
+      tags:
+        - Medications
+      summary: 투약 기록 등록
+      description: 환자에게 투약한 약물 정보를 기록합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+            example:
+              patientId: 1
+              drugName: 타이레놀
+              drugCode: A01AB01
+              dose: 500mg
+              route: PO
+              frequency: TID
+              administeredAt: 2024-11-30T10:30:00
+              orderDoctor: 김의사
+      responses:
+        '200':
+          description: 투약 기록 등록 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MedicationResponse'
+              example:
+                success: true
+                data:
+                  id: 1
+                  patientId: 1
+                  patientName: 홍길동
+                  nurseId: 1
+                  nurseName: 김간호
+                  drugName: 타이레놀
+                  drugCode: A01AB01
+                  dose: 500mg
+                  route: PO
+                  frequency: TID
+                  administeredAt: 2024-11-30T10:30:00
+                  orderDoctor: 김의사
+                  createdAt: 2024-11-30T10:30:00
+                  canEdit: true
+                message: 투약 기록이 등록되었습니다
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/medications/patient/{patientId}:
+    get:
+      tags:
+        - Medications
+      summary: 환자의 투약 기록 목록 조회
+      description: 특정 환자의 모든 투약 기록을 조회합니다.
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          description: 환자 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 투약 기록 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MedicationResponse'
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 접근 권한 없음
+        '404':
+          description: 환자를 찾을 수 없음
+
+  /api/medications/{medicationId}:
+    put:
+      tags:
+        - Medications
+      summary: 투약 기록 수정
+      description: 기존 투약 기록을 수정합니다.
+      parameters:
+        - name: medicationId
+          in: path
+          required: true
+          description: 투약 기록 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+      responses:
+        '200':
+          description: 투약 기록 수정 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MedicationResponse'
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 수정 권한 없음
+        '404':
+          description: 투약 기록을 찾을 수 없음
+
+    delete:
+      tags:
+        - Medications
+      summary: 투약 기록 삭제
+      description: 투약 기록을 삭제합니다.
+      parameters:
+        - name: medicationId
+          in: path
+          required: true
+          description: 투약 기록 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 투약 기록 삭제 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                success: true
+                data: null
+                message: 투약 기록이 삭제되었습니다
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 삭제 권한 없음
+        '404':
+          description: 투약 기록을 찾을 수 없음
+
+  /api/medications/drugs/search:
+    get:
+      tags:
+        - Medications
+      summary: 약품 검색
+      description: 식약처 API를 통해 약품을 검색합니다.
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          description: 검색할 약품명 (최소 2자 이상)
+          schema:
+            type: string
+          example: 타이레놀
+      responses:
+        '200':
+          description: 약품 검색 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DrugSearchResult'
+              example:
+                success: true
+                data:
+                  - itemName: 타이레놀정 500mg
+                    entpName: 한국얀센
+                    itemSeq: "123456789"
+                    efcyQesitm: 해열, 진통
+                message: null
+        '400':
+          description: 잘못된 요청 (검색어가 너무 짧음)
+
+  /api/handovers/ai-summary:
+    post:
+      tags:
+        - Handovers
+      summary: AI 인수인계 요약 생성
+      description: AI를 활용하여 근무조 인수인계 요약을 자동 생성합니다.
+      parameters:
+        - name: departmentId
+          in: query
+          required: true
+          description: 부서 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: fromShiftId
+          in: query
+          required: true
+          description: 인계 근무조 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: AI 요약 생성 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: string
+                        description: AI가 생성한 인수인계 요약 텍스트
+              example:
+                success: true
+                data: |
+                  [응급실 주간 근무 인수인계]
+                  
+                  1. 홍길동(P2024001) - 급성 심근경색
+                     - 바이탈: BP 120/80, HR 75, BT 36.5°C
+                     - 특이사항: 통증 호소 없음, 상태 안정적
+                  
+                  2. 김영희(P2024002) - 뇌졸중
+                     - 바이탈: BP 140/90, HR 82, BT 36.8°C
+                     - 특이사항: 의식 명료, 우측 편마비 지속
+                message: null
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 부서 또는 근무조를 찾을 수 없음
+
+  /api/handovers:
+    post:
+      tags:
+        - Handovers
+      summary: 인수인계 저장
+      description: AI가 생성한 인수인계 요약을 저장합니다.
+      parameters:
+        - name: departmentId
+          in: query
+          required: true
+          description: 부서 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: fromShiftId
+          in: query
+          required: true
+          description: 인계 근무조 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: toShiftId
+          in: query
+          required: true
+          description: 인수 근무조 ID
+          schema:
+            type: integer
+            format: int64
+          example: 2
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              description: AI가 생성한 인수인계 요약 텍스트
+            example: |
+              [응급실 주간 근무 인수인계]
+              
+              1. 홍길동(P2024001) - 급성 심근경색
+                 - 바이탈: BP 120/80, HR 75, BT 36.5°C
+                 - 특이사항: 통증 호소 없음, 상태 안정적
+      responses:
+        '200':
+          description: 인수인계 저장 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                success: true
+                data: null
+                message: 인수인계가 저장되었습니다
+        '400':
+          description: 잘못된 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 부서 또는 근무조를 찾을 수 없음
+
+  /api/handovers/department/{departmentId}:
+    get:
+      tags:
+        - Handovers
+      summary: 부서별 인수인계 목록 조회
+      description: 특정 부서의 인수인계 기록을 조회합니다.
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          description: 부서 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 인수인계 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HandoverDto'
+              example:
+                success: true
+                data:
+                  - id: 1
+                    departmentId: 1
+                    departmentName: 응급실
+                    fromShiftId: 1
+                    fromShiftType: DAY
+                    toShiftId: 2
+                    toShiftType: EVENING
+                    handoverDate: 2024-11-30
+                    aiSummary: "[응급실 주간 근무 인수인계]..."
+                    additionalNotes: null
+                    createdById: 1
+                    createdByName: 김간호
+                    createdAt: 2024-11-30T16:00:00
+                message: null
+        '404':
+          description: 부서를 찾을 수 없음
+
+  /api/handovers/{handoverId}:
+    delete:
+      tags:
+        - Handovers
+      summary: 인수인계 삭제
+      description: 인수인계 기록을 삭제합니다.
+      parameters:
+        - name: handoverId
+          in: path
+          required: true
+          description: 인수인계 ID
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: 인수인계 삭제 성공
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        nullable: true
+              example:
+                success: true
+                data: null
+                message: 인수인계가 삭제되었습니다
+        '401':
+          description: 인증되지 않은 사용자
+        '403':
+          description: 삭제 권한 없음
+        '404':
+          description: 인수인계를 찾을 수 없음
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT 토큰을 사용한 인증. 로그인 후 발급받은 토큰을 Authorization 헤더에 포함시켜 요청합니다.
+
+  schemas:
+    EmailSignupRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: 사용자 이메일 주소
+          example: nurse@mediflow.com
+        password:
+          type: string
+          format: password
+          description: 비밀번호 (최소 8자 이상)
+          example: password123!
+
+    EmailLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: 사용자 이메일 주소
+          example: nurse@mediflow.com
+        password:
+          type: string
+          format: password
+          description: 비밀번호
+          example: password123!
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 요청 성공 여부
+          example: true
+        data:
+          type: object
+          description: 응답 데이터
+          nullable: true
+        message:
+          type: string
+          description: 응답 메시지
+          nullable: true
+          example: null
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 요청 성공 여부
+          example: false
+        data:
+          type: object
+          nullable: true
+          example: null
+        message:
+          type: string
+          description: 오류 메시지
+          example: 잘못된 요청입니다.
+
+    UserResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 사용자 ID
+          example: 1
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+          example: nurse@mediflow.com
+        nickname:
+          type: string
+          description: 닉네임
+          example: 김간호
+        profileImageUrl:
+          type: string
+          format: uri
+          description: 프로필 이미지 URL
+          nullable: true
+          example: https://example.com/profile.jpg
+        provider:
+          type: string
+          enum: [GOOGLE, KAKAO, LOCAL]
+          description: 로그인 제공자
+          example: LOCAL
+
+    MyPatientResponse:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        chartNumber:
+          type: string
+          description: 차트번호
+          example: P2024001
+        name:
+          type: string
+          description: 환자명
+          example: 홍길동
+        age:
+          type: integer
+          description: 나이
+          example: 45
+        gender:
+          type: string
+          enum: [M, F]
+          description: 성별 (M=남성, F=여성)
+          example: M
+        diagnosis:
+          type: string
+          description: 주진단명
+          example: 급성 심근경색
+        allergies:
+          type: string
+          description: 알러지 정보
+          nullable: true
+          example: 페니실린
+        triageLevel:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 트리아지 단계 (1-5, 응급실만 해당)
+          nullable: true
+          example: 2
+        isPrimary:
+          type: boolean
+          description: 주담당 여부
+          example: true
+        systolicBp:
+          type: integer
+          description: 최근 수축기 혈압
+          nullable: true
+          example: 120
+        diastolicBp:
+          type: integer
+          description: 최근 이완기 혈압
+          nullable: true
+          example: 80
+        heartRate:
+          type: integer
+          description: 최근 심박수
+          nullable: true
+          example: 75
+        bodyTemp:
+          type: number
+          format: double
+          description: 최근 체온
+          nullable: true
+          example: 36.5
+        spo2:
+          type: integer
+          description: 최근 산소포화도
+          nullable: true
+          example: 98
+        lastVitalTime:
+          type: string
+          format: date-time
+          description: 최근 바이탈 측정 시간
+          nullable: true
+          example: 2024-11-30T10:30:00
+        departmentName:
+          type: string
+          description: 부서명
+          example: 응급실
+        departmentCode:
+          type: string
+          description: 부서 코드
+          example: ER
+
+    DepartmentSummaryResponse:
+      type: object
+      properties:
+        departmentName:
+          type: string
+          description: 부서명
+          example: 응급실
+        departmentCode:
+          type: string
+          description: 부서 코드
+          example: ER
+        totalPatients:
+          type: integer
+          format: int64
+          description: 총 환자 수
+          example: 25
+        myPatients:
+          type: integer
+          format: int64
+          description: 내 담당 환자 수
+          example: 8
+        nurseName:
+          type: string
+          description: 간호사명
+          example: 김간호
+        shiftType:
+          type: string
+          enum: [DAY, EVENING, NIGHT]
+          description: 근무조 유형 (DAY=주간, EVENING=초번, NIGHT=야간)
+          example: DAY
+
+    VitalSignRequest:
+      type: object
+      required:
+        - patientId
+      properties:
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        systolicBp:
+          type: integer
+          minimum: 50
+          maximum: 250
+          description: 수축기 혈압 (mmHg)
+          nullable: true
+          example: 120
+        diastolicBp:
+          type: integer
+          minimum: 30
+          maximum: 150
+          description: 이완기 혈압 (mmHg)
+          nullable: true
+          example: 80
+        heartRate:
+          type: integer
+          minimum: 30
+          maximum: 250
+          description: 심박수 (bpm)
+          nullable: true
+          example: 75
+        bodyTemp:
+          type: number
+          format: double
+          minimum: 35.0
+          maximum: 42.0
+          description: 체온 (°C)
+          nullable: true
+          example: 36.5
+        respiratoryRate:
+          type: integer
+          minimum: 5
+          maximum: 60
+          description: 호흡수 (회/분)
+          nullable: true
+          example: 18
+        spo2:
+          type: integer
+          minimum: 70
+          maximum: 100
+          description: 산소포화도 (%)
+          nullable: true
+          example: 98
+        measuredAt:
+          type: string
+          format: date-time
+          description: 측정 시간
+          nullable: true
+          example: 2024-11-30T10:30:00
+
+    VitalSignResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 바이탈 사인 ID
+          example: 1
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        patientName:
+          type: string
+          description: 환자명
+          example: 홍길동
+        nurseId:
+          type: integer
+          format: int64
+          description: 간호사 ID
+          example: 1
+        nurseName:
+          type: string
+          description: 간호사명
+          example: 김간호
+        systolicBp:
+          type: integer
+          description: 수축기 혈압 (mmHg)
+          nullable: true
+          example: 120
+        diastolicBp:
+          type: integer
+          description: 이완기 혈압 (mmHg)
+          nullable: true
+          example: 80
+        heartRate:
+          type: integer
+          description: 심박수 (bpm)
+          nullable: true
+          example: 75
+        bodyTemp:
+          type: number
+          format: double
+          description: 체온 (°C)
+          nullable: true
+          example: 36.5
+        respiratoryRate:
+          type: integer
+          description: 호흡수 (회/분)
+          nullable: true
+          example: 18
+        spo2:
+          type: integer
+          description: 산소포화도 (%)
+          nullable: true
+          example: 98
+        measuredAt:
+          type: string
+          format: date-time
+          description: 측정 시간
+          nullable: true
+          example: 2024-11-30T10:30:00
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성 시간
+          example: 2024-11-30T10:30:00
+        canEdit:
+          type: boolean
+          description: 현재 사용자가 수정 가능한지 여부
+          example: true
+
+    NursingNoteRequest:
+      type: object
+      required:
+        - patientId
+        - content
+        - category
+      properties:
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        content:
+          type: string
+          maxLength: 10000
+          description: 기록 내용 (HTML 형식)
+          example: <p>환자 상태 양호, 통증 호소 없음</p>
+        plainText:
+          type: string
+          maxLength: 10000
+          description: 기록 내용 (Plain Text)
+          nullable: true
+          example: 환자 상태 양호, 통증 호소 없음
+        category:
+          type: string
+          enum: [OBSERVATION, TREATMENT, EDUCATION, CONSULTATION, MEDICATION]
+          description: 기록 카테고리 (OBSERVATION=관찰, TREATMENT=처치, EDUCATION=교육, CONSULTATION=상담, MEDICATION=투약)
+          example: OBSERVATION
+        isImportant:
+          type: boolean
+          description: 중요 표시 여부
+          nullable: true
+          example: false
+
+    NursingNoteResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 간호기록 ID
+          example: 1
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        patientName:
+          type: string
+          description: 환자명
+          example: 홍길동
+        nurseId:
+          type: integer
+          format: int64
+          description: 간호사 ID
+          example: 1
+        nurseName:
+          type: string
+          description: 간호사명
+          example: 김간호
+        content:
+          type: string
+          description: 기록 내용 (HTML 형식)
+          example: <p>환자 상태 양호, 통증 호소 없음</p>
+        plainText:
+          type: string
+          description: 기록 내용 (Plain Text)
+          nullable: true
+          example: 환자 상태 양호, 통증 호소 없음
+        category:
+          type: string
+          enum: [OBSERVATION, TREATMENT, EDUCATION, CONSULTATION, MEDICATION]
+          description: 기록 카테고리
+          example: OBSERVATION
+        isImportant:
+          type: boolean
+          description: 중요 표시 여부
+          example: false
+        aiSuggested:
+          type: boolean
+          description: AI 제안 여부
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성 시간
+          example: 2024-11-30T10:30:00
+        updatedAt:
+          type: string
+          format: date-time
+          description: 수정 시간
+          example: 2024-11-30T10:30:00
+        canEdit:
+          type: boolean
+          description: 현재 사용자가 수정 가능한지 여부
+          example: true
+
+    MedicationRequest:
+      type: object
+      required:
+        - patientId
+        - drugName
+        - route
+      properties:
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        drugName:
+          type: string
+          maxLength: 200
+          description: 약물명
+          example: 타이레놀
+        drugCode:
+          type: string
+          maxLength: 50
+          description: 약물 코드
+          nullable: true
+          example: A01AB01
+        dose:
+          type: string
+          maxLength: 100
+          description: 용량
+          nullable: true
+          example: 500mg
+        route:
+          type: string
+          enum: [PO, IV, IM, SC, TOPICAL, INHALATION]
+          description: 투약 경로 (PO=경구, IV=정맥, IM=근육, SC=피하, TOPICAL=국소, INHALATION=흡입)
+          example: PO
+        frequency:
+          type: string
+          maxLength: 100
+          description: 투약 빈도
+          nullable: true
+          example: TID
+        administeredAt:
+          type: string
+          format: date-time
+          description: 투약 시간
+          nullable: true
+          example: 2024-11-30T10:30:00
+        orderDoctor:
+          type: string
+          maxLength: 100
+          description: 처방 의사명
+          nullable: true
+          example: 김의사
+
+    MedicationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 투약 기록 ID
+          example: 1
+        patientId:
+          type: integer
+          format: int64
+          description: 환자 ID
+          example: 1
+        patientName:
+          type: string
+          description: 환자명
+          example: 홍길동
+        nurseId:
+          type: integer
+          format: int64
+          description: 간호사 ID
+          example: 1
+        nurseName:
+          type: string
+          description: 간호사명
+          example: 김간호
+        drugName:
+          type: string
+          description: 약물명
+          example: 타이레놀
+        drugCode:
+          type: string
+          description: 약물 코드
+          nullable: true
+          example: A01AB01
+        dose:
+          type: string
+          description: 용량
+          nullable: true
+          example: 500mg
+        route:
+          type: string
+          enum: [PO, IV, IM, SC, TOPICAL, INHALATION]
+          description: 투약 경로
+          example: PO
+        frequency:
+          type: string
+          description: 투약 빈도
+          nullable: true
+          example: TID
+        administeredAt:
+          type: string
+          format: date-time
+          description: 투약 시간
+          nullable: true
+          example: 2024-11-30T10:30:00
+        orderDoctor:
+          type: string
+          description: 처방 의사명
+          nullable: true
+          example: 김의사
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성 시간
+          example: 2024-11-30T10:30:00
+        canEdit:
+          type: boolean
+          description: 현재 사용자가 수정 가능한지 여부
+          example: true
+
+    DrugSearchResult:
+      type: object
+      properties:
+        itemName:
+          type: string
+          description: 약품명
+          example: 타이레놀정 500mg
+        entpName:
+          type: string
+          description: 제조사명
+          example: 한국얀센
+        itemSeq:
+          type: string
+          description: 약품 일련번호
+          example: "123456789"
+        efcyQesitm:
+          type: string
+          description: 효능
+          nullable: true
+          example: 해열, 진통
+
+    HandoverDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 인수인계 ID
+          example: 1
+        departmentId:
+          type: integer
+          format: int64
+          description: 부서 ID
+          example: 1
+        departmentName:
+          type: string
+          description: 부서명
+          example: 응급실
+        fromShiftId:
+          type: integer
+          format: int64
+          description: 인계 근무조 ID
+          example: 1
+        fromShiftType:
+          type: string
+          enum: [DAY, EVENING, NIGHT]
+          description: 인계 근무조 유형
+          example: DAY
+        toShiftId:
+          type: integer
+          format: int64
+          description: 인수 근무조 ID
+          example: 2
+        toShiftType:
+          type: string
+          enum: [DAY, EVENING, NIGHT]
+          description: 인수 근무조 유형
+          example: EVENING
+        handoverDate:
+          type: string
+          format: date
+          description: 인수인계 날짜
+          example: 2024-11-30
+        aiSummary:
+          type: string
+          description: AI가 생성한 인수인계 요약
+          example: |
+            [응급실 주간 근무 인수인계]
+            
+            1. 홍길동(P2024001) - 급성 심근경색
+               - 바이탈: BP 120/80, HR 75, BT 36.5°C
+               - 특이사항: 통증 호소 없음, 상태 안정적
+        additionalNotes:
+          type: string
+          description: 추가 메모
+          nullable: true
+          example: null
+        createdById:
+          type: integer
+          format: int64
+          description: 작성자 ID
+          example: 1
+        createdByName:
+          type: string
+          description: 작성자명
+          example: 김간호
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성 시간
+          example: 2024-11-30T16:00:00
