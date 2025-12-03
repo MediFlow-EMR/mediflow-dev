@@ -4,6 +4,7 @@ import com.mediflow.emr.entity.enums.Provider;
 import com.mediflow.emr.entity.User;
 import com.mediflow.emr.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -27,6 +28,7 @@ import java.util.Optional;
  *
  *
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
@@ -83,6 +85,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             u.updateProfile(nickname, profileImageUrl);
             // 기존 사용자가 placeholder 이메일 상태이고, 이후 실제 이메일을 가져오게 된 경우 교체
             u.updateEmailIfPlaceholder(effectiveEmail, "@kakao.local");
+
+            // 기존 사용자지만 부서가 없으면 더미 데이터 적용
+            if (u.getDepartment() == null) {
+                log.info("기존 OAuth2 사용자 부서 미설정 - 더미 데이터 적용: userId={}, email={}", u.getId(), u.getEmail());
+                dummyDataService.applyDummyDataToNewUser(u);
+            }
+
             return u;
         }).orElseGet(() -> {
             // 신규 사용자 생성
@@ -96,6 +105,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             // 저장 후 더미 데이터 적용
             User savedUser = userRepository.save(newUser);
+            log.info("신규 OAuth2 사용자 생성 - 더미 데이터 적용: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
             dummyDataService.applyDummyDataToNewUser(savedUser);
             return savedUser;
         });
