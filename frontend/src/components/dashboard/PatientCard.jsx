@@ -15,16 +15,13 @@ const PatientCard = ({ patient, isSelected, onClick }) => {
 
   return (
     <div
-      className={`${styles.patientCard} ${isSelected ? styles.selected : ''} ${
-        patient.isPrimary ? styles.primary : ''
-      }`}
+      className={`${styles.patientCard} ${isSelected ? styles.selected : ''}`}
       onClick={onClick}
     >
       <div className={styles.header}>
         <div className={styles.patientInfo}>
           <div className={styles.name}>
             {patient.name}
-            {patient.isPrimary && ' [주담당]'}
           </div>
           <div className={styles.meta}>
             {patient.chartNumber} | {patient.age}세 {patient.gender === 'M' ? '남' : '여'}

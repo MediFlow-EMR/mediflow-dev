@@ -64,15 +64,23 @@ const OrderTab = ({ patientId }) => {
 
   // 오더 상태 변경
   const handleStatusChange = async (orderId, newStatus) => {
+    console.log('오더 상태 변경 시작:', { orderId, newStatus });
     try {
-      await apiClient.patch(`/orders/${orderId}/status`, null, {
-        params: { status: newStatus, completedBy: '현재 간호사' },
+      const response = await apiClient.patch(`/orders/${orderId}/status`, null, {
+        params: {
+          status: newStatus,
+          completedBy: '현재 간호사'
+        },
       });
-      fetchOrders();
+      console.log('오더 상태 변경 성공:', response.data);
+
+      // 오더 목록 새로고침
+      await fetchOrders();
       setSelectedOrder(null);
     } catch (err) {
       console.error('오더 상태 변경 실패:', err);
-      alert('오더 상태 변경에 실패했습니다');
+      console.error('에러 상세:', err.response?.data);
+      alert(`오더 상태 변경에 실패했습니다: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -135,12 +143,6 @@ const OrderTab = ({ patientId }) => {
             onClick={() => setFilterStatus('ALL')}
           >
             전체
-          </button>
-          <button
-            className={`${styles.filterButton} ${filterStatus === 'PENDING' ? styles.active : ''}`}
-            onClick={() => setFilterStatus('PENDING')}
-          >
-            대기
           </button>
           <button
             className={`${styles.filterButton} ${filterStatus === 'IN_PROGRESS' ? styles.active : ''}`}
