@@ -48,7 +48,7 @@ const AppHeader = () => {
                 <div className={styles.hospitalInfo}>
                     <div className={styles.hospitalName}>한국대학교병원</div>
                     <div className={styles.departmentName}>
-                        {departmentSummary?.departmentName || '부서 정보...'}
+                        {departmentSummary?.departmentCode || '부서 정보...'}
                     </div>
                 </div>
             </div>
