@@ -257,8 +257,8 @@ http://localhost:9005/swagger-ui.html
 
 ## 데이터베이스
 
-### ERD (핵심 관계)
-![img_1.png](img_1.png)
+### ERD 
+![데이터베이스](assets/db.png)
 
 **상세 ERD:** [docs/DATABASE_DESIGN.md](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/5.DATABASE_DESIGN.md)
 
