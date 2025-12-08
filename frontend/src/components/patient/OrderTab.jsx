@@ -94,7 +94,19 @@ const OrderTab = ({ patientId }) => {
 
   // 완료 버튼 클릭 (투약 등록 버튼 표시)
   const handleComplete = (orderId) => {
+    console.log('완료 버튼 클릭 - orderId:', orderId);
     setCompletedOrderId(orderId);
+  };
+
+  // 투약 등록 버튼 클릭
+  const handleOpenMedicationForm = (order) => {
+    console.log('투약 등록 버튼 클릭 - order:', order);
+    setSelectedOrder(order);
+    setMedicationFormData({
+      administeredAt: getCurrentDateTime(),
+      notes: '',
+    });
+    setShowMedicationForm(true);
   };
 
   // 약품 상세 정보 보기
@@ -138,15 +150,6 @@ const OrderTab = ({ patientId }) => {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  // 투약 등록 버튼 클릭
-  const handleOpenMedicationForm = (order) => {
-    setSelectedOrder(order);
-    setMedicationFormData({
-      administeredAt: getCurrentDateTime(),
-      notes: '',
-    });
-    setShowMedicationForm(true);
-  };
 
   // 투약 등록 폼 입력 변경
   const handleMedicationFormChange = (e) => {

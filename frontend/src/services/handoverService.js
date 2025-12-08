@@ -1,12 +1,12 @@
 import apiClient from "./apiClient.js";
 
 export const HandoverService = {
-  generateAiSummary: async ({ departmentId, fromShiftId }) => {
+  generateAiSummary: async ({ departmentId, fromShiftId, toShiftId }) => {
     const response = await apiClient.post(
         `/handovers/ai-summary`,
       null,
       {
-        params: { departmentId, fromShiftId },
+        params: { departmentId, fromShiftId, toShiftId },
         withCredentials: true
       }
     );
