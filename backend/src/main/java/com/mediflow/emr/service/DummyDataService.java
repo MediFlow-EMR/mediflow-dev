@@ -2,6 +2,7 @@ package com.mediflow.emr.service;
 
 import com.mediflow.emr.entity.*;
 import com.mediflow.emr.entity.enums.Role;
+import com.mediflow.emr.entity.enums.ShiftType;
 import com.mediflow.emr.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -74,13 +77,17 @@ public class DummyDataService {
             log.info("사용자 정보 업데이트 완료 - userId: {}, department: {}, role: NURSE",
                     user.getId(), department.getName());
 
-            // 4. 오늘 날짜의 근무조 조회
+            // 4. 오늘 날짜의 근무조 조회 (없으면 생성)
             LocalDate today = LocalDate.now();
             List<Shift> todayShifts = shiftRepository.findByDate(today);
 
             if (todayShifts.isEmpty()) {
-                log.info("오늘 날짜의 근무조가 없습니다. 배정을 건너뜁니다.");
-                return;
+                log.info("오늘 날짜({})의 근무조가 없습니다. 근무조를 생성합니다.", today);
+                todayShifts = createTodayShifts(today);
+                if (todayShifts.isEmpty()) {
+                    log.warn("근무조 생성 실패. 배정을 건너뜁니다.");
+                    return;
+                }
             }
 
             // 5. 해당 부서의 입원 환자 조회
@@ -125,6 +132,36 @@ public class DummyDataService {
             log.error("더미 데이터 적용 중 오류 발생 - userId: {}", user.getId(), e);
             // 오류가 발생해도 회원가입은 계속 진행
         }
+    }
+
+    /**
+     * 오늘 날짜의 근무조 생성 (DAY, EVENING, NIGHT)
+     */
+    private List<Shift> createTodayShifts(LocalDate today) {
+        List<Shift> shifts = new ArrayList<>();
+
+        shifts.add(Shift.builder()
+                .type(ShiftType.DAY)
+                .startTime(LocalTime.of(7, 0))
+                .endTime(LocalTime.of(15, 0))
+                .date(today)
+                .build());
+
+        shifts.add(Shift.builder()
+                .type(ShiftType.EVENING)
+                .startTime(LocalTime.of(15, 0))
+                .endTime(LocalTime.of(23, 0))
+                .date(today)
+                .build());
+
+        shifts.add(Shift.builder()
+                .type(ShiftType.NIGHT)
+                .startTime(LocalTime.of(23, 0))
+                .endTime(LocalTime.of(7, 0))
+                .date(today)
+                .build());
+
+        return shiftRepository.saveAll(shifts);
     }
 
     /**

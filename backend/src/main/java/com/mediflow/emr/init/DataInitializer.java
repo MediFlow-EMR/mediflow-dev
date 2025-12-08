@@ -142,19 +142,45 @@ public class DataInitializer implements CommandLineRunner {
         
         // 배정 확인
         List<Assignment> todayAssignments = assignmentRepository.findByAssignedDate(today);
+        List<User> allNurses = userRepository.findByRole(Role.NURSE);
+        List<Patient> patients = patientRepository.findByIsAdmitted(true);
+
         if (todayAssignments.isEmpty()) {
             log.info("오늘({}) 배정이 없습니다. 생성합니다.", today);
-            List<User> nurses = userRepository.findByRole(Role.NURSE);
-            List<Patient> patients = patientRepository.findByIsAdmitted(true);
-            
-            if (!nurses.isEmpty() && !patients.isEmpty()) {
-                List<Assignment> assignments = createAssignments(nurses, patients, todayShifts);
+
+            if (!allNurses.isEmpty() && !patients.isEmpty()) {
+                List<Assignment> assignments = createAssignments(allNurses, patients, todayShifts);
                 log.info("✅ 배정 {} 건 생성 완료", assignments.size());
             } else {
-                log.warn("간호사({})나 입원환자({})가 없어서 배정을 건너뜁니다.", nurses.size(), patients.size());
+                log.warn("간호사({})나 입원환자({})가 없어서 배정을 건너뜁니다.", allNurses.size(), patients.size());
             }
         } else {
             log.info("오늘({}) 배정이 이미 존재합니다. ({}건)", today, todayAssignments.size());
+
+            // 배정이 없는 간호사가 있는지 확인 (OAuth 로그인 사용자 등)
+            List<Long> assignedNurseIds = todayAssignments.stream()
+                    .map(a -> a.getNurse().getId())
+                    .distinct()
+                    .toList();
+
+            List<User> unassignedNurses = allNurses.stream()
+                    .filter(nurse -> !assignedNurseIds.contains(nurse.getId()))
+                    .toList();
+
+            if (!unassignedNurses.isEmpty()) {
+                log.info("배정이 없는 간호사 {} 명 발견. 자동 배정합니다.", unassignedNurses.size());
+                unassignedNurses.forEach(nurse -> log.info("  - {} (ID: {}, Email: {})",
+                        nurse.getName(), nurse.getId(), nurse.getEmail()));
+
+                if (!patients.isEmpty()) {
+                    List<Assignment> newAssignments = createAssignments(unassignedNurses, patients, todayShifts);
+                    log.info("✅ 추가 배정 {} 건 생성 완료", newAssignments.size());
+                } else {
+                    log.warn("입원환자가 없어서 배정을 건너뜁니다.");
+                }
+            } else {
+                log.info("모든 간호사가 배정되어 있습니다.");
+            }
         }
     }
 
