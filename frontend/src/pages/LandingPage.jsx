@@ -69,7 +69,7 @@ const LandingPage = () => {
                     <div className={styles.heroVisual}>
                         <div className={styles.demoContainer}>
                             <img 
-                                src="src/assets/aihandover.gif"
+                                src="/assets/aihandover.gif"
                                 alt="MediFlow AI 인수인계 자동 요약 데모" 
                                 className={styles.demoImage}
                             />
@@ -93,7 +93,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img 
-                                    src="src/assets/patientdashboard.gif"
+                                    src="/assets/patientdashboard.gif"
                                     alt="통합 환자 뷰" 
                                     className={styles.featureImage}
                                 />
@@ -111,7 +111,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img 
-                                    src="src/assets/nursingrecord.gif"
+                                    src="/assets/nursingrecord.gif"
                                     alt="AI 인수인계" 
                                     className={styles.featureImage}
                                 />
@@ -129,7 +129,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img 
-                                    src="src/assets/ordertab.gif"
+                                    src="/assets/ordertab.gif"
                                     alt="의료 오더" 
                                     className={styles.featureImage}
                                 />
