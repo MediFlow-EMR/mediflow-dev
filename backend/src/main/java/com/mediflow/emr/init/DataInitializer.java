@@ -73,9 +73,14 @@ public class DataInitializer implements CommandLineRunner {
      * 코드 기준으로 보정하므로 사용자가 직접 추가한 처방명은 건드리지 않는다.
      */
     private void synchronizeMedicationDisplayNames() {
+        List<Medication> medications = medicationRepository.findAll();
+        var performedOrderIds = medications.stream().filter(m -> m.getMedicalOrder() != null)
+                .map(m -> m.getMedicalOrder().getId()).collect(java.util.stream.Collectors.toSet());
         List<MedicalOrder> orders = medicalOrderRepository.findAll();
         int updatedOrders = 0;
         for (MedicalOrder order : orders) {
+            if (!performedOrderIds.contains(order.getId())
+                    && com.mediflow.emr.service.DemoPrescriptionUpgrade.upgrade(order, demoDrugCatalog)) updatedOrders++;
             String displayName = bilingualMedicationName(order.getOrderCode());
             if (displayName != null && demoDrugCatalog.find(order.getOrderCode()).map(p -> p.accepts(order.getOrderName())).orElse(false)
                     && !displayName.equals(order.getOrderName())) {
@@ -92,9 +97,9 @@ public class DataInitializer implements CommandLineRunner {
             medicalOrderRepository.saveAll(orders);
         }
 
-        List<Medication> medications = medicationRepository.findAll();
         int updatedMedications = 0;
         for (Medication medication : medications) {
+            if (com.mediflow.emr.service.DemoPrescriptionUpgrade.upgrade(medication, demoDrugCatalog)) updatedMedications++;
             String displayName = bilingualMedicationName(medication.getDrugCode());
             if (displayName != null && demoDrugCatalog.find(medication.getDrugCode()).map(p -> p.accepts(medication.getDrugName())).orElse(false)
                     && !displayName.equals(medication.getDrugName())) {
@@ -822,7 +827,7 @@ public class DataInitializer implements CommandLineRunner {
             case "급성 심근경색(AMI, I21.9)" -> new String[][]{
                     {"아스피린장용정(Aspirin)", "CARD-ASA", "100mg", "PO", "1일 1회", "출혈 징후 확인"},
                     {"아토르바스타틴정(Atorvastatin)", "CARD-ATOR", "40mg", "PO", "1일 1회", "취침 전 투여"},
-                    {"니트로글리세린설하정(Nitroglycerin)", "CARD-NTG", "0.4mg", "PO", "필요시", "흉통 시 혈압 확인 후 투여"}
+                    {"클로피도그렐정(Clopidogrel)", "CARD-CLOP", "75mg", "PO", "1일 1회", "데모 처방 · 출혈 징후 확인"}
             };
             case "허혈성 뇌졸중(AIS, I63.9)" -> new String[][]{
                     {"아스피린장용정(Aspirin)", "NEU-ASA", "100mg", "PO", "1일 1회", "연하 상태 및 출혈 징후 확인"},
@@ -850,7 +855,7 @@ public class DataInitializer implements CommandLineRunner {
             };
             case "급성 위염(K29.7)" -> new String[][]{
                     {"판토프라졸정(Pantoprazole)", "GI-PANTO", "40mg", "PO", "1일 1회", "아침 식전 투여"},
-                    {"수크랄페이트정(Sucralfate)", "GI-SUCR", "1g", "PO", "1일 3회", "식전 투여, 타 약물과 간격 확인"}
+                    {"알마게이트정(Almagate)", "GI-ALM", "1g", "PO", "1일 3회", "데모 처방 · 식후 30분~1시간에 씹어서 복용"}
             };
             case "기관지천식(BA, J45.9)" -> new String[][]{
                     {"살부타몰흡입액(Salbutamol)", "RESP-SAL", "2.5mg", "INHALATION", "필요시", "호흡곤란 시 투여 후 반응 평가"},

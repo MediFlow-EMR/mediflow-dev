@@ -21,7 +21,7 @@ class DemoDrugCatalogTest {
         return new MedicalOrderService(repository, mock(PatientRepository.class), api, catalog,
                 mock(PatientAccessService.class), mock(UserRepository.class));
     }
-    @Test void allFifteenVerifiedProductsUseExactIdentifierAndPreserveDose() throws Exception {
+    @Test void allSeventeenVerifiedProductsUseExactIdentifierAndPreserveDose() throws Exception {
         var catalog = catalog(true);
         var repo = mock(MedicalOrderRepository.class);
         var api = mock(DrugApiService.class);
@@ -50,20 +50,14 @@ class DemoDrugCatalogTest {
                 assertEquals("식품의약품안전처 의약품 제품 허가정보", result.getSource());
             }
         }
-        assertEquals(15, count);
+        assertEquals(17, count);
         verify(api, never()).getDrugDetail(anyString());
     }
-    @Test void unresolvedProductsNeverUseFuzzySearch() throws Exception {
+    @Test void legacyProductsAreNotMappedToDifferentIngredients() throws Exception {
         var catalog = catalog(true);
-        var repo = mock(MedicalOrderRepository.class);
-        var api = mock(DrugApiService.class);
         for (String code : new String[]{"CARD-NTG", "GI-SUCR"}) {
-            var product = catalog.find(code).orElseThrow();
-            when(repo.findById(1L)).thenReturn(Optional.of(MedicalOrder.builder()
-                    .orderType("MEDICATION").orderCode(code).orderName(product.displayName()).route("PO").build()));
-            assertEquals("DEMO_MAPPING_REQUIRED", service(repo, api, catalog).getOrderDrugDetail(1L).getStatus());
+            assertTrue(catalog.find(code).isEmpty());
         }
-        verifyNoInteractions(api);
     }
     @Test void nonDemoProfileDoesNotSubstituteAndChangedNameIsNotAccepted() throws Exception {
         assertTrue(catalog(false).find("ENDO-GLA").isEmpty());

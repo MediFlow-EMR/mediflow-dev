@@ -14,6 +14,6 @@
   {"codes":["RESP-BUD"],"genericName":"부데소니드흡입액","english":"Budesonide","itemSeq":"200100450","productName":"풀미칸분무용현탁액(미분화부데소니드)","strength":"0.5mg/2mL","route":"INHALATION"},
   {"codes":["REN-FUR","RENAL-FUR"],"genericName":"푸로세미드정","english":"Furosemide","itemSeq":"196400037","productName":"라식스정(푸로세미드)","strength":"40mg/정","route":"PO"},
   {"codes":["REN-CAL","RENAL-CAL"],"genericName":"탄산칼슘정","english":"Calcium carbonate","itemSeq":"199801435","productName":"파마탄산칼슘정","strength":"500mg/정","route":"PO"},
-  {"codes":["CARD-NTG"],"genericName":"니트로글리세린설하정","english":"Nitroglycerin","route":"PO","unresolvedReason":"데모의 0.4mg 설하정과 일치하는 정상 허가품목을 확인하지 못했습니다. 경로도 설하 투여와 경구 투여를 구분해 재설계해야 합니다. 0.6mg 제품으로 자동 대체하지 않습니다."},
-  {"codes":["GI-SUC","GI-SUCR"],"genericName":"수크랄페이트정","english":"Sucralfate","route":"PO","unresolvedReason":"현재 조회 결과에서 정상 허가된 국내 수크랄페이트 정제를 확인하지 못했습니다. 허가 만료 정제나 수출용 현탁액으로 자동 대체하지 않습니다."}
+  {"codes":["CARD-CLOP"],"genericName":"클로피도그렐정","english":"Clopidogrel","itemSeq":"200700907","productName":"플라빅스정75밀리그램(클로피도그렐황산염)","strength":"75mg/정","route":"PO"},
+  {"codes":["GI-ALM"],"genericName":"알마게이트정","english":"Almagate","itemSeq":"198700430","productName":"알마겔정(알마게이트)(수출명:유한가스트라겔정)","strength":"500mg/정","route":"PO"}
 ]
