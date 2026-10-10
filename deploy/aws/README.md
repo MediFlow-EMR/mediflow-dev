@@ -17,7 +17,7 @@
 | 항목 | 권장값 |
 |---|---|
 | AWS 리전 | `ap-northeast-2` |
-| 프런트 도메인 | `mediflow-emr.cloud` |
+| 프런트 도메인 | `www.mediflow-emr.cloud` |
 | API 도메인 | `api.mediflow-emr.cloud` |
 | 프런트 버킷 | 전 세계에서 고유한 이름, 예: `mediflow-frontend-계정ID` |
 | 배포 아티팩트 버킷 | 예: `mediflow-deploy-계정ID` |
@@ -174,7 +174,7 @@ ALB를 사용하면 타깃 그룹 포트는 9005, 헬스체크는 `/actuator/hea
 6. 허용 메서드는 `GET, HEAD, OPTIONS`만 선택합니다.
 7. SPA 라우팅을 위해 403/404 응답을 `/index.html`, HTTP 200으로 매핑합니다.
 8. CloudFront용 ACM 인증서는 반드시 `us-east-1`에서 발급합니다.
-9. Route 53에서 루트 도메인을 CloudFront에 Alias로 연결합니다.
+9. 가비아 DNS에서 호스트 `www`의 CNAME 값을 CloudFront 배포 도메인으로 설정합니다. 로그인 성공·실패 리다이렉트도 `https://www.mediflow-emr.cloud`를 사용합니다. 루트 도메인까지 연결하려면 별도로 Route 53 Alias 등 루트 도메인을 지원하는 방식을 구성합니다.
 
 OAC가 제안하는 S3 버킷 정책을 적용합니다. S3 객체를 퍼블릭으로 만들지 않습니다.
 
