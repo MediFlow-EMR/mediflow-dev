@@ -5,7 +5,7 @@ spring:
 
   datasource:
     # EC2 .env 파일의 변수 사용
-    url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&sslMode=${DB_SSL_MODE:verify-full}&serverSslCert=${DB_SSL_CERT:/etc/pki/tls/certs/rds-global-bundle.pem}
     driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -14,7 +14,7 @@ spring:
     hibernate:
       # 중요: 운영 환경에서는 절대 create를 쓰면 안 됨! (데이터 삭제 방지)
       # validate: 엔티티와 테이블이 맞는지 검사만 함.
-      ddl-auto: validate
+      ddl-auto: ${JPA_DDL_AUTO:validate}
     show-sql: false # 운영 로그 깔끔하게 유지
     properties:
       hibernate:
@@ -76,8 +76,8 @@ logging:
 
 # 쿠키 & 리다이렉트 설정 (HTTPS/도메인 적용)
 cookie:
-  domain: .mediflow-emr.cloud  # 실제 도메인 (api 서브도메인과 공유 위해 루트 도메인 사용)
-  secure: true               # HTTPS 필수
+  domain: ${COOKIE_DOMAIN:.mediflow-emr.cloud}
+  secure: ${COOKIE_SECURE:true}
   http-only: true
   same-site: None            # 소셜 로그인 흐름 끊김 방지
   access-token-name: ACCESS_TOKEN
@@ -86,17 +86,22 @@ cookie:
   refresh-max-age: 604800
 
 app:
-  # EC2 .env에 있는 프론트엔드 주소 사용
-  oauth2-success-redirect-url: https://mediflow-emr.cloud/app
-  oauth2-failure-redirect-url: https://mediflow-emr.cloud?from=oauth2
+  oauth2-success-redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:https://mediflow-emr.cloud/app}
+  oauth2-failure-redirect-url: ${OAUTH2_FAILURE_REDIRECT_URL:https://mediflow-emr.cloud?from=oauth2}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://mediflow-emr.cloud,https://www.mediflow-emr.cloud}
 
 # 식약처 API
 drug-api:
   base-url: https://apis.data.go.kr/1471000/DrbEasyDrugInfoService
   service-key: ${DRUG_API_SERVICE_KEY}
 
+drug-permit-api:
+  base-url: https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08
+
 # Gemini API
 gemini:
   api-key: ${GEMINI_API_KEY}
-  model: gemini-2.5-flash
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
   base-url: https://generativelanguage.googleapis.com/v1beta

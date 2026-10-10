@@ -47,6 +47,121 @@ const OrderTab = ({ patientId }) => {
     CANCELLED: '#ef4444',
   };
 
+  // 식약처 허가정보는 긴 단일 문자열로 내려오므로 문장/번호 항목별로 나눠 표시한다.
+  const normalizeDrugText = (text) => text
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&#x2022;', '•')
+    .replaceAll('&#x2981;', '•')
+    .replace(/\s*ㆍ\s*/g, '\n')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+
+  const formatDrugDocument = (text) => {
+    if (!text) return null;
+
+    const items = normalizeDrugText(text)
+      .replace(/\s*(\[\[SECTION:[^\]]+\]\])\s*/g, '\n$1\n')
+      .replace(/\s+(?=○\s)/g, '\n')
+      .replace(/\s+(?=\d+[.)]\s)/g, '\n')
+      .split(/\n+|(?<=다\.)\s+(?=[가-힣A-Z0-9])/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    return (
+      <ul className={styles.documentList}>
+        {items.map((item, index) => {
+          const sectionMatch = item.match(/^\[\[SECTION:(.+)\]\]$/);
+          if (sectionMatch) {
+            return (
+              <li className={styles.clinicalDocumentHeading} key={`${index}-${item.slice(0, 12)}`}>
+                {sectionMatch[1].replace(/[<>]/g, '')}
+              </li>
+            );
+          }
+          const numberMatch = item.match(/^(\d+[.)])\s*(.*)$/);
+          if (numberMatch) {
+            return (
+              <li className={styles.clinicalNumberRow} key={`${index}-${item.slice(0, 12)}`}>
+                <span>{numberMatch[1]}</span>
+                <p>{numberMatch[2]}</p>
+              </li>
+            );
+          }
+          const topicMatch = item.match(
+            /^○\s*(유효균종|적응증|성인 및 12세 이상 소아|신생아|영ㆍ유아 및 소아(?:\([^)]*\))?|고령자|수막염|임질|수술 전ㆍ후 감염증예방|신장 및 간기능 장애)\s*[:：-]?\s*(.*)$/
+          );
+          if (topicMatch) {
+            const detailItems = topicMatch[1] === '적응증'
+              ? topicMatch[2].split(/\s+-\s+/).map((value) => value.trim()).filter(Boolean)
+              : [];
+            return (
+              <li className={styles.clinicalTopicRow} key={`${index}-${item.slice(0, 12)}`}>
+                <span>{topicMatch[1]}</span>
+                {detailItems.length > 1 ? (
+                  <div className={styles.indicationGrid}>
+                    {detailItems.map((value) => <span key={value}>{value}</span>)}
+                  </div>
+                ) : (
+                  <p>{topicMatch[2]}</p>
+                )}
+              </li>
+            );
+          }
+          if (item.startsWith('○')) {
+            return (
+              <li className={styles.clinicalTopicRow} key={`${index}-${item.slice(0, 12)}`}>
+                <p>{item.replace(/^○\s*/, '')}</p>
+              </li>
+            );
+          }
+          return <li key={`${index}-${item.slice(0, 12)}`}>{item}</li>;
+        })}
+      </ul>
+    );
+  };
+
+  const formatCautionDocument = (text) => {
+    if (!text) return null;
+
+    const rows = normalizeDrugText(text)
+      .replace(/\s*(\[\[SECTION:[^\]]+\]\])\s*/g, '\n$1\n')
+      .replace(/\s+(?=\d+\)\s)/g, '\n')
+      .split(/\n+/)
+      .map((row) => row.trim())
+      .filter(Boolean);
+
+    return (
+      <div className={styles.cautionRows}>
+        {rows.map((row, index) => {
+          const sectionMatch = row.match(/^\[\[SECTION:(.+)\]\]$/);
+          const match = row.match(/^(\d+\))\s*(.*)$/);
+
+          if (sectionMatch) {
+            return (
+              <div className={styles.cautionSectionTitle} key={`${index}-${row.slice(0, 12)}`}>
+                {sectionMatch[1].replace(/[<>]/g, '')}
+              </div>
+            );
+          }
+
+          return (
+            <div className={styles.cautionRow} key={`${index}-${row.slice(0, 12)}`}>
+              {match ? (
+                <>
+                  <span className={styles.cautionNumber}>{match[1]}</span>
+                  <p>{match[2]}</p>
+                </>
+              ) : (
+                <p className={styles.cautionIntro}>{row}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // 오더 목록 조회
   const fetchOrders = async () => {
     if (!patientId) return;
@@ -75,10 +190,7 @@ const OrderTab = ({ patientId }) => {
     console.log('오더 상태 변경 시작:', { orderId, newStatus });
     try {
       const response = await apiClient.patch(`/orders/${orderId}/status`, null, {
-        params: {
-          status: newStatus,
-          completedBy: '현재 간호사'
-        },
+        params: { status: newStatus },
       });
       console.log('오더 상태 변경 성공:', response.data);
 
@@ -166,6 +278,7 @@ const OrderTab = ({ patientId }) => {
 
     try {
       const payload = {
+        orderId: selectedOrder.id,
         patientId,
         drugName: selectedOrder.orderName,
         drugCode: null,
@@ -178,9 +291,8 @@ const OrderTab = ({ patientId }) => {
       };
 
       await apiClient.post('/medications', payload);
-
-      // 오더 상태를 COMPLETED로 변경
-      await handleStatusChange(selectedOrder.id, 'COMPLETED');
+      // 서버가 투약 기록과 처방 완료를 하나의 트랜잭션으로 처리한다.
+      await fetchOrders();
 
       // 폼 닫기 및 상태 초기화
       setShowMedicationForm(false);
@@ -231,7 +343,10 @@ const OrderTab = ({ patientId }) => {
   return (
     <div className={styles.orderTab}>
       <div className={styles.header}>
-        <h3>오더 조회</h3>
+        <div>
+          <h3>처방 · 투약 수행 워크리스트</h3>
+          <p>처방 확인부터 투약 수행 기록까지 한 화면에서 처리합니다.</p>
+        </div>
         <div className={styles.filters}>
           <button
             className={`${styles.filterButton} ${filterStatus === 'ALL' ? styles.active : ''}`}
@@ -240,16 +355,22 @@ const OrderTab = ({ patientId }) => {
             전체
           </button>
           <button
+            className={`${styles.filterButton} ${filterStatus === 'PENDING' ? styles.active : ''}`}
+            onClick={() => setFilterStatus('PENDING')}
+          >
+            대기 {orders.filter((order) => order.status === 'PENDING').length}
+          </button>
+          <button
             className={`${styles.filterButton} ${filterStatus === 'IN_PROGRESS' ? styles.active : ''}`}
             onClick={() => setFilterStatus('IN_PROGRESS')}
           >
-            진행중
+            진행 {orders.filter((order) => order.status === 'IN_PROGRESS').length}
           </button>
           <button
             className={`${styles.filterButton} ${filterStatus === 'COMPLETED' ? styles.active : ''}`}
             onClick={() => setFilterStatus('COMPLETED')}
           >
-            완료
+            완료 {orders.filter((order) => order.status === 'COMPLETED').length}
           </button>
         </div>
       </div>
@@ -258,6 +379,11 @@ const OrderTab = ({ patientId }) => {
 
       {/* 오더 목록 */}
       <div className={styles.orderList}>
+        <div className={styles.tableHeader} aria-hidden="true">
+          <span>상태 · 처방</span>
+          <span>용량 · 경로 · 빈도 · 지시</span>
+          <span>수행</span>
+        </div>
         {loading && orders.length === 0 && (
           <div className={styles.loading}>오더 정보를 불러오는 중...</div>
         )}
@@ -281,7 +407,9 @@ const OrderTab = ({ patientId }) => {
                 </div>
                 <div className={styles.orderHeaderRight}>
                   <span className={styles.time}>{formatTime(order.orderedAt)}</span>
-                  <span className={styles.doctor}>{order.orderDoctor}</span>
+                  {order.orderDoctor && (
+                    <span className={styles.doctor}>처방의 {order.orderDoctor}</span>
+                  )}
                 </div>
               </div>
 
@@ -354,9 +482,12 @@ const OrderTab = ({ patientId }) => {
       {/* 약품 상세 정보 모달 */}
       {showDrugInfo && selectedOrder && (
         <div className={styles.modal} onClick={() => setShowDrugInfo(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.modalContent} ${styles.drugModalContent}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>약품 상세 정보</h3>
+              <div>
+                <h3>약품정보 조회</h3>
+                <span className={styles.modalSubtitle}>처방 약품의 허가사항과 투약 정보를 확인합니다.</span>
+              </div>
               <button className={styles.closeButton} onClick={() => setShowDrugInfo(false)}>
                 ✕
               </button>
@@ -367,13 +498,18 @@ const OrderTab = ({ patientId }) => {
                   <div className={styles.spinner}></div>
                   <p>약품 정보를 불러오는 중...</p>
                 </div>
-              ) : selectedOrder.drugInfo ? (
+              ) : selectedOrder.drugInfo?.available ? (
                 <>
-                  <div className={styles.drugInfoSection}>
-                    <h4>기본 정보</h4>
-                    <div className={styles.infoItem}>
-                      <span className={styles.infoLabel}>약품명</span>
-                      <span className={styles.infoValue}>{selectedOrder.drugInfo.itemName}</span>
+                  <div className={styles.prescriptionStrip}>
+                    <div><span>처방명</span><strong>{selectedOrder.orderName}</strong></div>
+                    <div><span>용량</span><strong>{selectedOrder.dose || '-'}</strong></div>
+                    <div><span>경로</span><strong>{routeLabels[selectedOrder.route] || selectedOrder.route || '-'}</strong></div>
+                    <div><span>빈도</span><strong>{selectedOrder.frequency || '-'}</strong></div>
+                  </div>
+                  <div className={styles.drugIdentity}>
+                    <div className={styles.drugIdentityTitle}>
+                      <span className={styles.matchedBadge}>허가품목 일치</span>
+                      <strong>{selectedOrder.drugInfo.itemName}</strong>
                     </div>
                     <div className={styles.infoItem}>
                       <span className={styles.infoLabel}>제조사</span>
@@ -385,36 +521,53 @@ const OrderTab = ({ patientId }) => {
                     </div>
                   </div>
 
-                  {selectedOrder.drugInfo.efcyQesitm && (
-                    <div className={styles.drugInfoSection}>
-                      <h4>효능·효과</h4>
-                      <p>{selectedOrder.drugInfo.efcyQesitm}</p>
-                    </div>
-                  )}
+                  <div className={styles.drugDocumentGrid}>
+                    {selectedOrder.drugInfo.efcyQesitm && (
+                      <section className={styles.clinicalPanel}>
+                        <h4>효능·효과</h4>
+                        <div className={styles.documentText}>{formatDrugDocument(selectedOrder.drugInfo.efcyQesitm)}</div>
+                      </section>
+                    )}
 
-                  {selectedOrder.drugInfo.useMethodQesitm && (
-                    <div className={styles.drugInfoSection}>
-                      <h4>사용법</h4>
-                      <p>{selectedOrder.drugInfo.useMethodQesitm}</p>
-                    </div>
-                  )}
+                    {selectedOrder.drugInfo.useMethodQesitm && (
+                      <section className={styles.clinicalPanel}>
+                        <h4>용법·용량</h4>
+                        <div className={styles.documentText}>{formatDrugDocument(selectedOrder.drugInfo.useMethodQesitm)}</div>
+                      </section>
+                    )}
+                  </div>
 
                   {selectedOrder.drugInfo.atpnWarnQesitm && (
-                    <div className={styles.drugInfoSection}>
-                      <h4>주의사항 경고</h4>
-                      <p className={styles.warning}>{selectedOrder.drugInfo.atpnWarnQesitm}</p>
-                    </div>
+                    <details className={`${styles.documentDetails} ${styles.warningDetails}`} open>
+                      <summary><span>중요 경고</span><small>식약처 허가정보</small></summary>
+                      <div className={styles.expandedDocument}>{formatCautionDocument(selectedOrder.drugInfo.atpnWarnQesitm)}</div>
+                    </details>
                   )}
 
                   {selectedOrder.drugInfo.atpnQesitm && (
-                    <div className={styles.drugInfoSection}>
-                      <h4>주의사항</h4>
-                      <p>{selectedOrder.drugInfo.atpnQesitm}</p>
-                    </div>
+                    <details className={styles.documentDetails} open>
+                      <summary><span>상세 주의사항</span><small>식약처 허가정보</small></summary>
+                      <div className={styles.expandedDocument}>{formatCautionDocument(selectedOrder.drugInfo.atpnQesitm)}</div>
+                    </details>
                   )}
+
+                  <div className={styles.dataSourceNotice}>
+                    기준정보: {selectedOrder.drugInfo.source} · 실제 투약 전 원내 처방 및 최신 허가사항 확인
+                  </div>
                 </>
+              ) : selectedOrder.drugInfo ? (
+                <div className={styles.noInfo}>
+                  <strong>
+                    {selectedOrder.drugInfo.status === 'NOT_COVERED'
+                      ? '현재 데이터셋 미수록 품목'
+                      : '공공 API 조회 실패'}
+                  </strong>
+                  <p>{selectedOrder.drugInfo.message}</p>
+                  <span>조회명: {selectedOrder.drugInfo.requestedName}</span>
+                  <span>조회원: {selectedOrder.drugInfo.source}</span>
+                </div>
               ) : (
-                <div className={styles.noInfo}>약품 상세 정보를 불러올 수 없습니다</div>
+                <div className={styles.noInfo}>약품 정보 응답을 확인할 수 없습니다.</div>
               )}
             </div>
           </div>

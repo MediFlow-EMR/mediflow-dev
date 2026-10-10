@@ -2,6 +2,7 @@ package com.mediflow.emr.controller;
 
 import com.mediflow.emr.dto.ApiResponse;
 import com.mediflow.emr.dto.HandoverDto;
+import com.mediflow.emr.dto.HandoverSaveRequest;
 import com.mediflow.emr.entity.Handover;
 import com.mediflow.emr.entity.User;
 import com.mediflow.emr.exception.BusinessException;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,19 +47,35 @@ public class HandoverController {
         return ResponseEntity.ok(ApiResponse.ok(aiSummary));
     }
 
+    @PostMapping("/ai-summary/patient/{patientId}")
+    public ResponseEntity<ApiResponse<String>> regeneratePatientAiSummary(
+            Authentication authentication,
+            @PathVariable Long patientId,
+            @RequestParam Long fromShiftId) {
+        User user = userRepository.findByProviderId(authentication.getName())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        String aiSummary = handoverService.generatePatientAiSummary(user.getId(), fromShiftId, patientId);
+        return ResponseEntity.ok(ApiResponse.ok(aiSummary));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> saveHandover(
             Authentication authentication,
-            @RequestParam Long departmentId,
-            @RequestParam Long fromShiftId,
-            @RequestParam Long toShiftId,
-            @RequestBody String aiSummary) {
+            @Valid @RequestBody HandoverSaveRequest request) {
         
         String providerId = authentication.getName();
         User user = userRepository.findByProviderId(providerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
-        handoverService.saveHandover(departmentId, fromShiftId, toShiftId, aiSummary, user);
+        handoverService.saveHandover(
+                request.departmentId(),
+                request.fromShiftId(),
+                request.toShiftId(),
+                request.aiDraft(),
+                request.finalSummary(),
+                user
+        );
         
         return ResponseEntity.ok(ApiResponse.ok(null, "인수인계가 저장되었습니다"));
     }

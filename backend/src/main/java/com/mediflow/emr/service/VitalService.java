@@ -31,6 +31,7 @@ public class VitalService {
     private final VitalSignRepository vitalSignRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final PatientAccessService patientAccessService;
 
     /**
      * 바이탈 사인 등록
@@ -44,8 +45,7 @@ public class VitalService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 환자 조회
-        Patient patient = patientRepository.findById(request.patientId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        Patient patient = patientAccessService.requireAccessiblePatient(nurseId, request.patientId());
 
         // 측정 시간 (요청에 없으면 현재 시간)
         LocalDateTime measuredAt = request.measuredAt() != null 
@@ -83,9 +83,7 @@ public class VitalService {
         log.info("환자 바이탈 목록 조회 - patientId: {}, currentUserId: {}", patientId, currentUserId);
 
         // 환자 존재 확인
-        if (!patientRepository.existsById(patientId)) {
-            throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
 
         List<VitalSign> vitals = vitalSignRepository.findByPatientIdOrderByMeasuredAtDesc(patientId);
         log.info("조회된 바이탈 수: {}", vitals.size());
@@ -98,8 +96,10 @@ public class VitalService {
     /**
      * 환자의 최근 바이탈 사인 조회
      */
-    public VitalSignResponse getLatestVital(Long patientId) {
+    public VitalSignResponse getLatestVital(Long patientId, Long currentUserId) {
         log.info("최근 바이탈 조회 - patientId: {}", patientId);
+
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
 
         List<VitalSign> vitals = vitalSignRepository.findByPatientIdOrderByMeasuredAtDesc(patientId);
         

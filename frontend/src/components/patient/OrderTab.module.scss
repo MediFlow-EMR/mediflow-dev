@@ -1,6 +1,6 @@
 .orderTab {
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.75rem;
+  background: #f8fafc;
   min-height: 100%;
 }
 
@@ -8,25 +8,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.6rem;
 
   h3 {
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #1e293b;
     margin: 0;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: #64748b;
+    font-size: 0.7rem;
   }
 }
 
 .filters {
   display: flex;
-  gap: 0.5rem;
+  gap: 2px;
 }
 
 .filterButton {
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.65rem;
   border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   background: white;
   color: #64748b;
   font-size: 0.875rem;
@@ -40,7 +46,7 @@
   }
 
   &.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: #075985;
     color: white;
     border-color: #3b82f6;
   }
@@ -65,19 +71,36 @@
 .orderList {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
+  border: 1px solid #cbd5e1;
+  background: white;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.35fr) minmax(120px, 1.3fr) 96px;
+  gap: 8px;
+  padding: 7px 9px;
+  background: #e2e8f0;
+  border-bottom: 1px solid #94a3b8;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .orderItem {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.35fr) minmax(120px, 1.3fr) 96px;
+  column-gap: 8px;
   background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
+  border-radius: 0;
+  padding: 7px 9px;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: none;
+  transition: background 0.15s;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-    transform: translateY(-2px);
+    background: #f0f9ff;
   }
 }
 
@@ -85,37 +108,39 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .orderHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 2px;
   font-size: 0.75rem;
   font-weight: 600;
   color: white;
 }
 
 .orderType {
-  padding: 0.25rem 0.75rem;
+  padding: 0.2rem 0.4rem;
   background: #f1f5f9;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
 }
 
 .orderName {
-  font-size: 1rem;
+  flex-basis: 100%;
+  margin-top: 2px;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #1e293b;
 }
@@ -128,7 +153,7 @@
 }
 
 .time {
-  font-size: 0.875rem;
+  font-size: 0.72rem;
   color: #64748b;
 }
 
@@ -140,32 +165,34 @@
 .orderDetails {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 8px;
+  margin: 0;
 }
 
 .detailItem {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 1px;
 }
 
 .detailLabel {
-  font-size: 0.75rem;
+  font-size: 0.62rem;
   font-weight: 600;
   color: #94a3b8;
   text-transform: uppercase;
 }
 
 .detailValue {
-  font-size: 0.875rem;
+  font-size: 0.72rem;
   color: #1e293b;
   font-weight: 500;
 }
 
 .orderActions {
   display: flex;
-  gap: 0.5rem;
+  gap: 3px;
+  align-items: center;
   justify-content: flex-end;
 }
 
@@ -173,10 +200,10 @@
 .startButton,
 .completeButton,
 .registerMedicationButton {
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.5rem;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: 2px;
+  font-size: 0.68rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -245,6 +272,366 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.drugModalContent {
+  max-width: 940px;
+  border-radius: 0.45rem;
+  overflow: hidden;
+
+  .modalHeader {
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    border-top: 4px solid #2563eb;
+  }
+
+  .modalBody {
+    padding: 0.85rem 1rem 1rem;
+  }
+}
+
+.modalSubtitle {
+  display: block;
+  margin-top: 0.18rem;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.prescriptionStrip {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  margin-bottom: 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+
+  > div {
+    display: flex;
+    min-width: 0;
+    border-right: 1px solid #cbd5e1;
+
+    &:last-child { border-right: 0; }
+  }
+
+  span {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.55rem;
+    background: #e8eef5;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  strong {
+    overflow: hidden;
+    padding: 0.5rem 0.6rem;
+    color: #0f172a;
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.drugIdentity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 0.7fr 0.6fr;
+  align-items: stretch;
+  margin-bottom: 0.65rem;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+
+  .infoItem {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.18rem;
+    padding: 0.48rem 0.65rem;
+    border-left: 1px solid #bfdbfe;
+    border-bottom: 0;
+  }
+}
+
+.drugIdentityTitle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.28rem;
+  min-width: 0;
+  padding: 0.48rem 0.65rem;
+
+  strong {
+    overflow: hidden;
+    color: #172554;
+    font-size: 0.86rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.matchedBadge {
+  width: fit-content;
+  padding: 0.12rem 0.35rem;
+  border-radius: 2px;
+  background: #2563eb;
+  color: white;
+  font-size: 0.63rem;
+  font-weight: 700;
+}
+
+.drugDocumentGrid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.clinicalPanel {
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  background: white;
+
+  h4 {
+    margin: 0;
+    padding: 0.42rem 0.6rem;
+    border-bottom: 1px solid #cbd5e1;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 0.76rem;
+  }
+}
+
+.documentText {
+  height: 8rem;
+  overflow-y: auto;
+  padding: 0.55rem 0.65rem;
+  color: #334155;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.documentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    padding-left: 0.85rem;
+
+    &::before {
+      position: absolute;
+      top: 0.48rem;
+      left: 0.12rem;
+      width: 0.28rem;
+      height: 0.28rem;
+      border-radius: 50%;
+      background: #64748b;
+      content: '';
+    }
+  }
+}
+
+.clinicalDocumentHeading {
+  margin: 0.28rem -0.1rem 0.05rem;
+  padding: 0.38rem 0.48rem !important;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 700;
+
+  &::before {
+    display: none;
+  }
+}
+
+.clinicalNumberRow,
+.clinicalTopicRow {
+  display: grid;
+  grid-template-columns: 2.15rem minmax(0, 1fr);
+  gap: 0.3rem;
+  padding: 0.46rem 0 !important;
+  border-bottom: 1px solid #e2e8f0;
+
+  &::before { display: none; }
+
+  > span {
+    color: #1d4ed8;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+  }
+}
+
+.clinicalTopicRow {
+  grid-template-columns: minmax(5.2rem, 8.5rem) minmax(0, 1fr);
+
+  > span {
+    padding-right: 0.55rem;
+    border-right: 1px solid #cbd5e1;
+    color: #334155;
+    white-space: nowrap;
+  }
+
+  > p:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.indicationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.28rem 0.75rem;
+
+  span {
+    padding: 0.25rem 0.4rem;
+    border-left: 2px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    line-height: 1.45;
+  }
+}
+
+.documentDetails {
+  margin-bottom: 0.48rem;
+  border: 1px solid #cbd5e1;
+  background: white;
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.48rem 0.65rem;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 700;
+
+    small { color: #64748b; font-size: 0.68rem; font-weight: 500; }
+  }
+}
+
+.warningDetails {
+  border-color: #fecaca;
+
+  summary { background: #fff7ed; color: #b91c1c; }
+}
+
+.expandedDocument {
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: 0.65rem;
+  border-top: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  line-height: 1.55;
+
+  .documentList {
+    gap: 0.55rem;
+
+    li {
+      padding-left: 0;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}
+
+.cautionRows {
+  display: flex;
+  flex-direction: column;
+}
+
+.cautionRow {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  gap: 0.2rem;
+  padding: 0.62rem 0.2rem;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:first-child { padding-top: 0.15rem; }
+  &:last-child { border-bottom: 0; padding-bottom: 0.15rem; }
+
+  p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.65;
+  }
+}
+
+.cautionNumber {
+  color: #1d4ed8;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.cautionSectionTitle {
+  margin: 0.35rem -0.2rem 0;
+  padding: 0.52rem 0.65rem;
+  border-left: 3px solid #2563eb;
+  background: #eef4fb;
+  color: #1e3a5f;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.cautionIntro {
+  grid-column: 1 / -1;
+  padding: 0.55rem 0.65rem;
+  border-left: 3px solid #f59e0b;
+  background: #fffbeb;
+  color: #78350f !important;
+  font-weight: 600;
+}
+
+.dataSourceNotice {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+  padding: 0.5rem 0.65rem;
+  border-left: 3px solid #0284c7;
+  background: #f0f9ff;
+  color: #075985;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .prescriptionStrip,
+  .drugIdentity,
+  .drugDocumentGrid { grid-template-columns: 1fr; }
+
+  .prescriptionStrip > div { border-right: 0; border-bottom: 1px solid #cbd5e1; }
+  .drugIdentity .infoItem { border-left: 0; border-top: 1px solid #bfdbfe; }
+}
+
+.noInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border: 1px solid #fbbf24;
+  background: #fffbeb;
+  color: #78350f;
+
+  strong {
+    font-size: 0.95rem;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+    font-size: 0.82rem;
+  }
+
+  span {
+    color: #92400e;
+    font-size: 0.72rem;
+  }
 }
 
 .modalHeader {

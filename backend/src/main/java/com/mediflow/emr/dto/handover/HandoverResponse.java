@@ -22,7 +22,10 @@ public class HandoverResponse {
     private String fromShiftType;
     private String toShiftType;
     private String aiSummary;
-    private String additionalNotes;
+    private String finalSummary;
+    private String status;
+    private String aiModel;
+    private LocalDateTime approvedAt;
     private String createdByName;
     private String handoverDate;
     private LocalDateTime createdAt;
@@ -34,11 +37,13 @@ public class HandoverResponse {
                 .fromShiftType(handover.getFromShift().getType().name())
                 .toShiftType(handover.getToShift().getType().name())
                 .aiSummary(handover.getAiSummary())
-                .additionalNotes(handover.getAdditionalNotes())
+                .finalSummary(handover.getFinalSummary())
+                .status(handover.getStatus())
+                .aiModel(handover.getAiModel())
+                .approvedAt(handover.getApprovedAt())
                 .createdByName(handover.getCreatedBy().getName())
                 .handoverDate(handover.getCreatedAt().toLocalDate().toString())
                 .createdAt(handover.getCreatedAt())
                 .build();
     }
 }
-

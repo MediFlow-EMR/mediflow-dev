@@ -1,0 +1,80 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:mediflow-test;MODE=MariaDB;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  mail:
+    host: localhost
+    port: 2525
+    username: test
+    password: test
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          ssl:
+            enable: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google
+            client-secret: test-google-secret
+            scope: [profile, email]
+            redirect-uri: http://localhost/login/oauth2/code/google
+          kakao:
+            client-id: test-kakao
+            client-secret: test-kakao-secret
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost/login/oauth2/code/kakao
+        provider:
+          kakao:
+            authorization-uri: https://example.com/oauth/authorize
+            token-uri: https://example.com/oauth/token
+            user-info-uri: https://example.com/user
+            user-name-attribute: id
+
+server:
+  port: 0
+
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LXRlc3Qtc2VjcmV0LWtleS10ZXN0LXNlY3JldC1rZXktdGVzdC1zZWNyZXQta2V5LTEyMzQ=
+  access-expiration: 3600000
+  refresh-expiration: 1209600000
+
+cookie:
+  domain: localhost
+  secure: false
+  http-only: true
+  same-site: Lax
+  access-token-name: ACCESS_TOKEN
+  refresh-token-name: REFRESH_TOKEN
+  access-max-age: 900
+  refresh-max-age: 604800
+
+app:
+  oauth2-success-redirect-url: http://localhost:3000/app
+  oauth2-failure-redirect-url: http://localhost:3000
+
+cors:
+  allowed-origins: http://localhost:3000
+
+drug-api:
+  base-url: https://example.com/drugs
+  service-key: test
+
+drug-permit-api:
+  base-url: https://example.com/permits
+
+gemini:
+  api-key: test
+  model: test-model
+  base-url: https://example.com/gemini

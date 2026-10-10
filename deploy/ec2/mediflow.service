@@ -1,0 +1,21 @@
+[Unit]
+Description=MediFlow Spring Boot backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mediflow
+Group=mediflow
+WorkingDirectory=/opt/mediflow
+EnvironmentFile=/etc/mediflow/mediflow.env
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=70 -jar /opt/mediflow/app.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

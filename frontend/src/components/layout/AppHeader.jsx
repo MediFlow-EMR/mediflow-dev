@@ -37,12 +37,19 @@ const AppHeader = () => {
         setSelectedDate(date);
     };
 
-    const isAiTestPage = location.pathname === '/app/ai-test';
-
     return (
         <header className={styles.header}>
             <div className={styles.left}>
-                <div className={styles.logo} onClick={handleLogoClick}>
+                <div
+                    className={styles.logo}
+                    onClick={handleLogoClick}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') handleLogoClick();
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    title="내 담당 환자로 이동"
+                >
                     MediFlow
                 </div>
                 <div className={styles.hospitalInfo}>

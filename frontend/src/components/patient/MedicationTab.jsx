@@ -122,6 +122,18 @@ const MedicationTab = ({ patientId }) => {
                     <span className={styles.detailValue}>{medication.orderDoctor}</span>
                   </div>
                 )}
+                {medication.orderId && (
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>연결 처방</span>
+                    <span className={styles.detailValue}>#{medication.orderId}</span>
+                  </div>
+                )}
+                {medication.notes && (
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>특이사항</span>
+                    <span className={styles.detailValue}>{medication.notes}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))

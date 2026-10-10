@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { HandoverService } from '../services/handoverService';
-import { useAuthStore } from '../stores/authStore';
 import useDashboardStore from '../stores/useDashboardStore';
 import styles from './HandoverPage.module.scss';
 
@@ -8,7 +7,6 @@ import styles from './HandoverPage.module.scss';
  * 인수인계 페이지 - 전체 환자의 인수인계를 한 번에 관리
  */
 const HandoverPage = () => {
-  const { user } = useAuthStore();
   const { departmentSummary } = useDashboardStore();
   const [previousHandover, setPreviousHandover] = useState(null);
   const [myHandover, setMyHandover] = useState('');
@@ -313,4 +311,3 @@ const HandoverPage = () => {
 };
 
 export default HandoverPage;
-

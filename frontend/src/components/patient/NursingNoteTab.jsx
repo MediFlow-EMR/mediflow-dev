@@ -192,7 +192,7 @@ const NursingNoteTab = ({ patientId }) => {
                   checked={formData.isImportant}
                   onChange={handleChange}
                 />
-                <span>중요 표시</span>
+                <span>중요 기록</span>
               </label>
             </div>
           </div>
@@ -236,10 +236,10 @@ const NursingNoteTab = ({ patientId }) => {
                     {categories.find(c => c.value === note.category)?.label || note.category}
                   </span>
                   {note.isImportant && (
-                    <span className={styles.importantBadge}>⭐ 중요</span>
+                    <span className={styles.importantBadge}>중요</span>
                   )}
                   {note.aiSuggested && (
-                    <span className={styles.aiBadge}>🤖 AI 제안</span>
+                    <span className={styles.aiBadge}>AI 제안</span>
                   )}
                 </div>
                 <div className={styles.noteHeaderRight}>

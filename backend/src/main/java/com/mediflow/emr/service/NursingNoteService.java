@@ -30,6 +30,7 @@ public class NursingNoteService {
     private final NursingNoteRepository nursingNoteRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final PatientAccessService patientAccessService;
 
     /**
      * 간호기록 등록
@@ -43,8 +44,7 @@ public class NursingNoteService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 환자 조회
-        Patient patient = patientRepository.findById(request.patientId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        Patient patient = patientAccessService.requireAccessiblePatient(nurseId, request.patientId());
 
         // 간호기록 생성
         NursingNote note = NursingNote.builder()
@@ -70,9 +70,7 @@ public class NursingNoteService {
         log.info("환자 간호기록 목록 조회 - patientId: {}, currentUserId: {}", patientId, currentUserId);
 
         // 환자 존재 확인
-        if (!patientRepository.existsById(patientId)) {
-            throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
 
         List<NursingNote> notes = nursingNoteRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
         log.info("조회된 간호기록 수: {}", notes.size());

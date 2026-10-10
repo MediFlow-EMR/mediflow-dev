@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 인수인계 엔티티
@@ -44,13 +45,24 @@ public class Handover extends BaseTimeEntity {
     @Column(nullable = false, name = "handover_date")
     private LocalDate handoverDate;
 
-    /** AI 요약 내용 */
+    /** 수정 전 AI 원본 초안 */
     @Column(columnDefinition = "TEXT", name = "ai_summary")
     private String aiSummary;
 
-    /** 추가 특이사항 */
-    @Column(columnDefinition = "TEXT", name = "additional_notes")
-    private String additionalNotes;
+    /** 의료인이 확인·수정한 최종 인수인계 */
+    @Column(columnDefinition = "TEXT", name = "final_summary")
+    private String finalSummary;
+
+    /** 생성에 사용한 모델과 최종 승인 상태 */
+    @Column(name = "ai_model", length = 100)
+    private String aiModel;
+
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String status = "APPROVED";
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
 
     /** 작성자 */
     @ManyToOne(fetch = FetchType.LAZY)

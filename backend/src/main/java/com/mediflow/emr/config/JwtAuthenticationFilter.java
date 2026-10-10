@@ -2,6 +2,7 @@ package com.mediflow.emr.config;
 
 import com.mediflow.emr.util.CookieProperties;
 import com.mediflow.emr.util.JwtTokenProvider;
+import com.mediflow.emr.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,6 +13,7 @@ import org.springframework.lang.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -19,7 +21,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 /**
  *  JWT 인증 필터
@@ -34,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CookieProperties cookieProperties;
+    private final UserRepository userRepository;
 
     /**
      * HTTP 요청을 필터링하여 JWT 토큰을 검증하고 인증 컨텍스트를 설정
@@ -56,10 +59,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtTokenProvider.getClaims(token);
             String subject = claims.getSubject(); // 토큰의 주체(예: 사용자 ID)
 
+            List<SimpleGrantedAuthority> authorities = userRepository.findByProviderId(subject)
+                    .filter(user -> user.getIsActive() && !user.getIsLocked())
+                    .map(user -> List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
+                    .orElseGet(List::of);
+
+            // 삭제·잠금·비활성화된 계정은 유효한 과거 토큰이 있어도 인증시키지 않는다.
+            if (authorities.isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     subject,
                     null,
-                    Collections.emptyList()
+                    authorities
             );
             ((UsernamePasswordAuthenticationToken) authentication)
                     .setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // 인증 세부 정보 설정

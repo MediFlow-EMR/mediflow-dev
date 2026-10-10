@@ -24,7 +24,10 @@ public class HandoverDto {
     private String toShiftType;
     private LocalDate handoverDate;
     private String aiSummary;
-    private String additionalNotes;
+    private String finalSummary;
+    private String aiModel;
+    private String status;
+    private LocalDateTime approvedAt;
     private Long createdById;
     private String createdByName;
     private LocalDateTime createdAt;
@@ -40,7 +43,10 @@ public class HandoverDto {
                 .toShiftType(handover.getToShift().getType().name())
                 .handoverDate(handover.getHandoverDate())
                 .aiSummary(handover.getAiSummary())
-                .additionalNotes(handover.getAdditionalNotes())
+                .finalSummary(handover.getFinalSummary())
+                .aiModel(handover.getAiModel())
+                .status(handover.getStatus())
+                .approvedAt(handover.getApprovedAt())
                 .createdById(handover.getCreatedBy().getId())
                 .createdByName(handover.getCreatedBy().getName())
                 .createdAt(handover.getCreatedAt())

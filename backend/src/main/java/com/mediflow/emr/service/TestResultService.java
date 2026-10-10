@@ -21,12 +21,15 @@ import java.util.stream.Collectors;
 public class TestResultService {
 
     private final TestResultRepository testResultRepository;
+    private final PatientAccessService patientAccessService;
 
     /**
      * 환자별 검사 결과 목록 조회
      */
-    public List<TestResultResponse> getTestResultsByPatient(Long patientId) {
+    public List<TestResultResponse> getTestResultsByPatient(Long patientId, Long currentUserId) {
         log.info("환자 검사 결과 조회 - patientId: {}", patientId);
+
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
         
         List<TestResult> testResults = testResultRepository.findByPatientIdOrderByResultDateDesc(patientId);
         

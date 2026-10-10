@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
  */
 @Builder
 public record MedicationRequest(
+        @NotNull(message = "처방 ID는 필수입니다")
+        Long orderId,
+
         @NotNull(message = "환자 ID는 필수입니다")
         Long patientId,
 
@@ -33,6 +36,9 @@ public record MedicationRequest(
         LocalDateTime administeredAt,
 
         @Size(max = 100, message = "처방 의사명은 100자 이하여야 합니다")
-        String orderDoctor
+        String orderDoctor,
+
+        @Size(max = 1000, message = "특이사항은 1000자 이하여야 합니다")
+        String notes
 ) {
 }

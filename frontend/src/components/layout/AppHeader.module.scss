@@ -15,6 +15,19 @@
       font-size: 24px;
       font-weight: 700;
       color: #0284c7;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: #0369a1;
+      }
+
+      &:focus-visible {
+        border-radius: 3px;
+        outline: 2px solid #38bdf8;
+        outline-offset: 4px;
+      }
     }
 
     .hospitalInfo {
@@ -41,7 +54,7 @@
       background: linear-gradient(135deg, #28a745 0%, #218838 100%);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
@@ -62,7 +75,7 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
@@ -98,7 +111,7 @@
       background: #0284c7;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 2px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;

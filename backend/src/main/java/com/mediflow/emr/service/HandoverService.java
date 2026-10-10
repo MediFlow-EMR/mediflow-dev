@@ -2,6 +2,9 @@ package com.mediflow.emr.service;
 
 import com.mediflow.emr.entity.*;
 import com.mediflow.emr.entity.enums.Gender;
+import com.mediflow.emr.exception.BusinessException;
+import com.mediflow.emr.exception.ErrorCode;
+import com.mediflow.emr.config.GeminiConfig;
 import com.mediflow.emr.repository.*;
 
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -30,6 +35,8 @@ public class HandoverService {
     private final GeminiService geminiService;
     private final HandoverRepository handoverRepository;
     private final AssignmentRepository assignmentRepository;
+    private final GeminiConfig geminiConfig;
+    private final ClinicalAuditService clinicalAuditService;
 
     @Transactional(readOnly = true)
     public String generateAiSummary(Long nurseId, Long fromShiftId) {
@@ -55,7 +62,7 @@ public class HandoverService {
             .collect(Collectors.toList());
 
         log.info("배정된 환자 수: {}", patients.size());
-        patients.forEach(p -> log.info("환자 ID: {}, 이름: {}, 차트번호: {}", p.getId(), p.getName(), p.getChartNumber()));
+        // 환자 식별정보는 로그에 남기지 않는다.
 
         // 부서 정보는 첫 번째 환자의 부서로 설정
         DepartmentEntity department = patients.get(0).getDepartment();
@@ -77,7 +84,71 @@ public class HandoverService {
 
         String prompt = buildPrompt(department, fromShift, patientDataList);
         log.info("생성된 프롬프트 길이: {}", prompt.length());
-        return geminiService.generateContent(prompt);
+        String deidentifiedSummary = geminiService.generateContent(prompt);
+        return restoreLocalPatientLabels(deidentifiedSummary, patientDataList);
+    }
+
+    @Transactional(readOnly = true)
+    public String generatePatientAiSummary(Long nurseId, Long fromShiftId, Long patientId) {
+        Shift fromShift = shiftRepository.findById(fromShiftId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "근무조를 찾을 수 없습니다."));
+
+        Patient patient = assignmentRepository.findByNurseIdAndShiftId(nurseId, fromShiftId)
+            .stream()
+            .map(Assignment::getPatient)
+            .filter(assignedPatient -> assignedPatient.getId().equals(patientId))
+            .findFirst()
+            .orElseThrow(() -> new BusinessException(
+                ErrorCode.FORBIDDEN,
+                "현재 근무조에 배정된 환자만 다시 생성할 수 있습니다."
+            ));
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime shiftStart = LocalDateTime.of(today, fromShift.getStartTime());
+        LocalDateTime shiftEnd = LocalDateTime.of(today, fromShift.getEndTime());
+        if (fromShift.getEndTime().isBefore(fromShift.getStartTime())) {
+            shiftEnd = shiftEnd.plusDays(1);
+        }
+
+        PatientData patientData = collectPatientData(patient, shiftStart, shiftEnd);
+        List<PatientData> patientDataList = List.of(patientData);
+        String prompt = buildPrompt(patient.getDepartment(), fromShift, patientDataList);
+        String deidentifiedSummary = geminiService.generateContent(prompt);
+
+        log.info("환자 단위 AI 인수인계 재생성 완료 - nurseId: {}, patientId: {}", nurseId, patientId);
+        return restoreLocalPatientLabels(deidentifiedSummary, patientDataList);
+    }
+
+    /**
+     * 외부 AI에는 가명 식별자만 전송하고, 응답이 병원 서버로 돌아온 뒤에만
+     * 실제 환자 표시명과 차트번호를 다시 결합한다.
+     */
+    private String restoreLocalPatientLabels(String summary, List<PatientData> dataList) {
+        String restored = summary;
+        for (int index = 0; index < dataList.size(); index++) {
+            Patient patient = dataList.get(index).patient;
+            String safeLabel = String.format("환자-%03d", index + 1);
+            String localLabel = patient.getName() + " (" + patient.getChartNumber() + ")";
+            restored = restored.replace(safeLabel, localLabel);
+        }
+
+        // 모델이 가명 표기를 임의로 바꾸더라도 카드 순서에 따라 서버 내부 환자와 다시 연결한다.
+        // 이 처리는 외부 AI 호출이 끝난 뒤 병원 서버 안에서만 수행된다.
+        Pattern patientHeading = Pattern.compile("\\*\\*\\[[^\\n\\]]+\\]\\*\\*");
+        Matcher matcher = patientHeading.matcher(restored);
+        StringBuffer normalized = new StringBuffer();
+        int patientIndex = 0;
+        while (matcher.find() && patientIndex < dataList.size()) {
+            Patient patient = dataList.get(patientIndex++).patient;
+            String gender = patient.getGender() == Gender.M ? "남" : "여";
+            String heading = String.format(
+                "**[%s (%s, %d세/%s)]**",
+                patient.getName(), patient.getChartNumber(), patient.getAge(), gender
+            );
+            matcher.appendReplacement(normalized, Matcher.quoteReplacement(heading));
+        }
+        matcher.appendTail(normalized);
+        return normalized.toString();
     }
 
     private PatientData collectPatientData(Patient patient, LocalDateTime start, LocalDateTime end) {
@@ -123,10 +194,13 @@ public class HandoverService {
         sb.append("다음은 [").append(dept.getName()).append("] [근무조: ")
           .append(shift.getType()).append("]의 인수인계 정보입니다.\n\n");
 
+        int patientSequence = 1;
         for (PatientData data : dataList) {
             Patient p = data.patient;
-            sb.append("[환자 - ").append(p.getName())
-              .append(" (").append(p.getChartNumber()).append(", ")
+            // 외부 AI에는 이름과 차트번호를 보내지 않고 요청 내 가명 식별자를 사용한다.
+            String safePatientLabel = String.format("환자-%03d", patientSequence++);
+            sb.append("[").append(safePatientLabel)
+              .append(" (")
               .append(p.getAge()).append("세/")
               .append(p.getGender() == Gender.M ? "남" : "여")
               .append(")]\n");
@@ -171,7 +245,7 @@ public class HandoverService {
         }
 
         sb.append("\n각 환자별로 다음 형식으로 인수인계문을 작성해줘:\n\n");
-        sb.append("[환자명 (차트번호, 나이/성별)]\n");
+        sb.append("[가명 환자 식별자 (나이/성별)]\n");
         sb.append("- 주요 변화: 특이사항 및 상태 변화\n");
         sb.append("- 수행한 처치: 투약, 검사 등\n");
         sb.append("- 지속 관찰 사항: 다음 근무조에서 주의할 점\n\n");
@@ -196,7 +270,20 @@ public class HandoverService {
     }
 
     @Transactional
-    public void saveHandover(Long departmentId, Long fromShiftId, Long toShiftId, String aiSummary, User user) {
+    public void saveHandover(Long departmentId, Long fromShiftId, Long toShiftId,
+                             String aiDraft, String finalSummary, User user) {
+        if (user.getDepartment() == null || !user.getDepartment().getId().equals(departmentId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "소속 부서의 인수인계만 저장할 수 있습니다.");
+        }
+
+        if (fromShiftId.equals(toShiftId)) {
+            throw new IllegalArgumentException("인계 근무조와 인수 근무조는 달라야 합니다.");
+        }
+
+        if (aiDraft == null || aiDraft.isBlank() || finalSummary == null || finalSummary.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 초안과 최종 인수인계 내용이 필요합니다.");
+        }
+
         DepartmentEntity department = departmentRepository.findById(departmentId)
             .orElseThrow(() -> new IllegalArgumentException("부서를 찾을 수 없습니다."));
         
@@ -211,11 +298,23 @@ public class HandoverService {
             .fromShift(fromShift)
             .toShift(toShift)
             .handoverDate(LocalDate.now())
-            .aiSummary(aiSummary)
+            .aiSummary(aiDraft)
+            .finalSummary(finalSummary)
+            .aiModel(geminiConfig.getModel())
+            .status("APPROVED")
+            .approvedAt(LocalDateTime.now())
             .createdBy(user)
             .build();
 
-        handoverRepository.save(handover);
+        Handover saved = handoverRepository.save(handover);
+        clinicalAuditService.record(
+                user.getId(),
+                null,
+                "APPROVE",
+                "HANDOVER",
+                saved.getId(),
+                "AI 초안 검토 완료; model=" + geminiConfig.getModel()
+        );
         log.info("인수인계 저장 완료");
     }
 

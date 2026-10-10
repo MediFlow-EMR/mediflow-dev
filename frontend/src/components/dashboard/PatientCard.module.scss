@@ -1,21 +1,24 @@
 .patientCard {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
+  background: #fff;
+  border-radius: 0;
+  padding: 8px 9px;
+  margin-bottom: 2px;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #dbe3ea;
+  border-left: 4px solid transparent;
+  box-shadow: none;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    background: #f0f9ff;
+    border-color: #7dd3fc;
   }
 
   &.selected {
+    background: #e0f2fe;
     border-color: #0284c7;
-    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+    border-left-color: #0369a1;
+    box-shadow: none;
   }
 
   &.primary {
@@ -23,25 +26,44 @@
   }
 }
 
+@media (max-width: 900px) {
+  .patientCard {
+    padding: 6px;
+  }
+
+  .vitals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contextLine {
+    flex-wrap: wrap;
+    gap: 3px 5px;
+  }
+
+  .diagnosis {
+    flex-basis: 100%;
+  }
+}
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .patientInfo {
   flex: 1;
 
   .name {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     color: #1f2937;
-    margin-bottom: 4px;
+    margin-bottom: 1px;
   }
 
   .meta {
-    font-size: 14px;
+    font-size: 11px;
     color: #6b7280;
   }
 }
@@ -89,31 +111,54 @@
   }
 }
 
+.contextLine {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.department {
+  flex: none;
+  color: #0369a1;
+  font-weight: 700;
+}
+
+.location {
+  flex: none;
+  padding-left: 8px;
+  border-left: 1px solid #cbd5e1;
+  color: #334155;
+  font-weight: 700;
+}
+
 .diagnosis {
-  font-size: 14px;
+  overflow: hidden;
   color: #374151;
-  margin-bottom: 12px;
-  padding: 8px;
-  background: #f9fafb;
-  border-radius: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vitals {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  font-size: 13px;
+  position: relative;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  font-size: 11px;
 
   .vitalItem {
     display: flex;
     flex-direction: column;
-    padding: 6px;
-    background: #f3f4f6;
-    border-radius: 6px;
+    padding: 3px 4px;
+    background: #f8fafc;
+    border-radius: 0;
+    border-right: 1px solid #e2e8f0;
 
     .label {
       color: #6b7280;
-      font-size: 11px;
+      font-size: 9px;
       margin-bottom: 2px;
     }
 
@@ -122,6 +167,14 @@
       font-weight: 600;
     }
   }
+
+  .measuredAt {
+    position: absolute;
+    right: 2px;
+    bottom: -14px;
+    color: #64748b;
+    font-size: 10px;
+  }
 }
 
 .noVitals {
@@ -129,4 +182,8 @@
   color: #9ca3af;
   font-size: 13px;
   padding: 8px;
+}
+
+.patientCard:has(.vitals) {
+  padding-bottom: 18px;
 }

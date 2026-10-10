@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.Random;
  */
 @Slf4j
 @Component
-@Profile({"dev", "prod"})
+@Profile({"dev", "demo"})
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -58,10 +59,105 @@ public class DataInitializer implements CommandLineRunner {
         // 부서 데이터가 있으면 근무조와 배정만 확인
         log.info("부서 데이터가 이미 존재합니다. 근무조와 배정만 확인합니다.");
         checkAndCreateShiftsAndAssignments();
+        synchronizeMedicationDisplayNames();
+        synchronizeNursingNoteImportance();
         
         log.info("========================================");
         log.info("초기 데이터 확인 완료!");
         log.info("========================================");
+    }
+
+    /**
+     * 기존 개발 DB의 약물명도 현재 표기 규칙(한글명(영문 일반명))에 맞춘다.
+     * 코드 기준으로 보정하므로 사용자가 직접 추가한 처방명은 건드리지 않는다.
+     */
+    private void synchronizeMedicationDisplayNames() {
+        List<MedicalOrder> orders = medicalOrderRepository.findAll();
+        int updatedOrders = 0;
+        for (MedicalOrder order : orders) {
+            String displayName = bilingualMedicationName(order.getOrderCode());
+            if (displayName != null && !displayName.equals(order.getOrderName())) {
+                order.setOrderName(displayName);
+                updatedOrders++;
+            }
+            String attendingPhysician = order.getPatient().getAttendingPhysician();
+            if (attendingPhysician != null && !attendingPhysician.equals(order.getOrderDoctor())) {
+                order.setOrderDoctor(attendingPhysician);
+                updatedOrders++;
+            }
+        }
+        if (updatedOrders > 0) {
+            medicalOrderRepository.saveAll(orders);
+        }
+
+        List<Medication> medications = medicationRepository.findAll();
+        int updatedMedications = 0;
+        for (Medication medication : medications) {
+            String displayName = bilingualMedicationName(medication.getDrugCode());
+            if (displayName != null && !displayName.equals(medication.getDrugName())) {
+                medication.update(displayName, medication.getDrugCode(), medication.getDose(),
+                        medication.getRoute(), medication.getFrequency(), medication.getAdministeredAt(),
+                        medication.getOrderDoctor());
+                updatedMedications++;
+            }
+            String attendingPhysician = medication.getPatient().getAttendingPhysician();
+            if (attendingPhysician != null && !attendingPhysician.equals(medication.getOrderDoctor())) {
+                medication.update(medication.getDrugName(), medication.getDrugCode(), medication.getDose(),
+                        medication.getRoute(), medication.getFrequency(), medication.getAdministeredAt(),
+                        attendingPhysician);
+                updatedMedications++;
+            }
+        }
+        if (updatedMedications > 0) {
+            medicationRepository.saveAll(medications);
+        }
+
+        log.info("약물 표시명 보정 완료 - 처방 {}건, 투약 기록 {}건", updatedOrders, updatedMedications);
+    }
+
+    private String bilingualMedicationName(String code) {
+        if (code == null) return null;
+        return switch (code) {
+            case "CARD-ASA" -> "아스피린장용정(Aspirin)";
+            case "CARD-ATO" -> "아토르바스타틴정(Atorvastatin)";
+            case "CARD-NTG" -> "니트로글리세린설하정(Nitroglycerin)";
+            case "RESP-CTX", "SURG-CTX" -> "세프트리악손주(Ceftriaxone)";
+            case "PRN-APAP", "ANAL-APAP", "GEN-APAP" -> "아세트아미노펜정(Acetaminophen)";
+            case "ENDO-MET" -> "메트포르민정(Metformin)";
+            case "ENDO-GLA" -> "인슐린글라진주(Insulin glargine)";
+            case "HTN-AML" -> "암로디핀정(Amlodipine)";
+            case "HTN-LOS" -> "로사르탄정(Losartan)";
+            case "ORTH-CLX" -> "세레콕시브캡슐(Celecoxib)";
+            case "SURG-MTZ" -> "메트로니다졸주(Metronidazole)";
+            case "GI-PAN" -> "판토프라졸정(Pantoprazole)";
+            case "GI-SUC" -> "수크랄페이트정(Sucralfate)";
+            case "RESP-SAL" -> "살부타몰흡입액(Salbutamol)";
+            case "RESP-BUD" -> "부데소니드흡입액(Budesonide)";
+            case "REN-FUR" -> "푸로세미드정(Furosemide)";
+            case "REN-CAL" -> "탄산칼슘정(Calcium carbonate)";
+            default -> null;
+        };
+    }
+
+    /** 기존 더미 기록의 무작위 중요 표시를 기록 내용에 맞게 바로잡는다. */
+    private void synchronizeNursingNoteImportance() {
+        List<NursingNote> notes = nursingNoteRepository.findAll();
+        int updated = 0;
+        for (NursingNote note : notes) {
+            String text = note.getPlainText() != null ? note.getPlainText() : note.getContent();
+            boolean important = isClinicallyNoteworthy(text);
+            if (!Boolean.valueOf(important).equals(note.getIsImportant())) {
+                note.update(note.getContent(), note.getPlainText(), note.getCategory(), important);
+                updated++;
+            }
+        }
+        if (updated > 0) nursingNoteRepository.saveAll(notes);
+        log.info("간호기록 중요 표시 보정 완료 - {}건", updated);
+    }
+
+    private boolean isClinicallyNoteworthy(String text) {
+        if (text == null) return false;
+        return text.contains("통증 호소") || text.contains("활동 제한");
     }
 
     /**
@@ -311,8 +407,11 @@ public class DataInitializer implements CommandLineRunner {
         List<Patient> patients = new ArrayList<>();
         int[] patientCounts = {15, 12, 35, 30, 20, 18, 6, 10}; // 부서별 환자 수
         String[] diagnoses = {
-                "급성 심근경색", "뇌졸중", "폐렴", "당뇨병", "고혈압",
-                "골절", "맹장염", "위염", "천식", "신부전"
+                "급성 심근경색(AMI, I21.9)", "허혈성 뇌졸중(AIS, I63.9)",
+                "지역사회획득폐렴(CAP, J18.9)", "제2형 당뇨병(T2DM, E11.9)",
+                "본태성 고혈압(HTN, I10)", "요골 원위부 골절(S52.5)",
+                "급성 충수염(K35.8)", "급성 위염(K29.7)",
+                "기관지천식(BA, J45.9)", "만성 신장병(CKD, N18.9)"
         };
 
         int chartNumberCounter = 1000;
@@ -339,6 +438,11 @@ public class DataInitializer implements CommandLineRunner {
                                 1 + random.nextInt(28)))
                         .diagnosis(diagnoses[random.nextInt(diagnoses.length)])
                         .admissionDate(LocalDate.now().minusDays(random.nextInt(30)))
+                        .roomNumber(String.valueOf(701 + random.nextInt(8)))
+                        .bedNumber(String.valueOf(1 + random.nextInt(4)))
+                        .attendingPhysician("담당의" + (1 + random.nextInt(6)))
+                        .fallRisk(age >= 65 || random.nextInt(10) < 2)
+                        .isolationType(random.nextInt(10) == 0 ? "접촉주의" : null)
                         .bloodType(getRandomBloodType())
                         .allergies(random.nextBoolean() ? "없음" : "페니실린")
                         .guardianName(String.format("보호자%d", chartNumberCounter))
@@ -601,28 +705,13 @@ public class DataInitializer implements CommandLineRunner {
                 .filter(Patient::getIsAdmitted)
                 .toList();
 
-        String[] doctors = {"김철수", "이영희", "박민수", "정수진", "최동욱"};
-        
-        // 투약 오더 샘플 (식약처 API에서 검색 가능한 실제 약품명)
-        String[][] medications = {
-                {"타이레놀", null, "500mg", "PO", "1일 3회"},
-                {"아스피린", null, "100mg", "PO", "1일 1회"},
-                {"게보린", null, "1정", "PO", "1일 3회"},
-                {"판피린", null, "1정", "PO", "1일 3회"},
-                {"부루펜", null, "200mg", "PO", "1일 3회"},
-                {"후시딘", null, "적당량", "TOPICAL", "1일 2회"},
-                {"베아제", null, "1정", "PO", "1일 3회"},
-                {"가스활명수", null, "1포", "PO", "필요시"}
-        };
-
         for (Patient patient : admittedPatients) {
-            // 환자당 2-4개 오더 생성
-            int orderCount = 2 + random.nextInt(3);
+            // 시연 데이터도 진단 맥락과 맞아야 한다. 실제 처방 권고가 아닌 UI 테스트용 예시다.
+            String[][] medicationPlans = medicationPlansFor(patient.getDiagnosis());
+            int orderCount = Math.min(3, medicationPlans.length);
             
             for (int i = 0; i < orderCount; i++) {
-                String[] med = medications[random.nextInt(medications.length)];
-                String doctor = doctors[random.nextInt(doctors.length)];
-                
+                String[] med = medicationPlans[i];
                 // 오더 시간 (과거 1-3일)
                 java.time.LocalDateTime orderedAt = java.time.LocalDateTime.now()
                         .minusDays(1 + random.nextInt(3))
@@ -650,10 +739,10 @@ public class DataInitializer implements CommandLineRunner {
                         .dose(med[2])
                         .route(med[3])
                         .frequency(med[4])
-                        .instructions("식후 30분")
+                        .instructions(med[5])
                         .status(status)
                         .orderedAt(orderedAt)
-                        .orderDoctor(doctor)
+                        .orderDoctor(patient.getAttendingPhysician())
                         .build());
             }
         }
@@ -672,21 +761,8 @@ public class DataInitializer implements CommandLineRunner {
                 .filter(Patient::getIsAdmitted)
                 .toList();
 
-        String[] doctors = {"김철수", "이영희", "박민수", "정수진", "최동욱"};
-        
-        // 투약 샘플 (식약처 API에서 검색 가능한 실제 약품명)
-        Object[][] drugs = {
-                {"타이레놀", null, "500mg", MedicationRoute.PO, "1일 3회"},
-                {"아스피린", null, "100mg", MedicationRoute.PO, "1일 1회"},
-                {"게보린", null, "1정", MedicationRoute.PO, "1일 3회"},
-                {"판피린", null, "1정", MedicationRoute.PO, "1일 3회"},
-                {"부루펜", null, "200mg", MedicationRoute.PO, "1일 3회"},
-                {"후시딘", null, "적당량", MedicationRoute.TOPICAL, "1일 2회"},
-                {"베아제", null, "1정", MedicationRoute.PO, "1일 3회"},
-                {"가스활명수", null, "1포", MedicationRoute.PO, "필요시"}
-        };
-
         for (Patient patient : admittedPatients) {
+            String[][] medicationPlans = medicationPlansFor(patient.getDiagnosis());
             // 같은 부서의 간호사 찾기
             List<User> deptNurses = nurses.stream()
                     .filter(n -> n.getDepartment() != null)
@@ -702,9 +778,7 @@ public class DataInitializer implements CommandLineRunner {
                 
                 for (int i = 0; i < medsPerDay; i++) {
                     User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
-                    Object[] drug = drugs[random.nextInt(drugs.length)];
-                    String doctor = doctors[random.nextInt(doctors.length)];
-                    
+                    String[] drug = medicationPlans[i % medicationPlans.length];
                     // 투약 시간 (과거 day일, 8시/14시/20시)
                     int[] hours = {8, 14, 20};
                     int hour = hours[i % hours.length];
@@ -719,19 +793,72 @@ public class DataInitializer implements CommandLineRunner {
                     medications.add(Medication.builder()
                             .patient(patient)
                             .nurse(nurse)
-                            .drugName((String) drug[0])
-                            .drugCode((String) drug[1])
-                            .dose((String) drug[2])
-                            .route((MedicationRoute) drug[3])
-                            .frequency((String) drug[4])
+                            .drugName(drug[0])
+                            .drugCode(drug[1])
+                            .dose(drug[2])
+                            .route(MedicationRoute.valueOf(drug[3]))
+                            .frequency(drug[4])
                             .administeredAt(administeredAt)
-                            .orderDoctor(doctor)
+                            .orderDoctor(patient.getAttendingPhysician())
                             .build());
                 }
             }
         }
 
         return medicationRepository.saveAll(medications);
+    }
+
+    /**
+     * 진단별 시연용 약물 세트. 임상 의사결정이나 실제 투약에 사용하지 않는다.
+     * 배열: 약명, 코드, 용량, 경로, 빈도, 지시사항
+     */
+    private String[][] medicationPlansFor(String diagnosis) {
+        return switch (diagnosis) {
+            case "급성 심근경색(AMI, I21.9)" -> new String[][]{
+                    {"아스피린장용정(Aspirin)", "CARD-ASA", "100mg", "PO", "1일 1회", "출혈 징후 확인"},
+                    {"아토르바스타틴정(Atorvastatin)", "CARD-ATOR", "40mg", "PO", "1일 1회", "취침 전 투여"},
+                    {"니트로글리세린설하정(Nitroglycerin)", "CARD-NTG", "0.4mg", "PO", "필요시", "흉통 시 혈압 확인 후 투여"}
+            };
+            case "허혈성 뇌졸중(AIS, I63.9)" -> new String[][]{
+                    {"아스피린장용정(Aspirin)", "NEU-ASA", "100mg", "PO", "1일 1회", "연하 상태 및 출혈 징후 확인"},
+                    {"아토르바스타틴정(Atorvastatin)", "NEU-ATOR", "40mg", "PO", "1일 1회", "취침 전 투여"}
+            };
+            case "지역사회획득폐렴(CAP, J18.9)" -> new String[][]{
+                    {"세프트리악손주(Ceftriaxone)", "RESP-CTX", "2g", "IV", "1일 1회", "항생제 알레르기 확인"},
+                    {"아세트아미노펜정(Acetaminophen)", "RESP-APAP", "500mg", "PO", "필요시", "38도 이상 발열 시"}
+            };
+            case "제2형 당뇨병(T2DM, E11.9)" -> new String[][]{
+                    {"메트포르민정(Metformin)", "ENDO-MET", "500mg", "PO", "1일 2회", "식사 직후, 신기능 확인"},
+                    {"인슐린글라진주(Insulin glargine)", "ENDO-GLA", "10unit", "SC", "1일 1회", "투여 전 혈당 확인"}
+            };
+            case "본태성 고혈압(HTN, I10)" -> new String[][]{
+                    {"암로디핀정(Amlodipine)", "CV-AMLO", "5mg", "PO", "1일 1회", "투여 전 혈압 확인"},
+                    {"로사르탄정(Losartan)", "CV-LOS", "50mg", "PO", "1일 1회", "혈압·신기능·칼륨 확인"}
+            };
+            case "요골 원위부 골절(S52.5)" -> new String[][]{
+                    {"아세트아미노펜정(Acetaminophen)", "ORTH-APAP", "500mg", "PO", "1일 3회", "통증 점수 확인"},
+                    {"세레콕시브캡슐(Celecoxib)", "ORTH-CEL", "100mg", "PO", "1일 2회", "위장관·신기능 위험 확인"}
+            };
+            case "급성 충수염(K35.8)" -> new String[][]{
+                    {"세프트리악손주(Ceftriaxone)", "SURG-CTX", "2g", "IV", "1일 1회", "항생제 알레르기 확인"},
+                    {"메트로니다졸주(Metronidazole)", "SURG-MTZ", "500mg", "IV", "1일 3회", "정해진 속도로 주입"}
+            };
+            case "급성 위염(K29.7)" -> new String[][]{
+                    {"판토프라졸정(Pantoprazole)", "GI-PANTO", "40mg", "PO", "1일 1회", "아침 식전 투여"},
+                    {"수크랄페이트정(Sucralfate)", "GI-SUCR", "1g", "PO", "1일 3회", "식전 투여, 타 약물과 간격 확인"}
+            };
+            case "기관지천식(BA, J45.9)" -> new String[][]{
+                    {"살부타몰흡입액(Salbutamol)", "RESP-SAL", "2.5mg", "INHALATION", "필요시", "호흡곤란 시 투여 후 반응 평가"},
+                    {"부데소니드흡입액(Budesonide)", "RESP-BUD", "0.5mg", "INHALATION", "1일 2회", "투여 후 구강 세척"}
+            };
+            case "만성 신장병(CKD, N18.9)" -> new String[][]{
+                    {"푸로세미드정(Furosemide)", "RENAL-FUR", "20mg", "PO", "1일 1회", "혈압·I/O·전해질 확인"},
+                    {"탄산칼슘정(Calcium carbonate)", "RENAL-CAL", "500mg", "PO", "1일 3회", "식사와 함께 투여"}
+            };
+            default -> new String[][]{
+                    {"아세트아미노펜정(Acetaminophen)", "GEN-APAP", "500mg", "PO", "필요시", "통증·발열 시 상태 확인 후 투여"}
+            };
+        };
     }
 
     /**
@@ -791,7 +918,7 @@ public class DataInitializer implements CommandLineRunner {
                             .content(noteContent)
                             .plainText(noteContent)
                             .category(category)
-                            .isImportant(random.nextInt(10) < 2) // 20% 확률로 중요 표시
+                            .isImportant(isClinicallyNoteworthy(noteContent))
                             .aiSuggested(false)
                             .build());
                 }
@@ -1007,12 +1134,17 @@ public class DataInitializer implements CommandLineRunner {
                 // DAY → EVENING 인수인계
                 if (shifts.size() >= 2) {
                     User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    String summary = summaryTemplates[random.nextInt(summaryTemplates.length)];
                     handovers.add(Handover.builder()
                             .department(dept)
                             .fromShift(shifts.get(0)) // DAY
                             .toShift(shifts.get(1))   // EVENING
                             .handoverDate(handoverDate)
-                            .aiSummary(summaryTemplates[random.nextInt(summaryTemplates.length)])
+                            .aiSummary(summary)
+                            .finalSummary(summary)
+                            .aiModel("seed-data")
+                            .status("APPROVED")
+                            .approvedAt(LocalDateTime.now())
                             .createdBy(nurse)
                             .build());
                 }
@@ -1020,12 +1152,17 @@ public class DataInitializer implements CommandLineRunner {
                 // EVENING → NIGHT 인수인계
                 if (shifts.size() >= 3) {
                     User nurse = deptNurses.get(random.nextInt(deptNurses.size()));
+                    String summary = summaryTemplates[random.nextInt(summaryTemplates.length)];
                     handovers.add(Handover.builder()
                             .department(dept)
                             .fromShift(shifts.get(1)) // EVENING
                             .toShift(shifts.get(2))   // NIGHT
                             .handoverDate(handoverDate)
-                            .aiSummary(summaryTemplates[random.nextInt(summaryTemplates.length)])
+                            .aiSummary(summary)
+                            .finalSummary(summary)
+                            .aiModel("seed-data")
+                            .status("APPROVED")
+                            .approvedAt(LocalDateTime.now())
                             .createdBy(nurse)
                             .build());
                 }
