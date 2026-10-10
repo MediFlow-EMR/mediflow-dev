@@ -82,10 +82,17 @@ public class HandoverService {
 
         log.info("수집된 환자 데이터 수: {}", patientDataList.size());
 
-        String prompt = buildPrompt(department, fromShift, patientDataList);
+        List<PatientData> recordedPatients = patientDataList.stream().filter(PatientData::hasData).toList();
+        if (recordedPatients.isEmpty()) {
+            return patientDataList.stream().map(this::missingRecordSummary).collect(Collectors.joining("\n\n"));
+        }
+        String prompt = buildPrompt(department, fromShift, recordedPatients);
         log.info("생성된 프롬프트 길이: {}", prompt.length());
         String deidentifiedSummary = geminiService.generateContent(prompt);
-        return restoreLocalPatientLabels(deidentifiedSummary, patientDataList);
+        String recordedSummary = restoreLocalPatientLabels(deidentifiedSummary, recordedPatients);
+        String missingSummary = patientDataList.stream().filter(data -> !data.hasData())
+                .map(this::missingRecordSummary).collect(Collectors.joining("\n\n"));
+        return missingSummary.isBlank() ? recordedSummary : recordedSummary + "\n\n" + missingSummary;
     }
 
     @Transactional(readOnly = true)
@@ -111,6 +118,7 @@ public class HandoverService {
         }
 
         PatientData patientData = collectPatientData(patient, shiftStart, shiftEnd);
+        if (!patientData.hasData()) return missingRecordSummary(patientData);
         List<PatientData> patientDataList = List.of(patientData);
         String prompt = buildPrompt(patient.getDepartment(), fromShift, patientDataList);
         String deidentifiedSummary = geminiService.generateContent(prompt);
@@ -132,14 +140,20 @@ public class HandoverService {
             restored = restored.replace(safeLabel, localLabel);
         }
 
-        // 모델이 가명 표기를 임의로 바꾸더라도 카드 순서에 따라 서버 내부 환자와 다시 연결한다.
-        // 이 처리는 외부 AI 호출이 끝난 뒤 병원 서버 안에서만 수행된다.
-        Pattern patientHeading = Pattern.compile("\\*\\*\\[[^\\n\\]]+\\]\\*\\*");
+        // AI가 반환한 식별자를 검증하며 응답 순서로 환자를 추측하지 않는다.
+        Pattern patientHeading = Pattern.compile("(?m)^(?:#{1,6}[\\t ]*)?(?:\\*\\*)?\\[([^\\n\\]]+)\\](?:\\*\\*)?[\\t ]*$");
         Matcher matcher = patientHeading.matcher(restored);
         StringBuffer normalized = new StringBuffer();
-        int patientIndex = 0;
-        while (matcher.find() && patientIndex < dataList.size()) {
-            Patient patient = dataList.get(patientIndex++).patient;
+        Set<Long> matchedPatients = new HashSet<>();
+        while (matcher.find()) {
+            String headingText = matcher.group(1);
+            Patient patient = dataList.stream().map(data -> data.patient)
+                    .filter(candidate -> headingText.contains("(" + candidate.getChartNumber() + ")"))
+                    .findFirst().orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST,
+                            "AI 응답의 환자 식별자가 일치하지 않습니다. 초안을 다시 생성해 주세요."));
+            if (!matchedPatients.add(patient.getId())) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 응답에 중복된 환자가 있습니다. 다시 생성해 주세요.");
+            }
             String gender = patient.getGender() == Gender.M ? "남" : "여";
             String heading = String.format(
                 "**[%s (%s, %d세/%s)]**",
@@ -148,7 +162,17 @@ public class HandoverService {
             matcher.appendReplacement(normalized, Matcher.quoteReplacement(heading));
         }
         matcher.appendTail(normalized);
+        if (matchedPatients.size() != dataList.size()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 응답에 환자 구분이 누락되었습니다. 다시 생성해 주세요.");
+        }
         return normalized.toString();
+    }
+
+    private String missingRecordSummary(PatientData data) {
+        Patient patient = data.patient;
+        return String.format("**[%s (%s, %d세/%s)]**\n- 주요 변화: 해당 근무조 기록 없음.\n"
+                        + "- 수행한 처치: 해당 근무조 기록 없음.\n- 지속 관찰 사항: 확인 가능한 기록이 없어 판단할 수 없음.",
+                patient.getName(), patient.getChartNumber(), patient.getAge(), patient.getGender() == Gender.M ? "남" : "여");
     }
 
     private PatientData collectPatientData(Patient patient, LocalDateTime start, LocalDateTime end) {
@@ -245,11 +269,14 @@ public class HandoverService {
         }
 
         sb.append("\n각 환자별로 다음 형식으로 인수인계문을 작성해줘:\n\n");
-        sb.append("[가명 환자 식별자 (나이/성별)]\n");
+        sb.append("**[환자-001 (나이/성별)]**\n");
         sb.append("- 주요 변화: 특이사항 및 상태 변화\n");
         sb.append("- 수행한 처치: 투약, 검사 등\n");
         sb.append("- 지속 관찰 사항: 다음 근무조에서 주의할 점\n\n");
-        sb.append("환자당 3-5문장, 중요한 환자는 더 자세히 작성. 간결하고 명확하게.");
+        sb.append("환자당 3-5문장, 중요한 환자는 더 자세히 작성. 간결하고 명확하게.\n");
+        sb.append("제공된 기록에 있는 사실만 요약하고 기록에 없는 수치, 약물, 처치, 환자명, 상태를 만들지 마세요.\n");
+        sb.append("누락된 정보는 '기록 없음'으로 표시하고 '정상', '안정적', '처치 완료'로 추정하지 마세요.\n");
+        sb.append("입력의 환자-001 등 가명 식별자를 그대로 사용하며 환자마다 반드시 **[식별자 (나이/성별)]** 제목을 작성하세요.");
 
         return sb.toString();
     }
