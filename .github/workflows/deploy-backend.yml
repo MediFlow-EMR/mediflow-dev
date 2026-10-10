@@ -52,11 +52,13 @@ jobs:
         working-directory: .
         shell: bash
         run: |
+          jq -n --arg command "sudo /opt/mediflow/bin/deploy.sh 's3://${{ vars.S3_DEPLOY_BUCKET }}/${{ steps.artifact.outputs.release_key }}'" \
+            '{commands: [$command]}' > "$RUNNER_TEMP/mediflow-ssm-parameters.json"
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ vars.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
             --comment "MediFlow ${GITHUB_SHA}" \
-            --parameters commands="sudo /opt/mediflow/bin/deploy.sh 's3://${{ vars.S3_DEPLOY_BUCKET }}/${{ steps.artifact.outputs.release_key }}'" \
+            --parameters "file://$RUNNER_TEMP/mediflow-ssm-parameters.json" \
             --query 'Command.CommandId' \
             --output text)
           echo "command_id=${COMMAND_ID}" >> "$GITHUB_OUTPUT"
