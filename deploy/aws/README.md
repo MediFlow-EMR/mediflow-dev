@@ -328,6 +328,12 @@ AWS 액세스 키를 환경변수에 추가하지 않습니다. 백엔드는 허
 완전한 오프라인 대체 기능은 아닙니다. 캐시 적중 로그는
 `Drug permit cache hit - itemSeq: ...`입니다.
 
+로그인한 사용자는 `/api/medications/drugs/{itemSeq}/detail`로 환자 처방과 독립적인
+품목번호 상세 조회를 할 수 있습니다. 캐시 사용 시 응답 `data.status`는
+`FOUND_PERMIT_CACHE`입니다. 미로그인 요청은 허용하지 않습니다.
+예: `https://api.mediflow-emr.cloud/api/medications/drugs/202602327/detail`.
+이는 카탈로그 조회일 뿐 해당 약을 환자에게 처방하거나 추천하는 기능이 아닙니다.
+
 EventBridge 예약과 Lambda 자동 배포는 아직 연결하지 않았습니다.
 사용할 실제 제품의 품목번호 목록을 확정하고 캐시 적중을 확인한 뒤 추가합니다.
 

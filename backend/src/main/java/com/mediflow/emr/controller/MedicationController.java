@@ -2,6 +2,7 @@ package com.mediflow.emr.controller;
 
 import com.mediflow.emr.dto.ApiResponse;
 import com.mediflow.emr.dto.DrugSearchResult;
+import com.mediflow.emr.dto.DrugDetailInfo;
 import com.mediflow.emr.dto.MedicationRequest;
 import com.mediflow.emr.dto.MedicationResponse;
 import com.mediflow.emr.entity.User;
@@ -124,5 +125,14 @@ public class MedicationController {
         
         List<DrugSearchResult> results = drugApiService.searchDrugs(keyword.trim());
         return ApiResponse.ok(results);
+    }
+
+    /** 품목번호로 허가정보 조회. 처방/환자 데이터를 변경하지 않는 약품 카탈로그 API. */
+    @GetMapping("/drugs/{itemSeq}/detail")
+    public ApiResponse<DrugDetailInfo> getDrugDetailByItemSeq(@PathVariable String itemSeq) {
+        if (!itemSeq.matches("[0-9]{9}")) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return ApiResponse.ok(drugApiService.getDrugDetailByItemSeq(itemSeq));
     }
 }

@@ -252,12 +252,57 @@ public class DrugApiService {
                         .findFirst().orElse(selected);
             }
 
+            return permitDetail(detail, drugName, cached.isPresent());
+        } catch (Exception exception) {
+            log.error("의약품 제품 허가정보 조회 실패 - drugName: {}, error: {}",
+                    drugName, exception.getMessage());
+            return unavailableDetail(drugName, "TEMPORARY_ERROR",
+                    "식약처 공공 API 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
+
+    public DrugDetailInfo getDrugDetailByItemSeq(String itemSeq) {
+        if (itemSeq == null || !itemSeq.matches("[0-9]{9}")) {
+            return unavailableDetail(itemSeq, "INVALID_ITEM_SEQ", "올바른 품목번호가 필요합니다.");
+        }
+        var cached = permitCache.find(itemSeq);
+        if (cached.isPresent()) {
+            return permitDetail(cached.get(), cached.get().getItemName(), true);
+        }
+        try {
+            var response = permitRestClient.get().uri(builder -> builder
+                    .path("/getDrugPrdtPrmsnDtlInq08")
+                    .queryParam("serviceKey", serviceKey)
+                    .queryParam("item_seq", itemSeq)
+                    .queryParam("pageNo", 1).queryParam("numOfRows", 10)
+                    .queryParam("type", "json").build())
+                    .accept(MediaType.APPLICATION_JSON).retrieve().body(DrugPermitApiResponse.class);
+            if (!isSuccessful(response) || response.getBody() == null || response.getBody().getItems() == null) {
+                return unavailableDetail(itemSeq, "TEMPORARY_ERROR", "허가정보 API 응답을 확인하지 못했습니다.");
+            }
+            var matches = response.getBody().getItems().stream()
+                    .filter(item -> itemSeq.equals(item.getItemSeq()))
+                    .filter(item -> item.getItemName() != null && !item.getItemName().isBlank())
+                    .filter(item -> item.getCancelName() == null || "정상".equals(item.getCancelName()))
+                    .toList();
+            if (matches.size() != 1) {
+                return unavailableDetail(itemSeq, "NOT_FOUND", "정상 허가된 해당 품목을 확인하지 못했습니다.");
+            }
+            return permitDetail(matches.getFirst(), matches.getFirst().getItemName(), false);
+        } catch (Exception error) {
+            // Do not log API exception messages containing a credential-bearing URL.
+            log.warn("품목번호 허가정보 조회 실패 - itemSeq: {}, type: {}", itemSeq, error.getClass().getSimpleName());
+            return unavailableDetail(itemSeq, "TEMPORARY_ERROR", "허가정보 API 연결이 원활하지 않습니다.");
+        }
+    }
+
+    private DrugDetailInfo permitDetail(DrugPermitApiResponse.Item detail, String requestedName, boolean cached) {
             return DrugDetailInfo.builder()
                     .available(true)
                     .source("식품의약품안전처 의약품 제품 허가정보")
-                    .status("FOUND_PERMIT")
-                    .message(cached.isPresent() ? "식약처 허가정보 캐시 조회 결과" : "전문의약품을 포함한 허가 품목 조회 결과")
-                    .requestedName(drugName)
+                    .status(cached ? "FOUND_PERMIT_CACHE" : "FOUND_PERMIT")
+                    .message(cached ? "식약처 허가정보 캐시 조회 결과" : "전문의약품을 포함한 허가 품목 조회 결과")
+                    .requestedName(requestedName)
                     .itemSeq(detail.getItemSeq())
                     .itemName(detail.getItemName())
                     .entpName(detail.getEntpName())
@@ -266,12 +311,6 @@ public class DrugApiService {
                     .atpnQesitm(stripDocumentMarkup(detail.getCautionDocument()))
                     .depositMethodQesitm(detail.getStorageMethod())
                     .build();
-        } catch (Exception exception) {
-            log.error("의약품 제품 허가정보 조회 실패 - drugName: {}, error: {}",
-                    drugName, exception.getMessage());
-            return unavailableDetail(drugName, "TEMPORARY_ERROR",
-                    "식약처 공공 API 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
-        }
     }
 
     private boolean isSuccessful(DrugPermitApiResponse response) {
