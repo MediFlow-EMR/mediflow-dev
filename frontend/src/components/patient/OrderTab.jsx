@@ -558,9 +558,11 @@ const OrderTab = ({ patientId }) => {
               ) : selectedOrder.drugInfo ? (
                 <div className={styles.noInfo}>
                   <strong>
-                    {selectedOrder.drugInfo.status === 'NOT_COVERED'
-                      ? '현재 데이터셋 미수록 품목'
-                      : '공공 API 조회 실패'}
+                    {{
+                      NOT_COVERED: '현재 데이터셋 미수록 품목',
+                      NOT_FOUND: '일치하는 허가품목 확인 필요',
+                      AMBIGUOUS_MATCH: '제품명과 함량 확인 필요',
+                    }[selectedOrder.drugInfo.status] || '공공 API 조회 실패'}
                   </strong>
                   <p>{selectedOrder.drugInfo.message}</p>
                   <span>조회명: {selectedOrder.drugInfo.requestedName}</span>
