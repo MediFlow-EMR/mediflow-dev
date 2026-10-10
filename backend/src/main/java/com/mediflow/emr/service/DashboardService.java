@@ -257,8 +257,26 @@ public class DashboardService {
         // 현재 근무조
         ShiftType currentShiftType = getCurrentShiftType();
         String shiftTypeName = getShiftTypeName(currentShiftType);
+        LocalDate today = LocalDate.now();
+        ShiftType nextShiftType = switch (currentShiftType) {
+            case DAY -> ShiftType.EVENING;
+            case EVENING -> ShiftType.NIGHT;
+            case NIGHT -> ShiftType.DAY;
+        };
+        Shift currentShift = shiftRepository.findByDateAndType(today, currentShiftType).orElse(null);
+        Shift nextShift = shiftRepository.findByDateAndType(today, nextShiftType).orElse(null);
+        // 근무조 ID는 날짜별로 다르며, 다음 시작 시간이 앞서면 다음 날짜의 근무조를 사용한다.
+        if (currentShift != null && nextShift != null
+                && !nextShift.getStartTime().isAfter(currentShift.getStartTime())) {
+            nextShift = shiftRepository.findByDateAndType(today.plusDays(1), nextShiftType).orElse(null);
+        }
+        Long shiftId = currentShift == null ? null : currentShift.getId();
+        Long nextShiftId = nextShift == null ? null : nextShift.getId();
 
         return DepartmentSummaryResponse.builder()
+                .departmentId(nurse.getDepartment().getId())
+                .shiftId(shiftId)
+                .nextShiftId(nextShiftId)
                 .departmentName(nurse.getDepartment().getName())
                 .departmentCode(nurse.getDepartment().getCode().toUpperCase()) // 부서 코드 대문자 변환
                 .totalPatients(totalPatients)

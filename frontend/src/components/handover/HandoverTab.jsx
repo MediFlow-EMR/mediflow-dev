@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { HandoverService } from '../../services/handoverService';
 import { useAuthStore } from '../../stores/authStore';
 import useDashboardStore from '../../stores/useDashboardStore';
@@ -25,7 +25,12 @@ const parsePatientSections = (summary) => {
 
 const HandoverTab = () => {
   const { user } = useAuthStore();
-  const { myPatients, allPatients } = useDashboardStore();
+  const { myPatients, allPatients, departmentSummary } = useDashboardStore();
+  const currentShiftType = departmentSummary?.shiftType?.toUpperCase();
+  const currentShiftId = departmentSummary?.shiftId;
+  const nextShiftId = departmentSummary?.nextShiftId;
+  const departmentId = departmentSummary?.departmentId || user?.department?.id;
+  const nextShiftType = { DAY: 'EVENING', EVENING: 'NIGHT', NIGHT: 'DAY' }[currentShiftType];
   const [activeTab, setActiveTab] = useState('previous');
   const [aiSummary, setAiSummary] = useState('');
   const [editedSummary, setEditedSummary] = useState('');
@@ -41,17 +46,12 @@ const HandoverTab = () => {
   const [expandedHandoverId, setExpandedHandoverId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === 'previous') {
-      loadPreviousHandovers();
-    }
-  }, [activeTab]);
-
-  const loadPreviousHandovers = async () => {
+  const loadPreviousHandovers = useCallback(async () => {
+    if (!departmentId) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await HandoverService.getHandoversByDepartment(user?.department?.id || 1);
+      const response = await HandoverService.getHandoversByDepartment(departmentId);
       if (response.success && response.data.length > 0) {
         const formatted = response.data.map(h => ({
           id: h.id,
@@ -75,22 +75,26 @@ const HandoverTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [departmentId]);
+
+  useEffect(() => {
+    if (activeTab === 'previous') {
+      loadPreviousHandovers();
+    }
+  }, [activeTab, loadPreviousHandovers]);
 
   const handleGenerateAiSummary = async () => {
+    if (!currentShiftId) {
+      setError('현재 근무조 정보를 불러온 뒤 다시 시도해 주세요.');
+      return;
+    }
     setIsGenerating(true);
     setError(null);
 
-    console.log('=== AI 인수인계 생성 요청 ===');
-    console.log('사용자 정보:', user);
-    console.log('사용자 ID:', user?.id);
-    console.log('부서 ID:', user?.department?.id);
-    console.log('요청 파라미터 - departmentId:', user?.department?.id || 1, 'fromShiftId: 1');
-
     try {
       const response = await HandoverService.generateAiSummary({
-        departmentId: user?.department?.id || 1,
-        fromShiftId: 1
+        departmentId,
+        fromShiftId: currentShiftId
       });
 
       if (response.success) {
@@ -106,6 +110,10 @@ const HandoverTab = () => {
   };
 
   const handleSave = async () => {
+    if (!currentShiftId || !nextShiftId) {
+      setError('현재 근무조 정보를 불러온 뒤 다시 시도해 주세요.');
+      return;
+    }
     if (!editedSummary.trim()) {
       setError('인수인계 내용을 입력해주세요');
       return;
@@ -116,9 +124,9 @@ const HandoverTab = () => {
 
     try {
       const response = await HandoverService.saveHandover({
-        departmentId: user?.department?.id || 1,
-        fromShiftId: 1,
-        toShiftId: 2,
+        departmentId,
+        fromShiftId: currentShiftId,
+        toShiftId: nextShiftId,
         aiDraft: aiSummary,
         finalSummary: editedSummary
       });
@@ -191,7 +199,7 @@ const HandoverTab = () => {
     try {
       const response = await HandoverService.regeneratePatientAiSummary({
         patientId: patient.patientId,
-        fromShiftId: 1
+        fromShiftId: currentShiftId
       });
       const regeneratedSections = parsePatientSections(response.data);
       const regeneratedBody = regeneratedSections[0]?.body || response.data.trim();
@@ -314,7 +322,7 @@ const HandoverTab = () => {
             <div className={styles.summarySection}>
               <div className={styles.summaryHeader}>
                 <div>
-                  <span className={styles.eyebrow}>DAY → EVENING</span>
+                  <span className={styles.eyebrow}>{currentShiftType} → {nextShiftType}</span>
                   <h3>AI 인수인계 초안</h3>
                 </div>
                 <div className={styles.draftMeta}>

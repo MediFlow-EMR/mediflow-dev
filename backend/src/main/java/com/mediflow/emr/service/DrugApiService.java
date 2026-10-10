@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -118,7 +117,7 @@ public class DrugApiService {
                             .path("/getDrbEasyDrugList")
                             .queryParam("serviceKey", serviceKey)
                             .queryParam("pageNo", 1)
-                            .queryParam("numOfRows", 1)
+                            .queryParam("numOfRows", 20)
                             .queryParam("type", "json")
                             .queryParam("itemName", apiSearchName)
                             .build())
@@ -148,7 +147,16 @@ public class DrugApiService {
                 return getPermitDrugDetail(drugName, apiSearchName);
             }
 
-            DrugApiResponse.DrugItem item = response.getBody().getItems().getFirst();
+            List<DrugApiResponse.DrugItem> matchingItems = response.getBody().getItems().stream()
+                    .filter(candidate -> matchesRequestedProduct(candidate.getItemName(), apiSearchName))
+                    .toList();
+            if (matchingItems.isEmpty()) {
+                return getPermitDrugDetail(drugName, apiSearchName);
+            }
+            if (matchingItems.size() > 1) {
+                return ambiguousDetail(drugName);
+            }
+            DrugApiResponse.DrugItem item = matchingItems.getFirst();
             log.info("약품 상세 정보 조회 성공 - drugName: {}, itemName: {}", drugName, item.getItemName());
 
             return com.mediflow.emr.dto.DrugDetailInfo.builder()
@@ -202,10 +210,18 @@ public class DrugApiService {
                         "e약은요와 의약품 제품 허가정보에서 일치하는 품목을 찾지 못했습니다.");
             }
 
-            DrugPermitApiResponse.Item selected = listResponse.getBody().getItems().stream()
+            List<DrugPermitApiResponse.Item> matchingItems = listResponse.getBody().getItems().stream()
                     .filter(item -> item.getCancelName() == null || "정상".equals(item.getCancelName()))
-                    .max(Comparator.comparingInt(item -> permitMatchScore(item, apiSearchName)))
-                    .orElse(listResponse.getBody().getItems().getFirst());
+                    .filter(item -> matchesRequestedProduct(item.getItemName(), apiSearchName))
+                    .toList();
+            if (matchingItems.isEmpty()) {
+                return unavailableDetail(drugName, "NOT_FOUND",
+                        "처방명과 일치하는 허가품목을 확인하지 못했습니다. 정확한 제품명과 함량으로 조회해 주세요.");
+            }
+            if (matchingItems.size() > 1) {
+                return ambiguousDetail(drugName);
+            }
+            DrugPermitApiResponse.Item selected = matchingItems.getFirst();
 
             DrugPermitApiResponse detailResponse = permitRestClient.get()
                     .uri(uriBuilder -> uriBuilder
@@ -264,20 +280,23 @@ public class DrugApiService {
         return drugName.replaceFirst("\\s*\\([^)]*\\)\\s*$", "").trim();
     }
 
-    private int permitMatchScore(DrugPermitApiResponse.Item item, String requestedName) {
-        String itemName = item.getItemName() == null ? "" : item.getItemName();
-        String requested = requestedName == null ? "" : requestedName;
-        int score = itemName.contains(requested) ? 100 : 0;
+    // 성분명·제형만 비슷한 검색 결과를 동일 제품으로 간주하지 않는다.
+    // 괄호 안 성분 설명은 제외하고, 제품명 뒤의 함량 표기만 허용한다.
+    static boolean matchesRequestedProduct(String itemName, String requestedName) {
+        if (itemName == null || requestedName == null || requestedName.isBlank()) return false;
+        if (itemName.contains("수출용") || itemName.contains("수출명")) return false;
+        String product = itemName.split("[（(]", 2)[0].replaceAll("\\s+", "");
+        String requested = requestedName.replaceAll("\\s+", "");
+        if (product.equalsIgnoreCase(requested)) return true;
+        if (product.length() <= requested.length()
+                || !product.regionMatches(true, 0, requested, 0, requested.length())) return false;
+        return !Character.isDigit(requested.charAt(requested.length() - 1))
+                && Character.isDigit(product.charAt(requested.length()));
+    }
 
-        if (requested.endsWith("정") && itemName.contains("정")) score += 45;
-        if (requested.endsWith("캡슐") && itemName.contains("캡슐")) score += 45;
-        if (requested.endsWith("시럽") && itemName.contains("시럽")) score += 45;
-        if (requested.endsWith("흡입액") && itemName.contains("흡입")) score += 45;
-        if (requested.endsWith("주") && itemName.contains("주")) score += 45;
-        if (itemName.contains("수출용")) score -= 30;
-        if (itemName.contains("수출명")) score -= 20;
-
-        return score;
+    private DrugDetailInfo ambiguousDetail(String drugName) {
+        return unavailableDetail(drugName, "AMBIGUOUS_MATCH",
+                "여러 허가품목이 검색되어 제품을 확정할 수 없습니다. 정확한 제품명과 함량으로 조회해 주세요.");
     }
 
     private String stripDocumentMarkup(String document) {

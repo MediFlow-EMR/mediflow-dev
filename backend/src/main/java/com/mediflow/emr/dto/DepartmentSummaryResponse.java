@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DepartmentSummaryResponse {
+    private Long departmentId;
+    private Long shiftId;
+    private Long nextShiftId;
 
     /** 부서명 */
     private String departmentName;
