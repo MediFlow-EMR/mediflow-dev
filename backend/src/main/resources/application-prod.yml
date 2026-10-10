@@ -100,6 +100,12 @@ drug-api:
 drug-permit-api:
   base-url: https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08
 
+drug-cache:
+  enabled: ${DRUG_CACHE_ENABLED:false}
+  bucket: ${DRUG_CACHE_BUCKET:}
+  region: ${DRUG_CACHE_REGION:ap-northeast-2}
+  max-age-hours: ${DRUG_CACHE_MAX_AGE_HOURS:48}
+
 # Gemini API
 gemini:
   api-key: ${GEMINI_API_KEY}

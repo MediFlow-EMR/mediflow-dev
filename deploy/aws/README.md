@@ -269,7 +269,7 @@ EventBridge(매일 새벽)
   → Lambda(Java 21 또는 Python 3.12)
   → 식약처 공개 API
   → private S3 drug-cache/*.json
-  → Spring Boot 조회 실패 시 캐시 fallback
+  → Spring Boot에서 허가품목 확인 후 상세정보 캐시 우선 조회
 ```
 
 이 방식은 환자정보를 Lambda로 전송하지 않고도 다음 내용을 포트폴리오에서 설명할 수 있습니다.
@@ -280,7 +280,56 @@ EventBridge(매일 새벽)
 - CloudWatch 로그/알람
 - 최소 권한 IAM
 
-기본 배포 성공 후 별도 브랜치에서 추가합니다.
+현재 구현은 품목번호 1개를 테스트 이벤트로 조회·저장하는 단계입니다.
+Lambda 소스는 `deploy/lambda/drug-cache/lambda_function.py`입니다.
+환자정보나 API 인증키를 이벤트 JSON에 넣지 않습니다.
+
+### Lambda 기본 설정
+
+- Python 3.12, 메모리 256 MB, 제한 시간 120초, VPC 미연결
+- 환경변수 `CACHE_BUCKET`: 비공개 배포 버킷 이름
+- 환경변수 `CACHE_PREFIX`: `drug-cache/`
+- 환경변수 `DRUG_API_SERVICE_KEY`: 공공데이터포털 Decoding 인증키 (Git에 저장 금지)
+- 실행 역할: 기본 로그 권한 + 해당 버킷 `drug-cache/*`에만 `s3:PutObject`
+- 테스트 이벤트: `{"item_seq":"202602327"}` (저장 검증용, 처방 매핑용 아님)
+- `CACHED`와 `stored: true` 확인 후 S3 객체가 생성되었는지 확인
+
+### EC2 백엔드 연결
+
+EC2 역할 `mediflow-ec2-role`에 아래 인라인 정책을 추가합니다.
+Lambda 실행 역할의 쓰기 정책은 그대로 유지합니다.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::mediflow-deploy-hjk3277-apne2-157325288484-ap-northeast-2-an/drug-cache/*"
+  }]
+}
+```
+
+EC2 `/etc/mediflow/mediflow.env`에서 다음 값을 설정하고 서비스를 재시작합니다.
+
+```dotenv
+DRUG_CACHE_ENABLED=true
+DRUG_CACHE_BUCKET=mediflow-deploy-hjk3277-apne2-157325288484-ap-northeast-2-an
+DRUG_CACHE_REGION=ap-northeast-2
+DRUG_CACHE_MAX_AGE_HOURS=48
+```
+
+캐시는 기본적으로 비활성화되어 있습니다. EC2 인스턴스 역할로만 인증하므로
+AWS 액세스 키를 환경변수에 추가하지 않습니다. 백엔드는 허가품목 검색으로
+유일한 품목번호를 먼저 확인하고 상세조회에서만 캐시를 사용합니다.
+품목번호·제품명·정상 허가 상태·스키마·출처·조회시간을 검증하며,
+48시간 초과/미래 날짜/손상된 객체/권한 오류/캐시 미존재는 공공 API 상세조회로 돌아갑니다.
+따라서 현재는 상세 API 호출을 줄이는 캐시이며, 검색 API까지 장애가 난 경우의
+완전한 오프라인 대체 기능은 아닙니다. 캐시 적중 로그는
+`Drug permit cache hit - itemSeq: ...`입니다.
+
+EventBridge 예약과 Lambda 자동 배포는 아직 연결하지 않았습니다.
+사용할 실제 제품의 품목번호 목록을 확정하고 캐시 적중을 확인한 뒤 추가합니다.
 
 ## 10. 배포 완료 확인
 

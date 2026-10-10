@@ -29,10 +29,13 @@ public class DrugApiService {
 
     private final RestClient restClient;
     private final RestClient permitRestClient;
+    private final DrugPermitCache permitCache;
 
     public DrugApiService(
             @Value("${drug-api.base-url}") String baseUrl,
-            @Value("${drug-permit-api.base-url:https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08}") String permitBaseUrl) {
+            @Value("${drug-permit-api.base-url:https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08}") String permitBaseUrl,
+            DrugPermitCache permitCache) {
+        this.permitCache = permitCache;
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .build();
@@ -222,8 +225,10 @@ public class DrugApiService {
                 return ambiguousDetail(drugName);
             }
             DrugPermitApiResponse.Item selected = matchingItems.getFirst();
+            var cached = permitCache.find(selected.getItemSeq())
+                    .filter(item -> matchesRequestedProduct(item.getItemName(), apiSearchName));
 
-            DrugPermitApiResponse detailResponse = permitRestClient.get()
+            DrugPermitApiResponse detailResponse = cached.isPresent() ? null : permitRestClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/getDrugPrdtPrmsnDtlInq08")
                             .queryParam("serviceKey", serviceKey)
@@ -236,18 +241,22 @@ public class DrugApiService {
                     .retrieve()
                     .body(DrugPermitApiResponse.class);
 
-            DrugPermitApiResponse.Item detail = selected;
+            DrugPermitApiResponse.Item detail = cached.orElse(selected);
             if (isSuccessful(detailResponse) && detailResponse.getBody() != null
                     && detailResponse.getBody().getItems() != null
                     && !detailResponse.getBody().getItems().isEmpty()) {
-                detail = detailResponse.getBody().getItems().getFirst();
+                detail = detailResponse.getBody().getItems().stream()
+                        .filter(item -> selected.getItemSeq().equals(item.getItemSeq()))
+                        .filter(item -> item.getCancelName() == null || "정상".equals(item.getCancelName()))
+                        .filter(item -> matchesRequestedProduct(item.getItemName(), apiSearchName))
+                        .findFirst().orElse(selected);
             }
 
             return DrugDetailInfo.builder()
                     .available(true)
                     .source("식품의약품안전처 의약품 제품 허가정보")
                     .status("FOUND_PERMIT")
-                    .message("전문의약품을 포함한 허가 품목 조회 결과")
+                    .message(cached.isPresent() ? "식약처 허가정보 캐시 조회 결과" : "전문의약품을 포함한 허가 품목 조회 결과")
                     .requestedName(drugName)
                     .itemSeq(detail.getItemSeq())
                     .itemName(detail.getItemName())
