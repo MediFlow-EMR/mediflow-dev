@@ -97,7 +97,7 @@ const SignUpForm = () => {
                             <button
                                 className={styles.signUpCompleteBtn}
                                 onClick={handleSignUpComplete}
-                                disabled={isLoading}
+                                disabled={isLoading || !isPasswordValid}
                             >
                                 {isLoading ? '처리 중...' : '회원가입 완료'}
                             </button>

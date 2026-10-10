@@ -13,6 +13,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DrugDetailInfo {
+    private boolean available;
+    private String source;
+    private String status;
+    private String message;
+    private String requestedName;
     private String itemSeq;        // 품목기준코드
     private String itemName;       // 약품명
     private String entpName;       // 제조사

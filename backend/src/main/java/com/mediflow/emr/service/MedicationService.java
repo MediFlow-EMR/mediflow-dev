@@ -3,11 +3,13 @@ package com.mediflow.emr.service;
 import com.mediflow.emr.dto.MedicationRequest;
 import com.mediflow.emr.dto.MedicationResponse;
 import com.mediflow.emr.entity.Medication;
+import com.mediflow.emr.entity.MedicalOrder;
 import com.mediflow.emr.entity.Patient;
 import com.mediflow.emr.entity.User;
 import com.mediflow.emr.exception.BusinessException;
 import com.mediflow.emr.exception.ErrorCode;
 import com.mediflow.emr.repository.MedicationRepository;
+import com.mediflow.emr.repository.MedicalOrderRepository;
 import com.mediflow.emr.repository.PatientRepository;
 import com.mediflow.emr.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,9 @@ public class MedicationService {
     private final MedicationRepository medicationRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final PatientAccessService patientAccessService;
+    private final MedicalOrderRepository medicalOrderRepository;
+    private final ClinicalAuditService clinicalAuditService;
 
     /**
      * 투약 기록 등록
@@ -44,8 +49,19 @@ public class MedicationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 환자 조회
-        Patient patient = patientRepository.findById(request.patientId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        Patient patient = patientAccessService.requireAccessiblePatient(nurseId, request.patientId());
+
+        MedicalOrder order = medicalOrderRepository.findById(request.orderId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (!order.getPatient().getId().equals(patient.getId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "선택한 처방과 환자가 일치하지 않습니다");
+        }
+        if (!"MEDICATION".equals(order.getOrderType())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "투약 처방만 투약 수행으로 기록할 수 있습니다");
+        }
+        if ("COMPLETED".equals(order.getStatus()) || "CANCELLED".equals(order.getStatus())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "이미 완료되었거나 취소된 처방입니다");
+        }
 
         // 투약 시간 (요청에 없으면 현재 시간)
         LocalDateTime administeredAt = request.administeredAt() != null 
@@ -61,16 +77,22 @@ public class MedicationService {
         Medication medication = Medication.builder()
                 .patient(patient)
                 .nurse(nurse)
-                .drugName(request.drugName())
-                .drugCode(request.drugCode())
-                .dose(request.dose())
-                .route(request.route())
-                .frequency(request.frequency())
+                .medicalOrder(order)
+                .drugName(order.getOrderName())
+                .drugCode(order.getOrderCode())
+                .dose(order.getDose())
+                .route(parseRoute(order.getRoute()))
+                .frequency(order.getFrequency())
                 .administeredAt(administeredAt)
-                .orderDoctor(request.orderDoctor())
+                .orderDoctor(order.getOrderDoctor())
+                .administrationNotes(request.notes())
                 .build();
 
         Medication saved = medicationRepository.save(medication);
+        order.updateStatus("COMPLETED", nurse.getName());
+        medicalOrderRepository.save(order);
+        clinicalAuditService.record(nurseId, patient.getId(), "ADMINISTER",
+                "MEDICATION", saved.getId(), "orderId=" + order.getId());
         log.info("투약 기록 등록 완료 - id: {}", saved.getId());
 
         return toResponse(saved, nurseId);
@@ -83,9 +105,7 @@ public class MedicationService {
         log.info("환자 투약 목록 조회 - patientId: {}, currentUserId: {}", patientId, currentUserId);
 
         // 환자 존재 확인
-        if (!patientRepository.existsById(patientId)) {
-            throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
 
         List<Medication> medications = medicationRepository.findByPatientIdOrderByAdministeredAtDesc(patientId);
         log.info("조회된 투약 기록 수: {}", medications.size());
@@ -182,6 +202,7 @@ public class MedicationService {
         return MedicationResponse.builder()
                 .id(medication.getId())
                 .patientId(medication.getPatient().getId())
+                .orderId(medication.getMedicalOrder() == null ? null : medication.getMedicalOrder().getId())
                 .patientName(medication.getPatient().getName())
                 .nurseId(medication.getNurse().getId())
                 .nurseName(medication.getNurse().getName())
@@ -192,8 +213,17 @@ public class MedicationService {
                 .frequency(medication.getFrequency())
                 .administeredAt(medication.getAdministeredAt())
                 .orderDoctor(medication.getOrderDoctor())
+                .notes(medication.getAdministrationNotes())
                 .createdAt(medication.getCreatedAt())
                 .canEdit(canEdit)
                 .build();
+    }
+
+    private com.mediflow.emr.entity.enums.MedicationRoute parseRoute(String route) {
+        try {
+            return com.mediflow.emr.entity.enums.MedicationRoute.valueOf(route);
+        } catch (RuntimeException exception) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "처방의 투약 경로가 올바르지 않습니다");
+        }
     }
 }

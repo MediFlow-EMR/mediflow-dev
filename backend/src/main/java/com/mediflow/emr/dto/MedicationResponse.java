@@ -19,6 +19,7 @@ public class MedicationResponse {
 
     private Long id;
     private Long patientId;
+    private Long orderId;
     private String patientName;
     private Long nurseId;
     private String nurseName;
@@ -29,6 +30,7 @@ public class MedicationResponse {
     private String frequency;
     private LocalDateTime administeredAt;
     private String orderDoctor;
+    private String notes;
     private LocalDateTime createdAt;
     
     /** 현재 사용자가 수정 가능한지 여부 */

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -56,6 +57,9 @@ public class MyPatientResponse {
     /** 최근 바이탈 - 체온 */
     private Double bodyTemp;
 
+    /** 최근 바이탈 - 호흡수 */
+    private Integer respiratoryRate;
+
     /** 최근 바이탈 - 산소포화도 */
     private Integer spo2;
 
@@ -67,4 +71,12 @@ public class MyPatientResponse {
 
     /** 부서 코드 */
     private String departmentCode;
+
+    /** 현재 입원 맥락 */
+    private LocalDate admissionDate;
+    private String roomNumber;
+    private String bedNumber;
+    private String attendingPhysician;
+    private Boolean fallRisk;
+    private String isolationType;
 }

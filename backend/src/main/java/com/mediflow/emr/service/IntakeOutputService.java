@@ -31,6 +31,7 @@ public class IntakeOutputService {
     private final IntakeOutputRepository intakeOutputRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final PatientAccessService patientAccessService;
 
     /**
      * 섭취배설량 등록
@@ -44,8 +45,7 @@ public class IntakeOutputService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 환자 조회
-        Patient patient = patientRepository.findById(request.patientId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+        Patient patient = patientAccessService.requireAccessiblePatient(nurseId, request.patientId());
 
         // 기록 시간 (요청에 없으면 현재 시간)
         LocalDateTime recordedAt = request.recordedAt() != null 
@@ -81,9 +81,7 @@ public class IntakeOutputService {
         log.info("환자 섭취배설량 목록 조회 - patientId: {}, currentUserId: {}", patientId, currentUserId);
 
         // 환자 존재 확인
-        if (!patientRepository.existsById(patientId)) {
-            throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
+        patientAccessService.requireAccessiblePatient(currentUserId, patientId);
 
         List<IntakeOutput> records = intakeOutputRepository.findByPatientIdOrderByRecordedAtDesc(patientId);
         log.info("조회된 I/O 기록 수: {}", records.size());

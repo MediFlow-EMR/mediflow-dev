@@ -4,9 +4,12 @@ import com.mediflow.emr.dto.ApiResponse;
 import com.mediflow.emr.dto.MedicalOrderRequest;
 import com.mediflow.emr.dto.MedicalOrderResponse;
 import com.mediflow.emr.service.MedicalOrderService;
+import com.mediflow.emr.service.PatientAccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,14 +21,18 @@ import java.util.List;
 public class MedicalOrderController {
 
     private final MedicalOrderService medicalOrderService;
+    private final PatientAccessService patientAccessService;
 
     /**
      * 환자별 오더 목록 조회
      */
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<ApiResponse<List<MedicalOrderResponse>>> getOrdersByPatient(
+            Authentication authentication,
             @PathVariable Long patientId) {
         log.info("환자 오더 목록 조회 요청: patientId={}", patientId);
+        Long userId = patientAccessService.requireUserId(authentication.getName());
+        patientAccessService.requireAccessiblePatient(userId, patientId);
         List<MedicalOrderResponse> orders = medicalOrderService.getOrdersByPatient(patientId);
         return ResponseEntity.ok(ApiResponse.ok(orders));
     }
@@ -34,9 +41,13 @@ public class MedicalOrderController {
      * 오더 등록
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<MedicalOrderResponse>> createOrder(
+            Authentication authentication,
             @RequestBody MedicalOrderRequest request) {
         log.info("오더 등록 요청: {}", request);
+        Long userId = patientAccessService.requireUserId(authentication.getName());
+        patientAccessService.requireAccessiblePatient(userId, request.getPatientId());
         MedicalOrderResponse order = medicalOrderService.createOrder(request);
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -46,11 +57,12 @@ public class MedicalOrderController {
      */
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<MedicalOrderResponse>> updateOrderStatus(
+            Authentication authentication,
             @PathVariable Long orderId,
-            @RequestParam String status,
-            @RequestParam(required = false) String completedBy) {
+            @RequestParam String status) {
         log.info("오더 상태 변경 요청: orderId={}, status={}", orderId, status);
-        MedicalOrderResponse order = medicalOrderService.updateOrderStatus(orderId, status, completedBy);
+        Long userId = patientAccessService.requireUserId(authentication.getName());
+        MedicalOrderResponse order = medicalOrderService.updateOrderStatus(orderId, status, userId);
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
 
@@ -58,6 +70,7 @@ public class MedicalOrderController {
      * 오더 삭제
      */
     @DeleteMapping("/{orderId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable Long orderId) {
         log.info("오더 삭제 요청: orderId={}", orderId);
         medicalOrderService.deleteOrder(orderId);

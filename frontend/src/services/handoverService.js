@@ -13,13 +13,24 @@ export const HandoverService = {
     return { success: true, data: response.data.data };
   },
 
-  saveHandover: async ({ departmentId, fromShiftId, toShiftId, aiSummary }) => {
+  regeneratePatientAiSummary: async ({ patientId, fromShiftId }) => {
+    const response = await apiClient.post(
+      `/handovers/ai-summary/patient/${patientId}`,
+      null,
+      {
+        params: { fromShiftId },
+        withCredentials: true
+      }
+    );
+    return { success: true, data: response.data.data };
+  },
+
+  saveHandover: async ({ departmentId, fromShiftId, toShiftId, aiDraft, finalSummary }) => {
     const response = await apiClient.post(
       `/handovers`,
-      aiSummary,
+      { departmentId, fromShiftId, toShiftId, aiDraft, finalSummary },
       {
-        params: { departmentId, fromShiftId, toShiftId },
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         withCredentials: true
       }
     );

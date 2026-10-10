@@ -72,11 +72,14 @@ public class VitalController {
      */
     @GetMapping("/patient/{patientId}/latest")
     public ApiResponse<VitalSignResponse> getLatestVital(
+            Authentication authentication,
             @PathVariable Long patientId
     ) {
         log.info("최근 바이탈 조회 - patientId: {}", patientId);
-        
-        VitalSignResponse vital = vitalService.getLatestVital(patientId);
+
+        User user = userRepository.findByProviderId(authentication.getName())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        VitalSignResponse vital = vitalService.getLatestVital(patientId, user.getId());
         return ApiResponse.ok(vital);
     }
 

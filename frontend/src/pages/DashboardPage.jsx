@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import useDashboardStore from '../stores/useDashboardStore';
 import PatientCard from '../components/dashboard/PatientCard';
 import PatientDetail from '../components/dashboard/PatientDetail';
@@ -31,6 +31,8 @@ import styles from './DashboardPage.module.scss';
  * ===================================================================
  */
 const DashboardPage = () => {
+  const PATIENTS_PER_PAGE = 5;
+  const [patientPage, setPatientPage] = useState(1);
   const {
     myPatients,
     allPatients,
@@ -61,7 +63,7 @@ const DashboardPage = () => {
     // [탭 클릭] activeTab = 'all' → fetchAllPatients() 호출
     if (activeTab === 'my') {
       fetchMyPatients();
-    } else {
+    } else if (activeTab === 'all') {
       fetchAllPatients();
     }
 
@@ -71,9 +73,36 @@ const DashboardPage = () => {
   // 현재 탭에 따라 표시할 환자 목록 선택
   // (API에서 받아온 데이터 중 어떤 것을 보여줄지 결정)
   const displayPatients = activeTab === 'my' ? myPatients : allPatients;
+  const totalPatientPages = Math.max(1, Math.ceil(displayPatients.length / PATIENTS_PER_PAGE));
+  const visiblePatients = useMemo(() => {
+    const start = (patientPage - 1) * PATIENTS_PER_PAGE;
+    return displayPatients.slice(start, start + PATIENTS_PER_PAGE);
+  }, [displayPatients, patientPage]);
+
+  useEffect(() => {
+    setPatientPage(1);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (patientPage > totalPatientPages) {
+      setPatientPage(totalPatientPages);
+    }
+  }, [patientPage, totalPatientPages]);
+
+  useEffect(() => {
+    if (activeTab === 'handover' || loading) return;
+
+    const selectedPatientIsVisible = displayPatients.some(
+      (patient) => patient.patientId === selectedPatient?.patientId
+    );
+
+    if (!selectedPatientIsVisible) {
+      selectPatient(displayPatients[0] || null);
+    }
+  }, [activeTab, displayPatients, loading, selectedPatient?.patientId, selectPatient]);
 
   return (
-    <div className={styles.dashboardPage}>
+    <div className={`${styles.dashboardPage} ${activeTab === 'handover' ? styles.handoverMode : ''}`}>
       {/* 좌측 패널 - 환자 목록 */}
       <div className={styles.leftPanel}>
 
@@ -101,7 +130,6 @@ const DashboardPage = () => {
                   인수인계
                 </button>
               </div>
-              <span className={styles.count}>{displayPatients.length}명</span>
             </div>
 
             {loading && <div className={styles.loading}>로딩중...</div>}
@@ -117,7 +145,7 @@ const DashboardPage = () => {
             {!loading &&
               !error &&
               activeTab !== 'handover' &&
-              displayPatients.map((patient) => (
+              visiblePatients.map((patient) => (
                 <PatientCard
                   key={patient.patientId}
                   patient={patient}
@@ -125,6 +153,34 @@ const DashboardPage = () => {
                   onClick={() => selectPatient(patient)}
                 />
               ))}
+
+            {!loading && !error && activeTab !== 'handover' && displayPatients.length > 0 && (
+              <div className={styles.pagination}>
+                <button
+                  type="button"
+                  aria-label="이전 환자 목록"
+                  onClick={() => setPatientPage((page) => Math.max(1, page - 1))}
+                  disabled={patientPage === 1}
+                >
+                  ‹
+                </button>
+                <div className={styles.pageStatus}>
+                  <strong>{patientPage}</strong> / {totalPatientPages}
+                  <span>
+                    {((patientPage - 1) * PATIENTS_PER_PAGE) + 1}–
+                    {Math.min(patientPage * PATIENTS_PER_PAGE, displayPatients.length)} / {displayPatients.length}명
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="다음 환자 목록"
+                  onClick={() => setPatientPage((page) => Math.min(totalPatientPages, page + 1))}
+                  disabled={patientPage === totalPatientPages}
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -210,13 +210,13 @@ const VitalTab = ({ patientId }) => {
   };
 
   if (loading && vitals.length === 0) {
-    return <div className={styles.loading}>바이탈 정보를 불러오는 중...</div>;
+    return <div className={styles.loading}>V/S 정보를 불러오는 중...</div>;
   }
 
   return (
     <div className={styles.vitalTab}>
       <div className={styles.header}>
-        <h3>바이탈 사인</h3>
+        <h3>V/S</h3>
         <div className={styles.headerButtons}>
           <button 
             className={styles.chartButton}
@@ -234,7 +234,7 @@ const VitalTab = ({ patientId }) => {
               }
             }}
           >
-            {showForm ? '취소' : '+ 바이탈 등록'}
+            {showForm ? '취소' : '+ V/S 등록'}
           </button>
         </div>
       </div>
@@ -363,14 +363,14 @@ const VitalTab = ({ patientId }) => {
         <TimeSeriesChart
           data={prepareChartData()}
           metrics={vitalMetrics}
-          title="바이탈 사인 추이"
+          title="V/S 추이"
         />
       )}
 
       {/* 바이탈 이력 목록 */}
       {!showChart && <div className={styles.vitalList}>
         {vitals.length === 0 ? (
-          <div className={styles.empty}>등록된 바이탈 정보가 없습니다</div>
+          <div className={styles.empty}>등록된 V/S 정보가 없습니다</div>
         ) : (
           vitals.map((vital, index) => {
             const prevVital = vitals[index + 1];
@@ -385,7 +385,7 @@ const VitalTab = ({ patientId }) => {
                       <button 
                         className={styles.editButton}
                         onClick={() => handleEdit(vital)}
-                        title="바이탈 수정"
+                        title="V/S 수정"
                       >
                         V/S 수정
                       </button>

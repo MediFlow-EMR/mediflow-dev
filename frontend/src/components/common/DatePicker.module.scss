@@ -8,7 +8,7 @@
   padding: 8px 16px;
   background: #f0f9ff;
   border: none;
-  border-radius: 8px;
+  border-radius: 2px;
   cursor: pointer;
   transition: background 0.2s ease;
 
@@ -42,7 +42,7 @@
     color: #0284c7;
     cursor: pointer;
     padding: 4px 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     transition: background 0.2s ease;
 
     &:hover {
@@ -94,7 +94,7 @@
   aspect-ratio: 1;
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: 2px;
   font-size: 14px;
   color: #374151;
   cursor: pointer;

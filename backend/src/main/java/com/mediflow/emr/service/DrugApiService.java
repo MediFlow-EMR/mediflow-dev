@@ -2,6 +2,8 @@ package com.mediflow.emr.service;
 
 import com.mediflow.emr.dto.DrugApiResponse;
 import com.mediflow.emr.dto.DrugSearchResult;
+import com.mediflow.emr.dto.DrugDetailInfo;
+import com.mediflow.emr.dto.DrugPermitApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,10 +29,16 @@ public class DrugApiService {
     private String serviceKey;
 
     private final RestClient restClient;
+    private final RestClient permitRestClient;
 
-    public DrugApiService(@Value("${drug-api.base-url}") String baseUrl) {
+    public DrugApiService(
+            @Value("${drug-api.base-url}") String baseUrl,
+            @Value("${drug-permit-api.base-url:https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08}") String permitBaseUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
+                .build();
+        this.permitRestClient = RestClient.builder()
+                .baseUrl(permitBaseUrl)
                 .build();
     }
 
@@ -100,6 +109,7 @@ public class DrugApiService {
      */
     public com.mediflow.emr.dto.DrugDetailInfo getDrugDetail(String drugName) {
         log.info("식약처 API 약품 상세 조회 시작 - drugName: {}", drugName);
+        String apiSearchName = normalizeDisplayDrugName(drugName);
 
         try {
             // 약품명으로 검색
@@ -110,7 +120,7 @@ public class DrugApiService {
                             .queryParam("pageNo", 1)
                             .queryParam("numOfRows", 1)
                             .queryParam("type", "json")
-                            .queryParam("itemName", drugName)
+                            .queryParam("itemName", apiSearchName)
                             .build())
                     .accept(MediaType.APPLICATION_JSON)
                     .retrieve()
@@ -129,19 +139,24 @@ public class DrugApiService {
 
                 if (!"00".equals(resultCode)) {
                     log.error("식약처 API 오류 - resultCode: {}, resultMsg: {}", resultCode, resultMsg);
-                    return null;
+                    return getPermitDrugDetail(drugName, apiSearchName);
                 }
             }
 
             if (response == null || response.getBody() == null || response.getBody().getItems() == null || response.getBody().getItems().isEmpty()) {
                 log.warn("약품 상세 정보를 찾을 수 없습니다: {}", drugName);
-                return null;
+                return getPermitDrugDetail(drugName, apiSearchName);
             }
 
             DrugApiResponse.DrugItem item = response.getBody().getItems().getFirst();
             log.info("약품 상세 정보 조회 성공 - drugName: {}, itemName: {}", drugName, item.getItemName());
 
             return com.mediflow.emr.dto.DrugDetailInfo.builder()
+                    .available(true)
+                    .source("식품의약품안전처 의약품개요정보(e약은요)")
+                    .status("FOUND")
+                    .message("식약처 공공데이터 조회 결과")
+                    .requestedName(drugName)
                     .itemSeq(item.getItemSeq())
                     .itemName(item.getItemName())
                     .entpName(item.getEntpName())
@@ -156,7 +171,138 @@ public class DrugApiService {
 
         } catch (Exception e) {
             log.error("약품 상세 정보 조회 실패 - drugName: {}, error: {}", drugName, e.getMessage(), e);
-            return null;
+            return getPermitDrugDetail(drugName, apiSearchName);
         }
+    }
+
+    /**
+     * e약은요에 없는 전문의약품은 전체 허가품목 서비스에서 목록을 찾고,
+     * 품목기준코드로 상세정보를 다시 조회한다.
+     */
+    private DrugDetailInfo getPermitDrugDetail(String drugName, String apiSearchName) {
+        try {
+            String searchName = normalizePermitSearchName(apiSearchName);
+            DrugPermitApiResponse listResponse = permitRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/getDrugPrdtPrmsnInq08")
+                            .queryParam("serviceKey", serviceKey)
+                            .queryParam("pageNo", 1)
+                            .queryParam("numOfRows", 20)
+                            .queryParam("type", "json")
+                            .queryParam("item_name", searchName)
+                            .build())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(DrugPermitApiResponse.class);
+
+            if (!isSuccessful(listResponse) || listResponse.getBody() == null
+                    || listResponse.getBody().getItems() == null
+                    || listResponse.getBody().getItems().isEmpty()) {
+                return unavailableDetail(drugName, "NOT_FOUND",
+                        "e약은요와 의약품 제품 허가정보에서 일치하는 품목을 찾지 못했습니다.");
+            }
+
+            DrugPermitApiResponse.Item selected = listResponse.getBody().getItems().stream()
+                    .filter(item -> item.getCancelName() == null || "정상".equals(item.getCancelName()))
+                    .max(Comparator.comparingInt(item -> permitMatchScore(item, apiSearchName)))
+                    .orElse(listResponse.getBody().getItems().getFirst());
+
+            DrugPermitApiResponse detailResponse = permitRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/getDrugPrdtPrmsnDtlInq08")
+                            .queryParam("serviceKey", serviceKey)
+                            .queryParam("pageNo", 1)
+                            .queryParam("numOfRows", 1)
+                            .queryParam("type", "json")
+                            .queryParam("item_seq", selected.getItemSeq())
+                            .build())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(DrugPermitApiResponse.class);
+
+            DrugPermitApiResponse.Item detail = selected;
+            if (isSuccessful(detailResponse) && detailResponse.getBody() != null
+                    && detailResponse.getBody().getItems() != null
+                    && !detailResponse.getBody().getItems().isEmpty()) {
+                detail = detailResponse.getBody().getItems().getFirst();
+            }
+
+            return DrugDetailInfo.builder()
+                    .available(true)
+                    .source("식품의약품안전처 의약품 제품 허가정보")
+                    .status("FOUND_PERMIT")
+                    .message("전문의약품을 포함한 허가 품목 조회 결과")
+                    .requestedName(drugName)
+                    .itemSeq(detail.getItemSeq())
+                    .itemName(detail.getItemName())
+                    .entpName(detail.getEntpName())
+                    .efcyQesitm(stripDocumentMarkup(detail.getEfficacyDocument()))
+                    .useMethodQesitm(stripDocumentMarkup(detail.getDosageDocument()))
+                    .atpnQesitm(stripDocumentMarkup(detail.getCautionDocument()))
+                    .depositMethodQesitm(detail.getStorageMethod())
+                    .build();
+        } catch (Exception exception) {
+            log.error("의약품 제품 허가정보 조회 실패 - drugName: {}, error: {}",
+                    drugName, exception.getMessage());
+            return unavailableDetail(drugName, "TEMPORARY_ERROR",
+                    "식약처 공공 API 연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
+
+    private boolean isSuccessful(DrugPermitApiResponse response) {
+        return response != null && response.getHeader() != null
+                && "00".equals(response.getHeader().getResultCode());
+    }
+
+    private String normalizePermitSearchName(String drugName) {
+        if (drugName == null) return "";
+        return drugName.replaceAll("(장용정|설하정|흡입액|캡슐|시럽|정|주)$", "").trim();
+    }
+
+    private String normalizeDisplayDrugName(String drugName) {
+        if (drugName == null) return "";
+        return drugName.replaceFirst("\\s*\\([^)]*\\)\\s*$", "").trim();
+    }
+
+    private int permitMatchScore(DrugPermitApiResponse.Item item, String requestedName) {
+        String itemName = item.getItemName() == null ? "" : item.getItemName();
+        String requested = requestedName == null ? "" : requestedName;
+        int score = itemName.contains(requested) ? 100 : 0;
+
+        if (requested.endsWith("정") && itemName.contains("정")) score += 45;
+        if (requested.endsWith("캡슐") && itemName.contains("캡슐")) score += 45;
+        if (requested.endsWith("시럽") && itemName.contains("시럽")) score += 45;
+        if (requested.endsWith("흡입액") && itemName.contains("흡입")) score += 45;
+        if (requested.endsWith("주") && itemName.contains("주")) score += 45;
+        if (itemName.contains("수출용")) score -= 30;
+        if (itemName.contains("수출명")) score -= 20;
+
+        return score;
+    }
+
+    private String stripDocumentMarkup(String document) {
+        if (document == null || document.isBlank()) return null;
+        return document
+                .replace("<![CDATA[", "")
+                .replace("]]>", "")
+                // 허가문서의 장 제목을 보존해야 각 장에서 번호가 다시 시작되는 이유를 알 수 있다.
+                .replaceAll("(?i)<(?:SECTION|ARTICLE)[^>]*title=\"([^\"]+)\"[^>]*>", " [[SECTION:$1]] ")
+                .replaceAll("<[^>]+>", " ")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&amp;", "&")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private com.mediflow.emr.dto.DrugDetailInfo unavailableDetail(
+            String drugName, String status, String message) {
+        return com.mediflow.emr.dto.DrugDetailInfo.builder()
+                .available(false)
+                .source("식품의약품안전처 의약품개요정보(e약은요)")
+                .status(status)
+                .message(message)
+                .requestedName(drugName)
+                .build();
     }
 }

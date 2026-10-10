@@ -36,6 +36,11 @@ public class Medication extends BaseTimeEntity {
     @JoinColumn(name = "nurse_id", nullable = false)
     private User nurse;
 
+    /** 이 투약 수행의 근거가 된 처방. 과거 시드 데이터와의 호환을 위해 nullable이다. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "medical_order_id")
+    private MedicalOrder medicalOrder;
+
     /** 약물명 */
     @Column(nullable = false, name = "drug_name", length = 200)
     private String drugName;
@@ -64,6 +69,10 @@ public class Medication extends BaseTimeEntity {
     /** 처방 의사 */
     @Column(name = "order_doctor", length = 100)
     private String orderDoctor;
+
+    /** 투약 당시 관찰한 특이사항 */
+    @Column(name = "administration_notes", length = 1000)
+    private String administrationNotes;
 
     /**
      * 투약 기록 수정

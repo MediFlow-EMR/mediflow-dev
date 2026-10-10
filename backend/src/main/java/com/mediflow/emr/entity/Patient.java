@@ -55,6 +55,25 @@ public class Patient extends BaseTimeEntity {
     @Column(name = "admission_date")
     private LocalDate admissionDate;
 
+    /** 병실 및 침상 — 입원환자 식별을 위한 현재 위치 */
+    @Column(name = "room_number", length = 20)
+    private String roomNumber;
+
+    @Column(name = "bed_number", length = 20)
+    private String bedNumber;
+
+    /** 현재 주치의 표시명 */
+    @Column(name = "attending_physician", length = 100)
+    private String attendingPhysician;
+
+    /** 병동 안전 표지 */
+    @Column(name = "fall_risk", nullable = false)
+    @Builder.Default
+    private Boolean fallRisk = false;
+
+    @Column(name = "isolation_type", length = 50)
+    private String isolationType;
+
     /** 퇴원일 */
     @Column(name = "discharge_date")
     private LocalDate dischargeDate;
