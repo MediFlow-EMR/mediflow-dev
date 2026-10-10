@@ -28,4 +28,5 @@ public class DrugDetailInfo {
     private String intrcQesitm;    // 상호작용
     private String seQesitm;       // 부작용
     private String depositMethodQesitm; // 보관방법
+    private String productStrength; // 제품 함량: 처방 투여량과 별도
 }

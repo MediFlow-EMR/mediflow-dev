@@ -29,6 +29,7 @@ public class MedicalOrderService {
     private final MedicalOrderRepository medicalOrderRepository;
     private final PatientRepository patientRepository;
     private final DrugApiService drugApiService;
+    private final DemoDrugCatalog demoDrugCatalog;
     private final PatientAccessService patientAccessService;
     private final UserRepository userRepository;
 
@@ -58,6 +59,33 @@ public class MedicalOrderService {
         }
         
         try {
+            var mapped = demoDrugCatalog.find(order.getOrderCode())
+                    .filter(product -> product.accepts(order.getOrderName()));
+            if (mapped.isPresent()) {
+                var product = mapped.get();
+                if (!product.verified()) {
+                    return DrugDetailInfo.builder().available(false).status("DEMO_MAPPING_REQUIRED")
+                            .source("식품의약품안전처 의약품 제품 허가정보")
+                            .requestedName(order.getOrderName()).message(product.unresolvedReason()).build();
+                }
+                if (!product.route().equals(order.getRoute())) {
+                    return DrugDetailInfo.builder().available(false).status("DEMO_MAPPING_REQUIRED")
+                            .source("식품의약품안전처 의약품 제품 허가정보")
+                            .requestedName(order.getOrderName()).message("제품과 처방의 투여 경로가 달라 자동 연결하지 않습니다.").build();
+                }
+                var detail = drugApiService.getDrugDetailByItemSeq(product.itemSeq());
+                if (detail.isAvailable() && (!product.itemSeq().equals(detail.getItemSeq())
+                        || !product.productName().equals(detail.getItemName()))) {
+                    return DrugDetailInfo.builder().available(false).status("DEMO_MAPPING_REQUIRED")
+                            .source("식품의약품안전처 의약품 제품 허가정보")
+                            .requestedName(order.getOrderName()).message("검증된 제품명과 현재 허가정보가 달라 재확인이 필요합니다.").build();
+                }
+                detail.setRequestedName(order.getOrderName());
+                detail.setProductStrength(product.strength());
+                detail.setSource("식품의약품안전처 의약품 제품 허가정보"
+                        + ("FOUND_PERMIT_CACHE".equals(detail.getStatus()) ? " (S3 캐시)" : ""));
+                return detail;
+            }
             return drugApiService.getDrugDetail(order.getOrderName());
         } catch (Exception e) {
             log.warn("약품 상세 정보 조회 실패: {}", order.getOrderName(), e);

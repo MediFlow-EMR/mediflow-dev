@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final NursingNoteRepository nursingNoteRepository;
     private final TestResultRepository testResultRepository;
     private final HandoverRepository handoverRepository;
+    private final com.mediflow.emr.service.DemoDrugCatalog demoDrugCatalog;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
 
@@ -76,7 +77,8 @@ public class DataInitializer implements CommandLineRunner {
         int updatedOrders = 0;
         for (MedicalOrder order : orders) {
             String displayName = bilingualMedicationName(order.getOrderCode());
-            if (displayName != null && !displayName.equals(order.getOrderName())) {
+            if (displayName != null && demoDrugCatalog.find(order.getOrderCode()).map(p -> p.accepts(order.getOrderName())).orElse(false)
+                    && !displayName.equals(order.getOrderName())) {
                 order.setOrderName(displayName);
                 updatedOrders++;
             }
@@ -94,7 +96,8 @@ public class DataInitializer implements CommandLineRunner {
         int updatedMedications = 0;
         for (Medication medication : medications) {
             String displayName = bilingualMedicationName(medication.getDrugCode());
-            if (displayName != null && !displayName.equals(medication.getDrugName())) {
+            if (displayName != null && demoDrugCatalog.find(medication.getDrugCode()).map(p -> p.accepts(medication.getDrugName())).orElse(false)
+                    && !displayName.equals(medication.getDrugName())) {
                 medication.update(displayName, medication.getDrugCode(), medication.getDose(),
                         medication.getRoute(), medication.getFrequency(), medication.getAdministeredAt(),
                         medication.getOrderDoctor());
@@ -117,6 +120,8 @@ public class DataInitializer implements CommandLineRunner {
 
     private String bilingualMedicationName(String code) {
         if (code == null) return null;
+        var product = demoDrugCatalog.find(code);
+        if (product.isPresent()) return product.get().displayName();
         return switch (code) {
             case "CARD-ASA" -> "아스피린장용정(Aspirin)";
             case "CARD-ATO" -> "아토르바스타틴정(Atorvastatin)";
@@ -734,7 +739,7 @@ public class DataInitializer implements CommandLineRunner {
                 orders.add(MedicalOrder.builder()
                         .patient(patient)
                         .orderType("MEDICATION")
-                        .orderName(med[0])
+                        .orderName(java.util.Optional.ofNullable(bilingualMedicationName(med[1])).orElse(med[0]))
                         .orderCode(med[1])
                         .dose(med[2])
                         .route(med[3])
@@ -793,7 +798,7 @@ public class DataInitializer implements CommandLineRunner {
                     medications.add(Medication.builder()
                             .patient(patient)
                             .nurse(nurse)
-                            .drugName(drug[0])
+                            .drugName(java.util.Optional.ofNullable(bilingualMedicationName(drug[1])).orElse(drug[0]))
                             .drugCode(drug[1])
                             .dose(drug[2])
                             .route(MedicationRoute.valueOf(drug[3]))

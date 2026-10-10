@@ -1,0 +1,19 @@
+[
+  {"codes":["CARD-ASA","NEU-ASA"],"genericName":"아스피린장용정","english":"Aspirin","itemSeq":"200108429","productName":"아스피린프로텍트정100밀리그람","strength":"100mg/정","route":"PO"},
+  {"codes":["CARD-ATO","CARD-ATOR","NEU-ATOR"],"genericName":"아토르바스타틴정","english":"Atorvastatin","itemSeq":"200410086","productName":"리피토정40밀리그램(아토르바스타틴칼슘삼수화물)","strength":"40mg/정","route":"PO"},
+  {"codes":["RESP-CTX","SURG-CTX"],"genericName":"세프트리악손주","english":"Ceftriaxone","itemSeq":"199600565","productName":"대웅곰세핀주2.0그램(세프트리악손나트륨수화물)","strength":"2g/바이알","route":"IV"},
+  {"codes":["PRN-APAP","ANAL-APAP","GEN-APAP","RESP-APAP","ORTH-APAP"],"genericName":"아세트아미노펜정","english":"Acetaminophen","itemSeq":"202106092","productName":"타이레놀정500밀리그람(아세트아미노펜)","strength":"500mg/정","route":"PO"},
+  {"codes":["ENDO-MET"],"genericName":"메트포르민정","english":"Metformin","itemSeq":"200401015","productName":"글루코파지정500밀리그램(메트포르민염산염)","strength":"500mg/정","route":"PO"},
+  {"codes":["ENDO-GLA"],"genericName":"인슐린글라진주","english":"Insulin glargine","itemSeq":"200410194","productName":"란투스주솔로스타(인슐린글라진,유전자재조합)","strength":"100unit/mL","route":"SC"},
+  {"codes":["HTN-AML","CV-AMLO"],"genericName":"암로디핀정","english":"Amlodipine","itemSeq":"200610660","productName":"노바스크정5밀리그람(암로디핀베실산염)","strength":"5mg/정","route":"PO"},
+  {"codes":["HTN-LOS","CV-LOS"],"genericName":"로사르탄정","english":"Losartan","itemSeq":"200811814","productName":"코자정(로사르탄칼륨)","strength":"50mg/정(로사르탄칼륨)","route":"PO"},
+  {"codes":["ORTH-CLX","ORTH-CEL"],"genericName":"세레콕시브캡슐","english":"Celecoxib","itemSeq":"200603815","productName":"쎄레브렉스캡슐100밀리그램(세레콕시브)","strength":"100mg/캡슐","route":"PO"},
+  {"codes":["SURG-MTZ"],"genericName":"메트로니다졸주","english":"Metronidazole","itemSeq":"198400094","productName":"트리젤주(메트로니다졸)","strength":"500mg/100mL","route":"IV"},
+  {"codes":["GI-PAN","GI-PANTO"],"genericName":"판토프라졸정","english":"Pantoprazole","itemSeq":"201006491","productName":"판토록정40밀리그램(판토프라졸나트륨세스키히드레이트)","strength":"40mg/정","route":"PO"},
+  {"codes":["RESP-SAL"],"genericName":"살부타몰흡입액","english":"Salbutamol","itemSeq":"199907319","productName":"벤토린네뷸2.5mg(살부타몰황산염)","strength":"2.5mg/2.5mL","route":"INHALATION"},
+  {"codes":["RESP-BUD"],"genericName":"부데소니드흡입액","english":"Budesonide","itemSeq":"200100450","productName":"풀미칸분무용현탁액(미분화부데소니드)","strength":"0.5mg/2mL","route":"INHALATION"},
+  {"codes":["REN-FUR","RENAL-FUR"],"genericName":"푸로세미드정","english":"Furosemide","itemSeq":"196400037","productName":"라식스정(푸로세미드)","strength":"40mg/정","route":"PO"},
+  {"codes":["REN-CAL","RENAL-CAL"],"genericName":"탄산칼슘정","english":"Calcium carbonate","itemSeq":"199801435","productName":"파마탄산칼슘정","strength":"500mg/정","route":"PO"},
+  {"codes":["CARD-NTG"],"genericName":"니트로글리세린설하정","english":"Nitroglycerin","route":"PO","unresolvedReason":"데모의 0.4mg 설하정과 일치하는 정상 허가품목을 확인하지 못했습니다. 경로도 설하 투여와 경구 투여를 구분해 재설계해야 합니다. 0.6mg 제품으로 자동 대체하지 않습니다."},
+  {"codes":["GI-SUC","GI-SUCR"],"genericName":"수크랄페이트정","english":"Sucralfate","route":"PO","unresolvedReason":"현재 조회 결과에서 정상 허가된 국내 수크랄페이트 정제를 확인하지 못했습니다. 허가 만료 정제나 수출용 현탁액으로 자동 대체하지 않습니다."}
+]

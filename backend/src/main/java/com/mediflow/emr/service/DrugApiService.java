@@ -206,7 +206,11 @@ public class DrugApiService {
                     .retrieve()
                     .body(DrugPermitApiResponse.class);
 
-            if (!isSuccessful(listResponse) || listResponse.getBody() == null
+            if (!isSuccessful(listResponse)) {
+                return unavailableDetail(drugName, "TEMPORARY_ERROR",
+                        "의약품 제품 허가정보 API 응답 오류입니다. 인증키·활용승인 상태를 확인해야 합니다.");
+            }
+            if (listResponse.getBody() == null
                     || listResponse.getBody().getItems() == null
                     || listResponse.getBody().getItems().isEmpty()) {
                 return unavailableDetail(drugName, "NOT_FOUND",
@@ -366,7 +370,7 @@ public class DrugApiService {
             String drugName, String status, String message) {
         return com.mediflow.emr.dto.DrugDetailInfo.builder()
                 .available(false)
-                .source("식품의약품안전처 의약품개요정보(e약은요)")
+                .source("식품의약품안전처 e약은요 · 의약품 제품 허가정보")
                 .status(status)
                 .message(message)
                 .requestedName(drugName)

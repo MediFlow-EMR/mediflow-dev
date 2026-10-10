@@ -519,6 +519,12 @@ const OrderTab = ({ patientId }) => {
                       <span className={styles.infoLabel}>품목기준코드</span>
                       <span className={styles.infoValue}>{selectedOrder.drugInfo.itemSeq}</span>
                     </div>
+                    {selectedOrder.drugInfo.productStrength && (
+                      <div className={styles.infoItem}>
+                        <span className={styles.infoLabel}>제품 함량</span>
+                        <span className={styles.infoValue}>{selectedOrder.drugInfo.productStrength} · 처방 투여량과 별도</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className={styles.drugDocumentGrid}>
@@ -562,11 +568,12 @@ const OrderTab = ({ patientId }) => {
                       NOT_COVERED: '현재 데이터셋 미수록 품목',
                       NOT_FOUND: '일치하는 허가품목 확인 필요',
                       AMBIGUOUS_MATCH: '제품명과 함량 확인 필요',
+                      DEMO_MAPPING_REQUIRED: '데모 처방의 제품 매핑 확인 필요',
                     }[selectedOrder.drugInfo.status] || '공공 API 조회 실패'}
                   </strong>
                   <p>{selectedOrder.drugInfo.message}</p>
                   <span>조회명: {selectedOrder.drugInfo.requestedName}</span>
-                  <span>조회원: {selectedOrder.drugInfo.source}</span>
+                  <span>정보 출처: {selectedOrder.drugInfo.source}</span>
                 </div>
               ) : (
                 <div className={styles.noInfo}>약품 정보 응답을 확인할 수 없습니다.</div>
