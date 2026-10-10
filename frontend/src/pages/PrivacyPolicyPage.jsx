@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
                         <img src={mediflowIcon} alt="MediFlow" />
                     </div>
                     <h1 className={styles.title}>개인정보처리방침</h1>
-                    <p className={styles.date}>최종 수정일: 2025년 11월 24일</p>
+                    <p className={styles.date}>최종 수정일: 2025.11.24</p>
                 </div>
 
                 {/* 내용 */}
@@ -191,7 +191,7 @@ export default function PrivacyPolicyPage() {
 
                     <div className={styles.footer}>
                         <p>
-                            <strong>시행일:</strong> 2025년 11월 24일
+                            <strong>시행일:</strong> 2025.11.24
                         </p>
                     </div>
                 </div>

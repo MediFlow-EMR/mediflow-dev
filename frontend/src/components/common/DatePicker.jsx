@@ -62,14 +62,6 @@ const DatePicker = ({ selectedDate, onDateChange }) => {
     );
   };
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long',
-    });
-  };
 
   return (
     <div className={styles.datePicker} ref={dropdownRef}>
@@ -82,7 +74,7 @@ const DatePicker = ({ selectedDate, onDateChange }) => {
           <div className={styles.header}>
             <button onClick={handlePrevMonth}>&lt;</button>
             <span>
-              {currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월
+              {currentMonth.getFullYear()}.{String(currentMonth.getMonth() + 1).padStart(2, '0')}
             </span>
             <button onClick={handleNextMonth}>&gt;</button>
           </div>
@@ -122,3 +114,4 @@ const DatePicker = ({ selectedDate, onDateChange }) => {
 };
 
 export default DatePicker;
+import { formatDate } from '../../utils/dateFormat';

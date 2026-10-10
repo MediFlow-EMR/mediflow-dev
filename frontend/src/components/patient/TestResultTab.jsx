@@ -44,16 +44,7 @@ const TestResultTab = ({ patientId }) => {
 
   // 시간 포맷
   const formatDateTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    return formatRecordDateTime(dateTime);
   };
 
   // 필터링된 검사 결과
@@ -160,3 +151,4 @@ const TestResultTab = ({ patientId }) => {
 };
 
 export default TestResultTab;
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

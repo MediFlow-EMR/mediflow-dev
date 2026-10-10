@@ -158,12 +158,7 @@ const IntakeOutputTab = ({ patientId }) => {
 
   // 시간 포맷
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${month}/${day} ${hours}:${minutes}`;
+    return formatDateTime(dateTime);
   };
 
   // 경고 체크
@@ -423,3 +418,4 @@ const IntakeOutputTab = ({ patientId }) => {
 };
 
 export default IntakeOutputTab;
+import { formatDateTime } from '../../utils/dateFormat';

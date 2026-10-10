@@ -8,9 +8,7 @@ const PatientCard = ({ patient, isSelected, onClick }) => {
   const hasAllergy = patient.allergies && patient.allergies !== '없음';
   const hasVitals = patient.lastVitalTime;
   const formatVitalTime = (value) => {
-    const date = new Date(value);
-    const pad = (number) => String(number).padStart(2, '0');
-    return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    return formatDateTime(value);
   };
 
   // 트리아지 레벨 클래스
@@ -85,3 +83,4 @@ const PatientCard = ({ patient, isSelected, onClick }) => {
 };
 
 export default PatientCard;
+import { formatDateTime } from '../../utils/dateFormat';

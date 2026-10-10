@@ -128,16 +128,7 @@ const NursingNoteTab = ({ patientId }) => {
 
   // 시간 포맷
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    return formatRecordDateTime(dateTime);
   };
 
   if (loading && notes.length === 0) {
@@ -278,3 +269,4 @@ const NursingNoteTab = ({ patientId }) => {
 };
 
 export default NursingNoteTab;
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

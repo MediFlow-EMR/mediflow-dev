@@ -323,16 +323,7 @@ const OrderTab = ({ patientId }) => {
 
   // 시간 포맷
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    return formatRecordDateTime(dateTime);
   };
 
   // 필터링된 오더
@@ -700,3 +691,4 @@ const OrderTab = ({ patientId }) => {
 };
 
 export default OrderTab;
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

@@ -185,7 +185,7 @@ const HandoverPage = () => {
             <h4>{prevShiftType} 근무조로부터 받은 인수인계</h4>
             {previousHandover && (
               <span className={styles.timestamp}>
-                {previousHandover.handoverDate} {previousHandover.createdByName}
+                {formatDate(previousHandover.handoverDate)} {previousHandover.createdByName}
               </span>
             )}
           </div>
@@ -311,3 +311,4 @@ const HandoverPage = () => {
 };
 
 export default HandoverPage;
+import { formatDate } from '../utils/dateFormat';

@@ -198,15 +198,7 @@ const VitalTab = ({ patientId }) => {
 
   // 시간 포맷 (한국 시간대)
   const formatTime = (dateTime) => {
-    const date = new Date(dateTime);
-    return date.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false, // 24시간 형식
-    });
+    return formatDateTime(dateTime);
   };
 
   if (loading && vitals.length === 0) {
@@ -465,3 +457,4 @@ const VitalTab = ({ patientId }) => {
 };
 
 export default VitalTab;
+import { formatDateTime } from '../../utils/dateFormat';

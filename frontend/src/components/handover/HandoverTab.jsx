@@ -258,7 +258,7 @@ const HandoverTab = () => {
                 <div key={handover.id} className={styles.handoverCard}>
                   <div className={styles.cardHeader}>
                     <div className={styles.headerInfo}>
-                      <span className={styles.date}>{handover.date}</span>
+                      <span className={styles.date}>{formatDate(handover.date)}</span>
                       <span className={styles.shift}>{handover.shift}</span>
                       <span className={styles.author}>작성자: {handover.createdByName}</span>
                       <span className={styles.approvedBadge}>검토·승인됨</span>
@@ -418,3 +418,4 @@ const HandoverTab = () => {
 };
 
 export default HandoverTab;
+import { formatDate } from '../../utils/dateFormat';
