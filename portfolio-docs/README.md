@@ -30,23 +30,23 @@
 
 ### 1. 이메일 로그인과 데모 체험
 
-![이메일 로그인과 데모 체험](assets/demos/login.gif?v=84579e31d4b5)
+![이메일 로그인과 데모 체험](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/login.gif)
 
 ### 2. 담당·부서 환자와 날짜·근무조 전환
 
-![담당·부서 환자와 날짜·근무조 전환](assets/demos/patientdashboard.gif?v=ae34e83d1517)
+![담당·부서 환자와 날짜·근무조 전환](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/patientdashboard.gif)
 
 ### 3. 간호기록 다중 카테고리 필터
 
-![간호기록 다중 카테고리 필터](assets/demos/nursingrecord.gif?v=7972abf1ece9)
+![간호기록 다중 카테고리 필터](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/nursingrecord.gif)
 
 ### 4. 오더 날짜 정렬과 약품 정보 조회
 
-![오더 날짜 정렬과 약품 정보 조회](assets/demos/ordertab.gif?v=299fa3949df9)
+![오더 날짜 정렬과 약품 정보 조회](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/ordertab.gif)
 
 ### 5. AI 초안 편집·미저장 보호·승인 기록 이력
 
-![AI 초안 편집·미저장 보호·승인 기록 이력](assets/demos/aihandover.gif?v=9a20495bb7db)
+![AI 초안 편집·미저장 보호·승인 기록 이력](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/aihandover.gif)
 
 [캡처 정보·프레임 수·SHA-256 검증값](assets/demos/manifest.json)
 
