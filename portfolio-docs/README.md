@@ -20,7 +20,7 @@
 
 ![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI_Model-8E75B2?logo=google&logoColor=white) 
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.6-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![React](https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![MariaDB](https://img.shields.io/badge/MariaDB-10.11-003545?logo=mariadb&logoColor=white)](https://mariadb.org)
 [![AWS](https://img.shields.io/badge/AWS-Cloud-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com)
 
@@ -198,10 +198,10 @@ CREATE INDEX idx_vital_good ON vital_sign(
 
 | 기술 | 버전 | 용도 |
 |-----|------|------|
-| ![React](https://img.shields.io/badge/React-19.1.1-61DAFB?logo=react&logoColor=black) | 19.1.1 | UI 컴포넌트 라이브러리 |
-| ![Vite](https://img.shields.io/badge/Vite-7.1.2-646CFF?logo=vite&logoColor=white) | 7.1.2 | 빌드 도구 (HMR 지원) |
+| ![React](https://img.shields.io/badge/React-19.2.3-61DAFB?logo=react&logoColor=black) | 19.2.3 | UI 컴포넌트 라이브러리 |
+| ![Vite](https://img.shields.io/badge/Vite-7.3.7-646CFF?logo=vite&logoColor=white) | 7.3.7 | 빌드 도구 (HMR 지원) |
 | ![Zustand](https://img.shields.io/badge/Zustand-5.0.8-443E38) | 5.0.8 | 경량 상태 관리 |
-| ![Axios](https://img.shields.io/badge/Axios-1.13.2-5A29E4?logo=axios&logoColor=white) | 1.13.2 | HTTP 클라이언트 |
+| ![Axios](https://img.shields.io/badge/Axios-1.20.0-5A29E4?logo=axios&logoColor=white) | 1.20.0 | HTTP 클라이언트 |
 | ![Recharts](https://img.shields.io/badge/Recharts-3.5.0-22B5BF) | 3.5.0 | 바이탈 사인 시계열 차트 |
 
 ### Backend
