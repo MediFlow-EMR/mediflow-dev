@@ -16,7 +16,27 @@ jobs:
       - name: Inspect migration prerequisites
         shell: bash
         run: |
-          jq -n --arg command 'sudo bash -c '\''systemctl is-active mediflow; command -v mariadb || true; command -v mariadb-dump || command -v mysqldump || true; command -v python3; python3 -c "import pymysql; print(\"PyMySQL available\")" 2>/dev/null || true; test -f /etc/mediflow/mediflow.env && echo "Environment file present"; df -h /opt/mediflow'\''' '{commands: [$command]}' > "$RUNNER_TEMP/parameters.json"
+          command=$(cat <<'COMMAND'
+          sudo python3 - <<'PYCODE'
+          import subprocess, socket, re
+          from pathlib import Path
+          data = Path('/etc/mediflow/mediflow.env').read_text()
+          for key in ('MAIL_USERNAME', 'MAIL_PASSWORD'):
+              match = re.search(r'^' + key + r'=(.*)$', data, re.M)
+              print(key + ': ' + ('configured' if match and match.group(1).strip().strip('\"\'') else 'missing'))
+          logs = subprocess.check_output(['journalctl', '-u', 'mediflow', '--since', '24 hours ago', '--no-pager'], text=True)
+          for name in ('MailAuthenticationException', 'AuthenticationFailedException', 'MailSendException', 'SocketTimeoutException', 'ConnectException', 'DataIntegrityViolationException', 'SQLSyntaxErrorException'):
+              print(name + ': ' + str(logs.count(name)))
+          for code in ('535', '534', '550', '553', '554'):
+              print('SMTP status ' + code + ': ' + str(len(re.findall(r'\b' + code + r'\b', logs))))
+          try:
+              with socket.create_connection(('smtp.naver.com', 465), timeout=8): print('SMTP TCP connection: reachable')
+          except OSError as error: print('SMTP TCP connection: ' + type(error).__name__)
+          print('Service: ' + subprocess.check_output(['systemctl','is-active','mediflow'], text=True).strip())
+          PYCODE
+          COMMAND
+          )
+          jq -n --arg command "$command" '{commands: [$command]}' > "$RUNNER_TEMP/parameters.json"
           command_id=$(aws ssm send-command --instance-ids '${{ vars.EC2_INSTANCE_ID }}' --document-name AWS-RunShellScript --parameters "file://$RUNNER_TEMP/parameters.json" --query Command.CommandId --output text)
           aws ssm wait command-executed --command-id "$command_id" --instance-id '${{ vars.EC2_INSTANCE_ID }}'
           aws ssm get-command-invocation --command-id "$command_id" --instance-id '${{ vars.EC2_INSTANCE_ID }}' --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
