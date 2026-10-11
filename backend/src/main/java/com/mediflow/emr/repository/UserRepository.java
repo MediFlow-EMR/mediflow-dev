@@ -9,6 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select e from User e where e.email = :email")
+    Optional<User> findByEmailForUpdate(@org.springframework.data.repository.query.Param("email") String email);
+
 
     /**
      * 이메일로 사용자 조회

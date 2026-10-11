@@ -4,8 +4,9 @@ import lombok.Builder;
 
 @Builder
 public record EmailLoginRequest(
-        String email,
-        String password
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Email
+        @jakarta.validation.constraints.Size(max = 255) String email,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 72) String password
 ) {
 }
 

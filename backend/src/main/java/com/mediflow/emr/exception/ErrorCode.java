@@ -23,6 +23,8 @@ public enum ErrorCode {
     VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "verification not found"),
     VERIFICATION_EXPIRED(HttpStatus.BAD_REQUEST, "verification code expired"),
     VERIFICATION_INVALID(HttpStatus.BAD_REQUEST, "verification code invalid"),
+    MAIL_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "인증 메일을 보내지 못했습니다. 잠시 후 다시 시도해주세요."),
+    TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "인증 메일은 1분에 한 번 요청할 수 있습니다. 잠시 후 다시 시도해주세요."),
     EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "email not verified"),
 
     // 부서 관련 에러 코드

@@ -35,6 +35,14 @@ public class EmailVerification extends BaseTimeEntity {
     @Builder.Default
     private Boolean isVerified = false; // 인증 완료 여부
 
+    @Column(nullable = false)
+    @Builder.Default
+    private int failedAttempts = 0;
+
+    public void recordFailedAttempt() {
+        failedAttempts++;
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user; // 인증을 진행하는 사용자
@@ -73,5 +81,6 @@ public class EmailVerification extends BaseTimeEntity {
         this.verificationCode = newCode;
         this.expiryDate = LocalDateTime.now().plusMinutes(5);
         this.isVerified = false;
+        this.failedAttempts = 0;
     }
 }

@@ -25,7 +25,7 @@ const groups = [
   ['handover_revision', 'PK revision_id · index (handover_id, revision_id)', 'handover_id / edited_by_id: snapshot IDs (no FK)', 'record_version · status · source_type · recorded_at', 'ai_summary · final_summary · edited_by_name'],
   ['clinical_audit_log', 'PK audit_log_id', 'user_id / patient_id: audit IDs (no FK)', 'action · resource_type · resource_id · occurred_at'],
   ['chat_history', 'PK chat_history_id', 'FK nurse_id → users', 'message · response · created_at'],
-  ['email_verification', 'PK verification_id', 'FK user_id → users', 'email · verification_code · expiry_date'],
+  ['email_verification', 'PK verification_id', 'FK user_id → users', 'email · verification_code · expiry_date', 'is_verified · failed_attempts (max 5)'],
  ]],
 ];
 const esc = x => x.replaceAll('&','&amp;').replaceAll('<','&lt;');

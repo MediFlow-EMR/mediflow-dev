@@ -1,11 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
+import { EmailAuthService } from '../../services/authService';
 import styles from './EmailInput.module.scss';
 
 const EmailInput = ({ onSuccess }) => {
     const emailRef = useRef();
     const checkController = useRef(null);
+    const sendLock = useRef(false);
+    const [isSending, setIsSending] = useState(false);
     const debounceTimerRef = useRef(null);
 
     const [error, setError] = useState('');
@@ -61,7 +64,9 @@ const EmailInput = ({ onSuccess }) => {
         const inputValue = e.target.value.trim();
         setIsDuplicate(false);
         setEmail(inputValue);
-        setIsEmailValid(false); // 이메일 변경 시 유효성 초기화
+        setIsEmailValid(false);
+        setError('');
+        setIsChecking(false);
 
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
@@ -85,18 +90,19 @@ const EmailInput = ({ onSuccess }) => {
         }, 500); // 0.5초 대기
     };
 
-    const handleSubmit = () => {
-        if (!email) {
-            setError('이메일을 입력해주세요.');
-            return;
-        }
-
-        if (error || !isEmailValid) {
-            return;
-        }
-
-        if (onSuccess) {
-            onSuccess(email);
+    const handleSubmit = async () => {
+        if (!isEmailValid || isChecking || sendLock.current) return;
+        sendLock.current = true;
+        setIsSending(true);
+        setError('');
+        try {
+            await EmailAuthService.sendCode(email);
+            onSuccess?.(email);
+        } catch (failure) {
+            setError(failure.response?.data?.message || '인증 메일을 보내지 못했습니다. 다시 시도해주세요.');
+        } finally {
+            sendLock.current = false;
+            setIsSending(false);
         }
     };
 
@@ -112,6 +118,7 @@ const EmailInput = ({ onSuccess }) => {
                     ref={emailRef}
                     id='email'
                     className={error ? styles.invalidInput : ''}
+                    disabled={isSending}
                     type='email'
                     name='email'
                     autoComplete='email'
@@ -139,9 +146,9 @@ const EmailInput = ({ onSuccess }) => {
                 type='button'
                 className={styles.submitButton}
                 onClick={handleSubmit}
-                disabled={!email || !!error || isChecking || !isEmailValid}
+                disabled={!email || isChecking || isSending || !isEmailValid}
             >
-                {isChecking ? '확인 중...' : '인증 코드 받기'}
+                {isSending ? '메일 발송 중…' : isChecking ? '확인 중…' : '인증 코드 받기'}
             </button>
         </div>
     );

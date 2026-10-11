@@ -14,7 +14,7 @@ export const AuthService = {
 
 /*
  이메일 인증 서비스:
- - checkEmail: 이메일 중복 확인 및 인증 코드 발송
+ - checkEmail: 이메일 중복 확인
  - verifyCode: 인증 코드 검증
  - getRemainingTime: 인증 코드 남은 시간 조회
  - signup: 회원가입 완료
@@ -22,6 +22,7 @@ export const AuthService = {
 */
 export const EmailAuthService = {
     checkEmail: (email) => apiClient.get('/auth/email/check', { params: { email } }),
+    sendCode: (email) => apiClient.post('/auth/email/send-code', { email }),
     verifyCode: (email, code) => apiClient.get('/auth/email/verify-code', { params: { email, code } }),
     getRemainingTime: (email) => apiClient.get('/auth/email/remaining-time', { params: { email } }),
     signup: (email, password) => apiClient.post('/auth/join', { email, password }),

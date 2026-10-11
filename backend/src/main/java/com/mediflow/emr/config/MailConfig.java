@@ -47,7 +47,9 @@ public class MailConfig {
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.smtp.auth", auth);
         props.put("mail.smtp.ssl.enable", sslEnable);
-        props.put("mail.smtp.ssl.trust", host);
+        props.put("mail.smtp.connectiontimeout", 5000);
+        props.put("mail.smtp.timeout", 8000);
+        props.put("mail.smtp.writetimeout", 8000);
 
         return mailSender;
     }

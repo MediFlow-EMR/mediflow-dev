@@ -12,7 +12,7 @@ const PasswordInput = ({ onPasswordChange }) => {
     // 패스워드 패턴 검증
     const validatePassword = (password) => {
         const passwordPattern =
-            /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+            /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,72}$/;
         return passwordPattern.test(password);
     };
 
@@ -62,7 +62,7 @@ const PasswordInput = ({ onPasswordChange }) => {
             }
         } else {
             setErrorMessage(
-                '비밀번호는 8자 이상이며, 숫자, 문자, 특수문자를 모두 포함해야 합니다.'
+                '비밀번호는 8~72자이며, 숫자, 문자, 특수문자를 모두 포함해야 합니다.'
             );
             // 부모 컴포넌트에 유효하지 않은 비밀번호와 강도 전달
             if (onPasswordChange) {
@@ -113,6 +113,7 @@ const PasswordInput = ({ onPasswordChange }) => {
                 <div className={styles.passwordFieldContainer}>
                     <input
                         ref={passwordRef}
+                        maxLength={72}
                         type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={changeHandler}

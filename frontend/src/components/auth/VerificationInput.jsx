@@ -8,6 +8,8 @@ const VerificationInput = ({ email, onSuccess }) => {
     const [remainingSeconds, setRemainingSeconds] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
+    const [resending, setResending] = useState(false);
+    const resendLock = useRef(false);
     const inputRefs = useRef([]);
     const successRef = useRef(onSuccess);
     const expired = remainingSeconds <= 0;
@@ -21,7 +23,7 @@ const VerificationInput = ({ email, onSuccess }) => {
         setRemainingSeconds(0);
         EmailAuthService.getRemainingTime(email)
             .then(response => { if (active) setRemainingSeconds(Math.max(0, response.data.remainingSeconds || 0)); })
-            .catch(() => { if (active) setError('인증 만료 시간을 확인할 수 없습니다. 이전 화면에서 다시 요청해주세요.'); })
+            .catch(() => { if (active) setError('인증 만료 시간을 확인할 수 없습니다. 인증 코드를 다시 요청해주세요.'); })
             .finally(() => { if (active) setIsLoading(false); });
         return () => { active = false; };
     }, [email]);
@@ -53,7 +55,7 @@ const VerificationInput = ({ email, onSuccess }) => {
                     const remaining = await EmailAuthService.getRemainingTime(email);
                     if (!active) return;
                     setRemainingSeconds(Math.max(0, remaining.data.remainingSeconds || 0));
-                    setError('새 인증코드를 재발송했습니다. 이메일을 다시 확인해주세요.');
+                    setError(remaining.data.remainingSeconds > 0 ? '인증 코드가 일치하지 않습니다. 이메일의 코드를 다시 확인해주세요.' : '인증 코드가 만료되었거나 시도 횟수를 초과했습니다. 인증 코드를 다시 요청해주세요.');
                     setCodes(['', '', '', '']);
                     inputRefs.current[0]?.focus();
                 }
@@ -64,7 +66,6 @@ const VerificationInput = ({ email, onSuccess }) => {
             }
         }, 350);
         return () => { active = false; clearTimeout(timer); };
-        // Expiration is handled by the input disable state; timer ticks must not restart verification.
     }, [codes, email, expired]);
 
     const updateCodes = (index, digits) => {
@@ -83,22 +84,43 @@ const VerificationInput = ({ email, onSuccess }) => {
             updateCodes(index - 1, '');
         }
     };
+    const resend = async () => {
+        if (resendLock.current) return;
+        resendLock.current = true;
+        setResending(true);
+        setError('');
+        try {
+            await EmailAuthService.sendCode(email);
+            const response = await EmailAuthService.getRemainingTime(email);
+            setRemainingSeconds(Math.max(0, response.data.remainingSeconds || 0));
+            setCodes(['', '', '', '']);
+            inputRefs.current[0]?.focus();
+        } catch (failure) {
+            setError(failure.response?.data?.message || '인증 메일을 다시 보내지 못했습니다. 다시 시도해주세요.');
+        } finally {
+            resendLock.current = false;
+            setResending(false);
+        }
+    };
     const minutes = Math.floor(remainingSeconds / 60);
     const seconds = String(remainingSeconds % 60).padStart(2, '0');
     return <>
         <p className={styles.infoText}>Step 2: 이메일로 전송된 인증번호 4자리를 입력해주세요.</p>
         {isLoading ? <div className={styles.skeletonTimer} /> : remainingSeconds > 0 ?
             <p className={styles.timerText}>남은 시간: <span className={styles.timer}>{minutes}:{seconds}</span></p> :
-            <p className={styles.expiredText}>인증 시간이 만료되었습니다. 이전 화면에서 다시 요청해주세요.</p>}
+            <p className={styles.expiredText}>인증 시간이 만료되었습니다. 인증 코드를 다시 요청해주세요.</p>}
         {error && <p role="alert" className={styles.errorMessage}>{error}</p>}
         <div className={styles.codeInputContainer} aria-busy={verifying || isLoading}>
             {codes.map((code, index) => <input key={index} ref={input => { inputRefs.current[index] = input; }}
                 type="text" inputMode="numeric" aria-label={`인증 코드 ${index + 1}번째 숫자`} pattern="[0-9]"
-                className={styles.codeInput} maxLength={1} value={code} disabled={isLoading || remainingSeconds === 0 || verifying}
+                className={styles.codeInput} maxLength={1} value={code} disabled={isLoading || remainingSeconds === 0 || verifying || resending}
                 onChange={event => updateCodes(index, event.target.value.replace(/\D/g, ''))}
                 onPaste={event => { event.preventDefault(); updateCodes(index, event.clipboardData.getData('text').replace(/\D/g, '')); }}
                 onKeyDown={event => keyDown(index, event)} />)}
         </div>
+        <button type="button" className={styles.backLink} onClick={resend} disabled={verifying || resending || isLoading}>
+            {resending ? '메일 발송 중…' : '인증 코드 다시 받기'}
+        </button>
         {verifying && <p role="status" className={styles.timerText}>인증 확인 중…</p>}
     </>;
 };

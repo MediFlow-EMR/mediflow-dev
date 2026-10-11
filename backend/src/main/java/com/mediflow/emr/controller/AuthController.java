@@ -98,7 +98,7 @@ public class AuthController {
      * @return 200 OK with success message
      */
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody EmailSignupRequest dto) {
+    public ResponseEntity<?> join(@jakarta.validation.Valid @RequestBody EmailSignupRequest dto) {
         log.info("[AuthController] 회원가입 요청: email={}", dto.email());
 
         emailAuthService.completeSignup(dto);
@@ -118,7 +118,7 @@ public class AuthController {
      * @return 200 OK with token, user info, and redirect URL
      */
     @PostMapping("/email/login")
-    public ResponseEntity<?> emailLogin(@RequestBody EmailLoginRequest dto, HttpServletResponse response) {
+    public ResponseEntity<?> emailLogin(@jakarta.validation.Valid @RequestBody EmailLoginRequest dto, HttpServletResponse response) {
         log.info("[AuthController] 이메일 로그인 요청: email={}", dto.email());
 
         // 1. 이메일/비밀번호 검증 및 사용자 조회
