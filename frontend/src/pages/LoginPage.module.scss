@@ -1,10 +1,10 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, #eff6ff, #ffffff, #f0f9ff);
+  background: linear-gradient(to bottom right, var(--surface-eff6ff), var(--surface-ffffff), var(--surface-f0f9ff));
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1rem;
+  padding: 1.5rem 1rem;
 }
 
 .wrapper {
@@ -14,7 +14,7 @@
 
 .logoSection {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 
   .logoWrapper {
     display: flex;
@@ -22,26 +22,26 @@
     margin-bottom: 1.5rem;
 
     img {
-      width: 6rem;
-      height: 6rem;
+      width: 4.5rem;
+      height: 4.5rem;
     }
   }
 
   .title {
     font-size: 2.25rem;
     font-weight: 700;
-    color: #0369a1;
+    color: var(--ink-0369a1);
     margin-bottom: 0.5rem;
   }
 
   .subtitle {
-    color: #0284c7;
+    color: var(--ink-0284c7);
     font-size: 0.875rem;
   }
 }
 
 .card {
-  background: white;
+  background: var(--surface-ffffff);
   border-radius: 1rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 2rem;
@@ -56,41 +56,41 @@
 .primaryButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: #0ea5e9;
-  color: white;
+  background-color: var(--surface-0ea5e9);
+  color: var(--ink-ffffff);
   border-radius: 0.5rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border: none;
   cursor: pointer;
   font-size: 1rem;
 
   &:hover {
-    background-color: #0284c7;
+    background-color: var(--surface-0284c7);
   }
 }
 
 .secondaryButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: white;
-  color: #0284c7;
-  border: 2px solid #0ea5e9;
+  background-color: var(--surface-ffffff);
+  color: var(--ink-0284c7);
+  border: 2px solid var(--line-0ea5e9);
   border-radius: 0.5rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   cursor: pointer;
   font-size: 1rem;
 
   &:hover {
-    background-color: #f0f9ff;
+    background-color: var(--surface-f0f9ff);
   }
 }
 
 .divider {
   position: relative;
-  margin: 2rem 0;
+  margin: 0.75rem 0;
 
   .dividerLine {
     position: absolute;
@@ -100,7 +100,7 @@
 
     div {
       width: 100%;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--line-e5e7eb);
     }
   }
 
@@ -112,8 +112,8 @@
 
     span {
       padding: 0 1rem;
-      background-color: white;
-      color: #6b7280;
+      background-color: var(--surface-ffffff);
+      color: var(--ink-6b7280);
     }
   }
 }
@@ -121,12 +121,12 @@
 .socialButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--surface-ffffff);
+  color: var(--ink-374151);
+  border: 1px solid var(--line-d1d5db);
   border-radius: 0.5rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   cursor: pointer;
   font-size: 1rem;
   display: flex;
@@ -135,7 +135,7 @@
   gap: 0.75rem;
 
   &:hover {
-    background-color: #f9fafb;
+    background-color: var(--surface-f9fafb);
   }
 
   img {
@@ -144,12 +144,12 @@
   }
 
   &.kakao {
-    background-color: #fee500;
+    background-color: var(--surface-fee500);
     border: none;
     color: #1f2937;
 
     &:hover {
-      background-color: #fdd835;
+      background-color: var(--surface-fdd835);
     }
   }
 }
@@ -157,11 +157,11 @@
 .footer {
   text-align: center;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
   margin-top: 2rem;
 
   button {
-    color: #0284c7;
+    color: var(--ink-0284c7);
     font-weight: 500;
     text-decoration: underline;
     background: none;
@@ -170,8 +170,10 @@
     padding: 0;
 
     &:hover {
-      color: #0369a1;
+      color: var(--ink-0369a1);
     }
   }
 }
 
+
+.container { position: relative; padding-top: 68px; padding-bottom: 32px; }

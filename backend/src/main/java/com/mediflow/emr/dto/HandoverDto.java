@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 public class HandoverDto {
     
     private Long id;
+    private Long version;
+    private String sourceType;
+    private LocalDateTime updatedAt;
     private Long departmentId;
     private String departmentName;
     private Long fromShiftId;
@@ -35,6 +38,9 @@ public class HandoverDto {
     public static HandoverDto from(Handover handover) {
         return HandoverDto.builder()
                 .id(handover.getId())
+                .version(handover.getVersion())
+                .sourceType(handover.getSourceType())
+                .updatedAt(handover.getUpdatedAt())
                 .departmentId(handover.getDepartment().getId())
                 .departmentName(handover.getDepartment().getName())
                 .fromShiftId(handover.getFromShift().getId())

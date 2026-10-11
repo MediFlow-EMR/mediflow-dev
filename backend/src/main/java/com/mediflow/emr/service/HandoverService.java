@@ -1,6 +1,8 @@
 package com.mediflow.emr.service;
 
 import com.mediflow.emr.entity.*;
+import com.mediflow.emr.dto.HandoverSaveRequest;
+import com.mediflow.emr.dto.HandoverDto;
 import com.mediflow.emr.entity.enums.Gender;
 import com.mediflow.emr.exception.BusinessException;
 import com.mediflow.emr.exception.ErrorCode;
@@ -34,6 +36,7 @@ public class HandoverService {
     private final ShiftRepository shiftRepository;
     private final GeminiService geminiService;
     private final HandoverRepository handoverRepository;
+    private final HandoverRevisionRepository revisionRepository;
     private final AssignmentRepository assignmentRepository;
     private final GeminiConfig geminiConfig;
     private final ClinicalAuditService clinicalAuditService;
@@ -296,66 +299,115 @@ public class HandoverService {
         }
     }
 
+    private void requireDepartment(Long departmentId, User user) {
+        if (user.getDepartment() == null || !Objects.equals(user.getDepartment().getId(), departmentId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "소속 부서의 인수인계만 접근할 수 있습니다.");
+        }
+    }
+
+    private Handover accessibleHandover(Long id, User user, boolean editing) {
+        Handover record = handoverRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "인수인계를 찾을 수 없습니다."));
+        requireDepartment(record.getDepartment().getId(), user);
+        if ((editing || "DRAFT".equals(record.getStatus())) && !Objects.equals(record.getCreatedBy().getId(), user.getId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "작성자만 초안을 조회하거나 인수인계를 수정할 수 있습니다.");
+        }
+        return record;
+    }
+
+    private void validateContent(HandoverSaveRequest request) {
+        String source = request.sourceType() == null ? "AI" : request.sourceType();
+        String status = request.status() == null ? "APPROVED" : request.status();
+        if (!Set.of("AI", "MANUAL").contains(source) || !Set.of("DRAFT", "APPROVED").contains(status)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "올바른 작성 방식과 저장 상태를 선택해주세요.");
+        }
+        if (request.finalSummary() == null || request.finalSummary().isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "인수인계 내용을 입력해주세요.");
+        }
+        if ("AI".equals(source) && (request.aiDraft() == null || request.aiDraft().isBlank())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 원본 초안이 필요합니다.");
+        }
+        if (Objects.equals(request.fromShiftId(), request.toShiftId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "인계 근무조와 인수 근무조는 달라야 합니다.");
+        }
+    }
+
+    private void snapshot(Handover record, User editor) {
+        revisionRepository.save(HandoverRevision.builder()
+                .handoverId(record.getId()).editedById(editor.getId())
+                .editedByName(editor.getName() == null ? editor.getNickname() : editor.getName())
+                .recordedAt(LocalDateTime.now()).recordVersion(record.getVersion())
+                .status(record.getStatus()).sourceType(record.getSourceType())
+                .aiSummary(record.getAiSummary()).finalSummary(record.getFinalSummary()).aiModel(record.getAiModel()).build());
+    }
+
     @Transactional
-    public void saveHandover(Long departmentId, Long fromShiftId, Long toShiftId,
-                             String aiDraft, String finalSummary, User user) {
-        if (user.getDepartment() == null || !user.getDepartment().getId().equals(departmentId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "소속 부서의 인수인계만 저장할 수 있습니다.");
+    public HandoverDto saveHandover(HandoverSaveRequest request, User user) {
+        requireDepartment(request.departmentId(), user);
+        validateContent(request);
+        DepartmentEntity department = departmentRepository.findById(request.departmentId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.DEPARTMENT_NOT_FOUND));
+        Shift from = shiftRepository.findById(request.fromShiftId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "인계 근무조를 찾을 수 없습니다."));
+        Shift to = shiftRepository.findById(request.toShiftId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "인수 근무조를 찾을 수 없습니다."));
+        Handover record = Handover.builder().department(department).fromShift(from).toShift(to)
+                .handoverDate(LocalDate.now()).createdBy(user).build();
+        applyContent(record, request);
+        Handover saved = handoverRepository.saveAndFlush(record);
+        snapshot(saved, user);
+        clinicalAuditService.record(user.getId(), null, saved.getStatus().equals("DRAFT") ? "SAVE_DRAFT" : "APPROVE",
+                "HANDOVER", saved.getId(), "source=" + saved.getSourceType() + "; version=" + saved.getVersion());
+        return HandoverDto.from(saved);
+    }
+
+    private void applyContent(Handover record, HandoverSaveRequest request) {
+        String source = request.sourceType() == null ? "AI" : request.sourceType();
+        record.updateContent("AI".equals(source) ? request.aiDraft() : null, request.finalSummary(), source,
+                request.status() == null ? "APPROVED" : request.status(),
+                "AI".equals(source) ? (record.getAiModel() == null || !Objects.equals(record.getAiSummary(), request.aiDraft()) ? geminiConfig.getModel() : record.getAiModel()) : null);
+    }
+
+    @Transactional
+    public HandoverDto updateHandover(Long id, HandoverSaveRequest request, User user) {
+        Handover record = accessibleHandover(id, user, true);
+        validateContent(request);
+        if (request.version() == null || !Objects.equals(record.getVersion(), request.version())) {
+            throw new BusinessException(ErrorCode.CONFLICT);
         }
-
-        if (fromShiftId.equals(toShiftId)) {
-            throw new IllegalArgumentException("인계 근무조와 인수 근무조는 달라야 합니다.");
+        if (!Objects.equals(record.getDepartment().getId(), request.departmentId()) ||
+                !Objects.equals(record.getFromShift().getId(), request.fromShiftId()) ||
+                !Objects.equals(record.getToShift().getId(), request.toShiftId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "기존 인수인계의 부서와 근무조는 변경할 수 없습니다.");
         }
-
-        if (aiDraft == null || aiDraft.isBlank() || finalSummary == null || finalSummary.isBlank()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 초안과 최종 인수인계 내용이 필요합니다.");
+        if ("APPROVED".equals(record.getStatus()) &&
+                (!"APPROVED".equals(request.status() == null ? "APPROVED" : request.status()) ||
+                !Objects.equals(record.getSourceType(), request.sourceType() == null ? "AI" : request.sourceType()) ||
+                !Objects.equals(record.getAiSummary(), request.aiDraft()))) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "승인된 인수인계의 상태와 작성 원본은 변경할 수 없습니다.");
         }
-
-        DepartmentEntity department = departmentRepository.findById(departmentId)
-            .orElseThrow(() -> new IllegalArgumentException("부서를 찾을 수 없습니다."));
-        
-        Shift fromShift = shiftRepository.findById(fromShiftId)
-            .orElseThrow(() -> new IllegalArgumentException("인계 근무조를 찾을 수 없습니다."));
-        
-        Shift toShift = shiftRepository.findById(toShiftId)
-            .orElseThrow(() -> new IllegalArgumentException("인수 근무조를 찾을 수 없습니다."));
-
-        Handover handover = Handover.builder()
-            .department(department)
-            .fromShift(fromShift)
-            .toShift(toShift)
-            .handoverDate(LocalDate.now())
-            .aiSummary(aiDraft)
-            .finalSummary(finalSummary)
-            .aiModel(geminiConfig.getModel())
-            .status("APPROVED")
-            .approvedAt(LocalDateTime.now())
-            .createdBy(user)
-            .build();
-
-        Handover saved = handoverRepository.save(handover);
-        clinicalAuditService.record(
-                user.getId(),
-                null,
-                "APPROVE",
-                "HANDOVER",
-                saved.getId(),
-                "AI 초안 검토 완료; model=" + geminiConfig.getModel()
-        );
-        log.info("인수인계 저장 완료");
+        // Preserve a baseline for records created before revision tracking was added.
+        if (!revisionRepository.existsByHandoverId(id)) snapshot(record, record.getCreatedBy());
+        applyContent(record, request);
+        Handover saved = handoverRepository.saveAndFlush(record);
+        snapshot(saved, user);
+        clinicalAuditService.record(user.getId(), null, "UPDATE", "HANDOVER", saved.getId(),
+                "status=" + saved.getStatus() + "; version=" + saved.getVersion());
+        return HandoverDto.from(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<Handover> getHandoversByDepartment(Long departmentId) {
-        List<Handover> handovers = handoverRepository.findByDepartmentIdOrderByHandoverDateDesc(departmentId);
-        // Lazy loading 강제 초기화
-        handovers.forEach(h -> {
-            h.getDepartment().getName();
-            h.getFromShift().getType();
-            h.getToShift().getType();
-            h.getCreatedBy().getName();
-        });
-        return handovers;
+    public List<HandoverDto> getHandoversByDepartment(Long departmentId, User user) {
+        requireDepartment(departmentId, user);
+        return handoverRepository.findByDepartmentIdOrderByHandoverDateDesc(departmentId).stream()
+                .filter(record -> !"DRAFT".equals(record.getStatus()) || Objects.equals(record.getCreatedBy().getId(), user.getId()))
+                .map(HandoverDto::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<HandoverRevision> getRevisions(Long id, User user) {
+        accessibleHandover(id, user, false);
+        return revisionRepository.findByHandoverIdOrderByIdDesc(id);
     }
 
     @Transactional

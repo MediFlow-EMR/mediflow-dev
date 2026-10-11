@@ -5,6 +5,7 @@ import com.mediflow.emr.dto.MedicalOrderRequest;
 import com.mediflow.emr.dto.MedicalOrderResponse;
 import com.mediflow.emr.service.MedicalOrderService;
 import com.mediflow.emr.service.PatientAccessService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -44,8 +45,8 @@ public class MedicalOrderController {
     @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<MedicalOrderResponse>> createOrder(
             Authentication authentication,
-            @RequestBody MedicalOrderRequest request) {
-        log.info("오더 등록 요청: {}", request);
+            @Valid @RequestBody MedicalOrderRequest request) {
+        log.info("오더 등록 요청");
         Long userId = patientAccessService.requireUserId(authentication.getName());
         patientAccessService.requireAccessiblePatient(userId, request.getPatientId());
         MedicalOrderResponse order = medicalOrderService.createOrder(request);
@@ -71,9 +72,9 @@ public class MedicalOrderController {
      */
     @DeleteMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable Long orderId) {
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(Authentication authentication, @PathVariable Long orderId) {
         log.info("오더 삭제 요청: orderId={}", orderId);
-        medicalOrderService.deleteOrder(orderId);
+        medicalOrderService.deleteOrder(orderId, patientAccessService.requireUserId(authentication.getName()));
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
@@ -82,9 +83,9 @@ public class MedicalOrderController {
      */
     @GetMapping("/{orderId}/drug-detail")
     public ResponseEntity<ApiResponse<com.mediflow.emr.dto.DrugDetailInfo>> getOrderDrugDetail(
-            @PathVariable Long orderId) {
+            Authentication authentication, @PathVariable Long orderId) {
         log.info("오더 약품 상세 정보 조회 요청: orderId={}", orderId);
-        com.mediflow.emr.dto.DrugDetailInfo drugDetail = medicalOrderService.getOrderDrugDetail(orderId);
+        com.mediflow.emr.dto.DrugDetailInfo drugDetail = medicalOrderService.getOrderDrugDetail(orderId, patientAccessService.requireUserId(authentication.getName()));
         return ResponseEntity.ok(ApiResponse.ok(drugDetail));
     }
 }

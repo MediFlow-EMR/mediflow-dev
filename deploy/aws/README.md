@@ -32,7 +32,7 @@ AWS 비용 알림부터 만듭니다.
 
 ## 1. GitHub 저장소 준비
 
-현재 로컬 작업 폴더는 원격 저장소가 연결되지 않은 상태입니다. 기존 `MediFlow-EMR/mediflow-dev`를 유지하는 것을 권장합니다.
+코드 저장소는 `MediFlow-EMR/mediflow-dev`, 문서 저장소는 `MediFlow-EMR/MediFlow-docs`입니다. 운영 배포는 코드 저장소 main의 GitHub Actions와 production 환경 변수로 실행합니다.
 
 1. GitHub 저장소의 기본 브랜치를 `main`으로 확인합니다.
 2. 현재 코드는 별도 브랜치(예: `codex/aws-deploy`)로 먼저 올립니다.
@@ -82,7 +82,7 @@ AWS 비용 알림부터 만듭니다.
 6. 자동 백업 7일, 삭제 방지 활성화를 권장합니다.
 7. 생성 후 RDS 엔드포인트를 기록합니다.
 
-최초 실행에서만 `JPA_DDL_AUTO=update`를 사용해 스키마를 만듭니다. 정상 기동 후에는 `/etc/mediflow/mediflow.env`를 `JPA_DDL_AUTO=validate`로 바꾸고 서비스를 재시작합니다. 다음 개선 단계에서는 Flyway 마이그레이션으로 교체합니다.
+운영은 `JPA_DDL_AUTO=validate`를 유지합니다. 기존 스키마의 변경은 Flyway가 앱 기동 전에 적용합니다. 현재 마이그레이션은 기존 MediFlow 스키마를 대상으로 하므로 빈 DB는 검증된 초기 스키마를 먼저 준비해야 합니다. 기존 운영 DB의 최초 기준선 등록과 백업은 [DB 전환 안내](../database/README.md)를 따릅니다.
 
 ## 4. EC2와 Systems Manager
 
@@ -129,6 +129,7 @@ sudo bash /tmp/mediflow-bootstrap.sh
 
 - `deploy/ec2/mediflow.service` → `/etc/systemd/system/mediflow.service`
 - `deploy/ec2/deploy.sh` → `/opt/mediflow/bin/deploy.sh`
+- `deploy/ec2/database-backup.py` → `/opt/mediflow/bin/database-backup.py` (배포 워크플로가 매 릴리스 설치)
 - `backend/.env.prod.example`을 참고해 `/etc/mediflow/mediflow.env` 작성
 
 권한을 설정합니다.
@@ -402,3 +403,11 @@ e약은요·허가정보 조회 경로를 표시합니다. API 오류는 `TEMPOR
 - S3 객체는 직접 URL 접근 불가, CloudFront로만 접근
 - GitHub 저장소와 로그에 비밀값이 없음
 - CloudWatch와 AWS Budget 알림 활성화
+
+## DB 마이그레이션 배포 확인
+
+- 배포 전 RDS 백업·복구 상태와 연결 대상 DB, 스키마 권한을 확인합니다.
+- 기존 DB 최초 도입에만 FLYWAY_BASELINE_ON_MIGRATE=true로 20261010 기준선을 등록합니다. 이후 false로 유지합니다.
+- 새 JAR의 prod 시작 시 Flyway가 버전별 SQL을 실행하고 Hibernate validate 후 건강 상태를 확인합니다.
+- flyway_schema_history의 성공 기록 및 기존 인수인계 보존을 확인합니다. 체크섬 불일치·실패는 서버 기동을 막습니다.
+- 앱 롤백은 DB 변경을 되돌리지 않습니다. [마이그레이션 절차](../database/README.md)를 따릅니다.

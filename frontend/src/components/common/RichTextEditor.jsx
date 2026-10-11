@@ -1,3 +1,4 @@
+import { sanitizeClinicalHtml } from '../../utils/clinicalHtml';
 import { useRef, useEffect } from 'react';
 import styles from './RichTextEditor.module.scss';
 
@@ -5,19 +6,19 @@ import styles from './RichTextEditor.module.scss';
  * 간단한 리치 텍스트 에디터
  * contentEditable 기반
  */
-const RichTextEditor = ({ value, onChange, placeholder }) => {
+const RichTextEditor = ({ value, onChange, placeholder, disabled = false }) => {
   const editorRef = useRef(null);
 
   // 초기값 설정
   useEffect(() => {
     if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || '';
+      editorRef.current.innerHTML = sanitizeClinicalHtml(value);
     }
   }, [value]);
 
   // 에디터 내용 변경 핸들러
   const handleInput = () => {
-    if (editorRef.current && onChange) {
+    if (!disabled && editorRef.current && onChange) {
       const html = editorRef.current.innerHTML;
       const text = editorRef.current.innerText;
       onChange(html, text);
@@ -137,7 +138,17 @@ const RichTextEditor = ({ value, onChange, placeholder }) => {
       <div
         ref={editorRef}
         className={styles.editor}
-        contentEditable
+        contentEditable={!disabled}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
+        role="textbox"
+        aria-label={placeholder || '간호기록 내용'}
+        aria-multiline="true"
+        onPaste={event => {
+          event.preventDefault();
+          document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
+          handleInput();
+        }}
         onInput={handleInput}
         data-placeholder={placeholder || '내용을 입력하세요...'}
         suppressContentEditableWarning

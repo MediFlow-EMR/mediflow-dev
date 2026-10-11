@@ -38,6 +38,12 @@ public record VitalSignRequest(
         @Max(value = 100, message = "산소포화도는 100% 이하여야 합니다")
         Integer spo2,
 
-        LocalDateTime measuredAt
+        LocalDateTime measuredAt,
+
+        @PositiveOrZero Long version
 ) {
+    @AssertTrue(message = "측정값을 하나 이상 입력해주세요")
+    public boolean isMeasurementPresent() {
+        return systolicBp != null || diastolicBp != null || heartRate != null || bodyTemp != null || respiratoryRate != null || spo2 != null;
+    }
 }

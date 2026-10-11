@@ -22,6 +22,8 @@ public record NursingNoteRequest(
         @NotNull(message = "기록 카테고리는 필수입니다")
         NoteCategory category,
 
-        Boolean isImportant
+        Boolean isImportant,
+
+        @PositiveOrZero Long version
 ) {
 }

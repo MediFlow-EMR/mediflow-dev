@@ -1,28 +1,28 @@
 .patientCard {
-  background: #fff;
+  background: var(--surface-ffffff);
   border-radius: 0;
   padding: 8px 9px;
   margin-bottom: 2px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #dbe3ea;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
+  border: 1px solid var(--line-dbe3ea);
   border-left: 4px solid transparent;
   box-shadow: none;
 
   &:hover {
-    background: #f0f9ff;
-    border-color: #7dd3fc;
+    background: var(--surface-f0f9ff);
+    border-color: var(--line-7dd3fc);
   }
 
   &.selected {
-    background: #e0f2fe;
-    border-color: #0284c7;
-    border-left-color: #0369a1;
+    background: var(--surface-e0f2fe);
+    border-color: var(--line-0284c7);
+    border-left-color: var(--line-0369a1);
     box-shadow: none;
   }
 
   &.primary {
-    border-left: 4px solid #0284c7;
+    border-left: 4px solid var(--line-0284c7);
   }
 }
 
@@ -58,13 +58,13 @@
   .name {
     font-size: 14px;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--ink-1f2937);
     margin-bottom: 1px;
   }
 
   .meta {
     font-size: 11px;
-    color: #6b7280;
+    color: var(--ink-6b7280);
   }
 }
 
@@ -75,8 +75,8 @@
 }
 
 .allergyBadge {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--surface-fee2e2);
+  color: var(--ink-dc2626);
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 12px;
@@ -88,26 +88,27 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: white;
+  color: var(--ink-ffffff);
 
   &.level1 {
-    background: #dc2626; // 빨강 - 즉시
+    background: var(--surface-dc2626); // 빨강 - 즉시
   }
 
   &.level2 {
-    background: #f97316; // 주황 - 긴급
+    background: var(--surface-f97316); // 주황 - 긴급
   }
 
   &.level3 {
-    background: #eab308; // 노랑 - 응급
+    background: var(--surface-eab308); // 노랑 - 응급
+    color: #1f2937;
   }
 
   &.level4 {
-    background: #10b981; // 초록 - 준응급
+    background: var(--surface-10b981); // 초록 - 준응급
   }
 
   &.level5 {
-    background: #0284c7; // 파랑 - 비응급
+    background: var(--surface-0284c7); // 파랑 - 비응급
   }
 }
 
@@ -122,21 +123,21 @@
 
 .department {
   flex: none;
-  color: #0369a1;
+  color: var(--ink-0369a1);
   font-weight: 700;
 }
 
 .location {
   flex: none;
   padding-left: 8px;
-  border-left: 1px solid #cbd5e1;
-  color: #334155;
+  border-left: 1px solid var(--line-cbd5e1);
+  color: var(--ink-334155);
   font-weight: 700;
 }
 
 .diagnosis {
   overflow: hidden;
-  color: #374151;
+  color: var(--ink-374151);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -152,18 +153,18 @@
     display: flex;
     flex-direction: column;
     padding: 3px 4px;
-    background: #f8fafc;
+    background: var(--surface-f8fafc);
     border-radius: 0;
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid var(--line-e2e8f0);
 
     .label {
-      color: #6b7280;
+      color: var(--ink-6b7280);
       font-size: 9px;
       margin-bottom: 2px;
     }
 
     .value {
-      color: #1f2937;
+      color: var(--ink-1f2937);
       font-weight: 600;
     }
   }
@@ -172,14 +173,14 @@
     position: absolute;
     right: 2px;
     bottom: -14px;
-    color: #64748b;
+    color: var(--ink-64748b);
     font-size: 10px;
   }
 }
 
 .noVitals {
   text-align: center;
-  color: #9ca3af;
+  color: var(--ink-9ca3af);
   font-size: 13px;
   padding: 8px;
 }

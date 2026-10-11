@@ -117,7 +117,7 @@ public class MedicationService {
 
     /**
      * 투약 기록 수정
-     * 의료법 제23조에 따라 의료 기록은 10년간 보존해야 하므로 수정 불가
+     * 투약 원본 보존 정책에 따라 직접 수정하지 않는다.
      */
     @Transactional
     public MedicationResponse updateMedication(Long medicationId, Long nurseId, MedicationRequest request) {
@@ -132,42 +132,16 @@ public class MedicationService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 기록만 수정할 수 있습니다");
         }
 
-        // 의료법 제23조: 의료 기록은 10년간 보존 의무
+        // 투약 원본 보존 정책.
         // 투약 기록은 수정 불가
-        log.warn("의료법 제23조에 따라 투약 기록 수정 불가 - medicationId: {}", medicationId);
+        log.warn("원본 보존 정책에 따라 투약 기록 수정 불가 - medicationId: {}", medicationId);
         throw new BusinessException(ErrorCode.MEDICAL_RECORD_CANNOT_BE_DELETED);
 
-        // 기존 수정 코드 (주석 처리)
-        /*
-        // 투약 시간 (요청에 없으면 기존 시간 유지)
-        LocalDateTime administeredAt = request.administeredAt() != null 
-                ? request.administeredAt() 
-                : medication.getAdministeredAt();
-
-        // 미래 시간 검증
-        if (administeredAt.isAfter(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "투약 시간은 현재 시간보다 미래일 수 없습니다");
-        }
-
-        // 기록 수정
-        medication.update(
-                request.drugName(),
-                request.drugCode(),
-                request.dose(),
-                request.route(),
-                request.frequency(),
-                administeredAt,
-                request.orderDoctor()
-        );
-
-        log.info("투약 기록 수정 완료 - id: {}", medication.getId());
-        return toResponse(medication, nurseId);
-        */
     }
 
     /**
      * 투약 기록 삭제
-     * 의료법 제23조에 따라 의료 기록은 10년간 보존해야 하므로 삭제 불가
+     * 투약 원본 보존 정책에 따라 직접 삭제하지 않는다.
      */
     @Transactional
     public void deleteMedication(Long medicationId, Long nurseId) {
@@ -182,22 +156,17 @@ public class MedicationService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 기록만 삭제할 수 있습니다");
         }
 
-        // 의료법 제23조: 의료 기록은 10년간 보존 의무
+        // 투약 원본 보존 정책.
         // 삭제 대신 예외를 발생시켜 삭제 불가 안내
-        log.warn("의료법 제23조에 따라 투약 기록 삭제 불가 - medicationId: {}", medicationId);
+        log.warn("원본 보존 정책에 따라 투약 기록 삭제 불가 - medicationId: {}", medicationId);
         throw new BusinessException(ErrorCode.MEDICAL_RECORD_CANNOT_BE_DELETED);
 
-        // 기존 삭제 코드 (주석 처리)
-        // medicationRepository.delete(medication);
-        // log.info("투약 기록 삭제 완료 - id: {}", medicationId);
     }
 
     /**
      * Entity -> Response DTO 변환
      */
     private MedicationResponse toResponse(Medication medication, Long currentUserId) {
-        boolean canEdit = currentUserId != null && 
-                         medication.getNurse().getId().equals(currentUserId);
         
         return MedicationResponse.builder()
                 .id(medication.getId())
@@ -215,7 +184,7 @@ public class MedicationService {
                 .orderDoctor(medication.getOrderDoctor())
                 .notes(medication.getAdministrationNotes())
                 .createdAt(medication.getCreatedAt())
-                .canEdit(canEdit)
+                .canEdit(false)
                 .build();
     }
 

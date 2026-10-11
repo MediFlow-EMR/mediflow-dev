@@ -1,5 +1,7 @@
 package com.mediflow.emr.service;
 
+import com.mediflow.emr.util.RecordUpdateGuard;
+
 import com.mediflow.emr.dto.IntakeOutputRequest;
 import com.mediflow.emr.dto.IntakeOutputResponse;
 import com.mediflow.emr.entity.IntakeOutput;
@@ -102,6 +104,9 @@ public class IntakeOutputService {
         IntakeOutput record = intakeOutputRepository.findById(recordId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.IO_NOT_FOUND));
 
+        patientAccessService.requireAccessiblePatient(nurseId, record.getPatient().getId());
+        RecordUpdateGuard.requireCurrent(record.getPatient().getId(), request.patientId(), record.getVersion(), request.version());
+
         // 권한 확인 (본인이 등록한 기록만 수정 가능)
         if (!record.getNurse().getId().equals(nurseId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 기록만 수정할 수 있습니다");
@@ -127,12 +132,13 @@ public class IntakeOutputService {
         );
 
         log.info("섭취배설량 수정 완료 - id: {}", record.getId());
+        intakeOutputRepository.saveAndFlush(record);
         return toResponse(record, nurseId);
     }
 
     /**
      * 섭취배설량 삭제
-     * 의료법 제23조에 따라 의료 기록은 10년간 보존해야 하므로 삭제 불가
+     * 원본 보존 정책에 따라 직접 삭제하지 않는다.
      */
     @Transactional
     public void deleteIntakeOutput(Long recordId, Long nurseId) {
@@ -147,14 +153,11 @@ public class IntakeOutputService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 기록만 삭제할 수 있습니다");
         }
 
-        // 의료법 제23조: 의료 기록은 10년간 보존 의무
+        // 원본 보존 정책.
         // 삭제 대신 예외를 발생시켜 삭제 불가 안내
-        log.warn("의료법 제23조에 따라 섭취배설량 기록 삭제 불가 - recordId: {}", recordId);
+        log.warn("원본 보존 정책에 따라 섭취배설량 기록 삭제 불가 - recordId: {}", recordId);
         throw new BusinessException(ErrorCode.MEDICAL_RECORD_CANNOT_BE_DELETED);
 
-        // 기존 삭제 코드 (주석 처리)
-        // intakeOutputRepository.delete(record);
-        // log.info("섭취배설량 삭제 완료 - id: {}", recordId);
     }
 
     /**
@@ -166,6 +169,7 @@ public class IntakeOutputService {
         
         return IntakeOutputResponse.builder()
                 .id(record.getId())
+                .version(record.getVersion())
                 .patientId(record.getPatient().getId())
                 .patientName(record.getPatient().getName())
                 .nurseId(record.getNurse().getId())

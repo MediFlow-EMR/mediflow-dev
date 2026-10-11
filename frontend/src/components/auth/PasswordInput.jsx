@@ -118,12 +118,16 @@ const PasswordInput = ({ onPasswordChange }) => {
                         onChange={changeHandler}
                         className={`${styles.passwordInput} ${errorMessage ? styles.invalidInput : ''}`}
                         placeholder='비밀번호를 입력하세요'
+                        autoComplete='new-password'
+                        aria-label='새 비밀번호'
+                        aria-invalid={!!errorMessage}
                     />
                     <button
                         type='button'
                         className={styles.togglePasswordBtn}
                         onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
+                        aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
+                        aria-pressed={showPassword}
                     >
                         {showPassword ? (
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

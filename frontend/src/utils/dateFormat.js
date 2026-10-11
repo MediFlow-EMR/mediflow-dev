@@ -1,3 +1,4 @@
+import { recordTimestamp } from './sortRecords.js';
 const pad = (value) => String(value).padStart(2, '0');
 
 // Calendar selections and date-only API values must not shift across time zones.
@@ -18,9 +19,12 @@ const recordFormatter = new Intl.DateTimeFormat('en-GB', {
 
 export const formatDateTime = (value) => {
   if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
+  const timestamp = recordTimestamp(value);
+  if (timestamp === null) return '-';
+  const date = new Date(timestamp);
   const parts = Object.fromEntries(recordFormatter.formatToParts(date)
     .filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, value]));
   return `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}`;
 };
+
+export const currentRecordDateTime = () => formatDateTime(new Date()).replaceAll('.', '-').replace(' ', 'T');

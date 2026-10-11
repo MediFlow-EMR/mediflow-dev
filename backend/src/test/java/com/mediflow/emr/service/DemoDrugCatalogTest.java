@@ -37,13 +37,13 @@ class DemoDrugCatalogTest {
             assertTrue(product.itemSeq().matches("[0-9]{9}"));
             for (String code : product.codes()) {
                 assertEquals(product.itemSeq(), catalog.find(code).orElseThrow().itemSeq());
-                var order = MedicalOrder.builder().orderType("MEDICATION").orderCode(code)
+                var order = MedicalOrder.builder().patient(com.mediflow.emr.entity.Patient.builder().id(100L).build()).orderType("MEDICATION").orderCode(code)
                         .orderName(product.genericName() + "(" + product.english() + ")")
                         .route(product.route()).dose("unchanged-demo-dose").build();
                 when(repo.findById(1L)).thenReturn(Optional.of(order));
                 when(api.getDrugDetailByItemSeq(product.itemSeq())).thenReturn(DrugDetailInfo.builder()
                         .available(true).itemSeq(product.itemSeq()).itemName(product.productName()).status("FOUND_PERMIT").build());
-                var result = service.getOrderDrugDetail(1L);
+                var result = service.getOrderDrugDetail(1L, 10L);
                 assertTrue(result.isAvailable(), code);
                 assertEquals(product.strength(), result.getProductStrength());
                 assertEquals("unchanged-demo-dose", order.getDose());
@@ -67,9 +67,9 @@ class DemoDrugCatalogTest {
         var catalog = catalog(true);
         var repo = mock(MedicalOrderRepository.class);
         var api = mock(DrugApiService.class);
-        when(repo.findById(1L)).thenReturn(Optional.of(MedicalOrder.builder().orderType("MEDICATION")
+        when(repo.findById(1L)).thenReturn(Optional.of(MedicalOrder.builder().patient(com.mediflow.emr.entity.Patient.builder().id(100L).build()).orderType("MEDICATION")
                 .orderCode("ENDO-GLA").orderName(catalog.find("ENDO-GLA").orElseThrow().displayName()).route("IV").build()));
-        assertFalse(service(repo, api, catalog).getOrderDrugDetail(1L).isAvailable());
+        assertFalse(service(repo, api, catalog).getOrderDrugDetail(1L, 10L).isAvailable());
         verifyNoInteractions(api);
     }
 }

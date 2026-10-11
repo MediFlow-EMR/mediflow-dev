@@ -1,8 +1,10 @@
+import ThemeToggle from '../components/common/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 import googleLogo from '../assets/google-logo.svg';
 import kakaoLogo from '../assets/kakao-logo.svg';
 import mediflowIcon from '../assets/mediflow-icon.svg';
 import styles from './LoginPage.module.scss';
+import DemoAccountHint from '../components/auth/DemoAccountHint';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -17,6 +19,7 @@ export default function LoginPage() {
 
     return (
         <div className={styles.container}>
+            <div className="page-theme-control"><ThemeToggle /></div>
             <div className={styles.wrapper}>
                 {/* 로고 섹션 */}
                 <div className={styles.logoSection}>
@@ -76,6 +79,7 @@ export default function LoginPage() {
                             카카오로 계속하기
                         </button>
                     </div>
+                    <DemoAccountHint />
                 </div>
 
                 {/* 하단 텍스트 */}

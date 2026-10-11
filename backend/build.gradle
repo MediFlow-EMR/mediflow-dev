@@ -58,6 +58,8 @@ dependencies {
 
     // Database
     runtimeOnly 'com.h2database:h2' // 인메모리 데이터베이스 (개발/테스트용)
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.flywaydb:flyway-mysql'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client' // MariaDB JDBC 드라이버 (운영용)
 
     // Lombok

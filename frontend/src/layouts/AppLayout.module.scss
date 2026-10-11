@@ -1,6 +1,6 @@
 .appLayout {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, #eff6ff, #ffffff, #f0f9ff);
+  background: linear-gradient(to bottom right, var(--surface-eff6ff), var(--surface-ffffff), var(--surface-f0f9ff));
   display: flex;
   flex-direction: column;
 }
@@ -12,3 +12,5 @@
   margin: 0 auto;
   width: 100%;
 }
+
+@media (max-width: 768px) { .main { padding: 12px; } }

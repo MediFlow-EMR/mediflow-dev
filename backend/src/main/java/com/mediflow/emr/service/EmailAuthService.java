@@ -240,7 +240,7 @@ public class EmailAuthService {
         }
 
         // 인증코드가 틀렸거나 만료된 경우 자동으로 인증코드를 재발송
-        log.warn("인증 코드 검증 실패. email={}, inputCode={} - 새 인증 코드 발송", email, code);
+        log.warn("인증 코드 검증 실패 - 새 인증 코드 발송");
         updateVerificationCode(email, verification);
         return false;
     }

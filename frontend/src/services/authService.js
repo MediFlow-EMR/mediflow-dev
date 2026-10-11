@@ -25,5 +25,5 @@ export const EmailAuthService = {
     verifyCode: (email, code) => apiClient.get('/auth/email/verify-code', { params: { email, code } }),
     getRemainingTime: (email) => apiClient.get('/auth/email/remaining-time', { params: { email } }),
     signup: (email, password) => apiClient.post('/auth/join', { email, password }),
-    login: (email, password) => apiClient.post('/auth/email/login', { email, password }),
+    login: (email, password) => apiClient.post('/auth/email/login', { email, password }, { skipAuthRefresh: true }),
 };

@@ -50,9 +50,9 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: white;
+    background: var(--surface-ffffff);
     padding: 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--line-cbd5e1);
     border-radius: 2px;
     box-shadow: none;
     overflow: hidden;
@@ -60,7 +60,7 @@
     .listHeader {
       font-size: 16px;
       font-weight: 600;
-      color: #1f2937;
+      color: var(--ink-1f2937);
       margin-bottom: 6px;
       padding: 4px 2px 8px;
       display: flex;
@@ -77,12 +77,12 @@
           padding: 7px 1px 9px;
           border: none;
           background: transparent;
-          color: #64748b;
+          color: var(--ink-64748b);
           font-size: 13px;
           font-weight: 650;
           cursor: pointer;
           letter-spacing: -0.01em;
-          transition: color 0.16s ease;
+          transition: color var(--motion-fast);
 
           &::after {
             position: absolute;
@@ -94,27 +94,27 @@
             background: transparent;
             content: '';
             transform: scaleX(0.45);
-            transition: background 0.16s ease, transform 0.16s ease;
+            transition: background var(--motion-fast), transform 0.16s ease;
           }
 
           &:hover {
             background: transparent;
-            color: #0369a1;
+            color: var(--ink-0369a1);
           }
 
           &.activeTab {
             background: transparent;
-            color: #075985;
+            color: var(--ink-075985);
             font-weight: 800;
 
             &::after {
-              background: #0284c7;
+              background: var(--surface-0284c7);
               transform: scaleX(1);
             }
 
             &:hover {
               background: transparent;
-              color: #075985;
+              color: var(--ink-075985);
             }
           }
         }
@@ -125,19 +125,19 @@
     .loading {
       text-align: center;
       padding: 40px;
-      color: #6b7280;
+      color: var(--ink-6b7280);
     }
 
     .error {
       text-align: center;
       padding: 40px;
-      color: #ef4444;
+      color: var(--ink-ef4444);
     }
 
     .empty {
       text-align: center;
       padding: 40px;
-      color: #9ca3af;
+      color: var(--ink-9ca3af);
     }
 
     .pagination {
@@ -149,27 +149,27 @@
       bottom: 0;
       margin-top: auto;
       padding: 6px 4px 2px;
-      background: #fff;
-      border-top: 1px solid #cbd5e1;
+      background: var(--surface-ffffff);
+      border-top: 1px solid var(--line-cbd5e1);
 
       button {
         height: 30px;
-        border: 1px solid #94a3b8;
+        border: 1px solid var(--line-94a3b8);
         border-radius: 2px;
-        background: #f8fafc;
-        color: #075985;
+        background: var(--surface-f8fafc);
+        color: var(--ink-075985);
         font-size: 21px;
         line-height: 1;
         cursor: pointer;
 
         &:hover:not(:disabled) {
-          background: #e0f2fe;
-          border-color: #0284c7;
+          background: var(--surface-e0f2fe);
+          border-color: var(--line-0284c7);
         }
 
         &:disabled {
-          color: #cbd5e1;
-          border-color: #e2e8f0;
+          color: var(--ink-cbd5e1);
+          border-color: var(--line-e2e8f0);
           cursor: not-allowed;
         }
       }
@@ -177,17 +177,17 @@
 
     .pageStatus {
       text-align: center;
-      color: #475569;
+      color: var(--ink-475569);
       font-size: 11px;
 
       strong {
-        color: #0f172a;
+        color: var(--ink-0f172a);
       }
 
       span {
         display: block;
         margin-top: 1px;
-        color: #64748b;
+        color: var(--ink-64748b);
         font-size: 9px;
       }
     }
@@ -212,3 +212,5 @@
     width: 100%;
   }
 }
+
+.leftPanel .patientList .listHeader .tabs { gap: 12px; flex-wrap: wrap; }

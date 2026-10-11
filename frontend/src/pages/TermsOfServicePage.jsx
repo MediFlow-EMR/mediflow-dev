@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/common/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 import mediflowIcon from '../assets/mediflow-icon.svg';
 import styles from './TermsOfServicePage.module.scss';
@@ -7,6 +8,7 @@ export default function TermsOfServicePage() {
 
     return (
         <div className={styles.container}>
+            <div className="page-theme-control"><ThemeToggle /></div>
             <div className={styles.wrapper}>
                 {/* 헤더 */}
                 <div className={styles.header}>

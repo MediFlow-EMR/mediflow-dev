@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { formatDateTime } from '../../utils/dateFormat';
+import useUnsavedRecord from '../../hooks/useUnsavedRecord';
+import DateTimePicker from '../common/DateTimePicker';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import SortControl from '../common/SortControl';
+import { sortRecords } from '../../utils/sortRecords';
+import { useState, useRef } from 'react';
 import apiClient from '../../services/apiClient';
 import TimeSeriesChart from '../common/TimeSeriesChart';
 import styles from './IntakeOutputTab.module.scss';
 
-/**
- * 섭취배설량(I/O) 탭 컴포넌트
- */
-const IntakeOutputTab = ({ patientId }) => {
+const IntakeOutputTab = ({ patientId, onDirtyChange }) => {
   // I/O 메트릭 정의
   const ioMetrics = [
     { key: 'intakeOral', label: '경구 섭취', color: '#3b82f6', unit: 'mL' },
@@ -17,25 +21,19 @@ const IntakeOutputTab = ({ patientId }) => {
     { key: 'outputTotal', label: '배설 총량', color: '#dc2626', unit: 'mL' },
   ];
 
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { items: records, loading, loadError, refresh: fetchRecords } = useRecordList(`/intake-output/patient/${patientId}`, 'I/O 목록을 불러올 수 없습니다');
+
+  const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
+  const [editingVersion, setEditingVersion] = useState(null);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [showChart, setShowChart] = useState(false);
 
   // 현재 시간 (한국 시간)
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
 
-  // I/O 입력 폼 상태
   const [formData, setFormData] = useState({
     intakeOral: '',
     intakeIv: '',
@@ -44,28 +42,8 @@ const IntakeOutputTab = ({ patientId }) => {
     recordedAt: '',
   });
 
-  // I/O 목록 조회
-  const fetchRecords = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/intake-output/patient/${patientId}`);
-      setRecords(response.data.data || []);
-    } catch (err) {
-      console.error('I/O 목록 조회 실패:', err);
-      setError('I/O 목록을 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useUnsavedRecord(showForm, onDirtyChange, saving);
 
-  useEffect(() => {
-    if (patientId) {
-      fetchRecords();
-    }
-  }, [patientId]);
-
-  // 입력값 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -74,11 +52,15 @@ const IntakeOutputTab = ({ patientId }) => {
   // I/O 등록/수정
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
     setError(null);
 
     try {
       const payload = {
         patientId,
+        version: editingVersion,
         intakeOral: formData.intakeOral ? parseInt(formData.intakeOral) : null,
         intakeIv: formData.intakeIv ? parseInt(formData.intakeIv) : null,
         outputUrine: formData.outputUrine ? parseInt(formData.outputUrine) : null,
@@ -95,12 +77,11 @@ const IntakeOutputTab = ({ patientId }) => {
       resetForm();
       fetchRecords();
     } catch (err) {
-      console.error('I/O 저장 실패:', err);
+
       setError(err.response?.data?.message || 'I/O 저장에 실패했습니다');
-    }
+    } finally { saveLock.current = false; setSaving(false); }
   };
 
-  // 폼 초기화
   const resetForm = () => {
     setFormData({
       intakeOral: '',
@@ -110,10 +91,10 @@ const IntakeOutputTab = ({ patientId }) => {
       recordedAt: '',
     });
     setEditingRecordId(null);
+    setEditingVersion(null);
     setShowForm(false);
   };
 
-  // 수정 모드로 전환
   const handleEdit = (record) => {
     setFormData({
       intakeOral: record.intakeOral || '',
@@ -123,15 +104,13 @@ const IntakeOutputTab = ({ patientId }) => {
       recordedAt: record.recordedAt ? record.recordedAt.slice(0, 16) : '',
     });
     setEditingRecordId(record.id);
+    setEditingVersion(record.version);
     setShowForm(true);
     setShowChart(false);
   };
 
-  // 차트 데이터 준비
   const prepareChartData = () => {
-    return records
-      .slice()
-      .reverse()
+    return sortRecords(records, 'recordedAt', 'asc')
       .map(record => ({
         time: record.recordedAt,
         intakeOral: record.intakeOral,
@@ -156,7 +135,6 @@ const IntakeOutputTab = ({ patientId }) => {
     return { intakeTotal, outputTotal, balance: intakeTotal - outputTotal };
   };
 
-  // 시간 포맷
   const formatTime = (dateTime) => {
     return formatDateTime(dateTime);
   };
@@ -196,7 +174,7 @@ const IntakeOutputTab = ({ patientId }) => {
             {showChart ? '목록 보기' : '한눈에 보기'}
           </button>
           <button 
-            className={styles.addButton}
+            className={styles.addButton} disabled={saving}
             onClick={() => {
               if (showForm) {
                 resetForm();
@@ -205,12 +183,13 @@ const IntakeOutputTab = ({ patientId }) => {
               }
             }}
           >
-            {showForm ? '취소' : '+ I/O 등록'}
+            {saving ? '저장 중…' : showForm ? '취소' : '+ I/O 등록'}
           </button>
         </div>
       </div>
+      <div className="record-toolbar"><SortControl value={sortOrder} onChange={setSortOrder} basis="기록일시" /></div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <RequestError className={styles.error} message={error || loadError} onRetry={loadError ? fetchRecords : undefined} />
 
       {/* 당일 누적 */}
       <div className={styles.todaySummary}>
@@ -232,16 +211,11 @@ const IntakeOutputTab = ({ patientId }) => {
 
       {/* I/O 입력 폼 */}
       {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} aria-busy={saving}>
+          <fieldset className="record-form-fields" disabled={saving}>
           <div className={styles.formGroup}>
             <label>기록시간</label>
-            <input
-              type="datetime-local"
-              name="recordedAt"
-              value={formData.recordedAt}
-              onChange={handleChange}
-              max={getCurrentDateTime()}
-            />
+            <DateTimePicker id="recordedAt" label="기록 일시" value={formData.recordedAt} onChange={value => setFormData(prev => ({ ...prev, recordedAt: value }))} />
             <small>기록 시간을 입력하세요 (미입력 시 현재 시간, 미래 시간 입력 불가)</small>
           </div>
 
@@ -253,6 +227,7 @@ const IntakeOutputTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="intakeOral"
+                  aria-label="경구 섭취량 (mL)"
                   value={formData.intakeOral}
                   onChange={handleChange}
                   placeholder="0"
@@ -265,6 +240,7 @@ const IntakeOutputTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="intakeIv"
+                  aria-label="정맥 수액량 (mL)"
                   value={formData.intakeIv}
                   onChange={handleChange}
                   placeholder="0"
@@ -281,6 +257,7 @@ const IntakeOutputTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="outputUrine"
+                  aria-label="소변량 (mL)"
                   value={formData.outputUrine}
                   onChange={handleChange}
                   placeholder="0"
@@ -293,6 +270,7 @@ const IntakeOutputTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="outputDrain"
+                  aria-label="배액량 (mL)"
                   value={formData.outputDrain}
                   onChange={handleChange}
                   placeholder="0"
@@ -317,6 +295,7 @@ const IntakeOutputTab = ({ patientId }) => {
               </button>
             )}
           </div>
+        </fieldset>
         </form>
       )}
 
@@ -334,7 +313,7 @@ const IntakeOutputTab = ({ patientId }) => {
         {records.length === 0 ? (
           <div className={styles.empty}>등록된 I/O 기록이 없습니다</div>
         ) : (
-          records.map((record) => {
+          sortRecords(records, 'recordedAt', sortOrder).map((record) => {
             const warnings = getWarning(record);
             
             return (
@@ -418,4 +397,3 @@ const IntakeOutputTab = ({ patientId }) => {
 };
 
 export default IntakeOutputTab;
-import { formatDateTime } from '../../utils/dateFormat';

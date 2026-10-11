@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
-import apiClient from '../../services/apiClient';
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import SortControl from '../common/SortControl';
+import { sortRecords } from '../../utils/sortRecords';
+import { useState } from 'react';
 import styles from './MedicationTab.module.scss';
 
 /**
  * 투약 기록 탭 컴포넌트
  */
 const MedicationTab = ({ patientId }) => {
-  const [medications, setMedications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { items: medications, loading, loadError, refresh: fetchMedications } = useRecordList(`/medications/patient/${patientId}`, '투약 목록을 불러올 수 없습니다');
+
+  const [sortOrder, setSortOrder] = useState('desc');
 
   // 투약 경로 옵션
   const routes = [
@@ -20,36 +24,6 @@ const MedicationTab = ({ patientId }) => {
     { value: 'INHALATION', label: '흡입' },
   ];
 
-
-  // 투약 목록 조회
-  const fetchMedications = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/medications/patient/${patientId}`);
-      setMedications(response.data.data || []);
-    } catch (err) {
-      console.error('투약 목록 조회 실패:', err);
-      setError('투약 목록을 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (patientId) {
-      fetchMedications();
-    }
-  }, [patientId]);
-
-  // 수정 모드로 전환 (현재는 투약 등록이 오더탭에서만 가능하므로 비활성화)
-  const handleEdit = (medication) => {
-    // 투약 수정 기능은 향후 구현 예정
-    console.log('투약 수정:', medication);
-    alert('투약 수정 기능은 현재 지원되지 않습니다.');
-  };
-
-  // 시간 포맷
   const formatTime = (dateTime) => {
     return formatRecordDateTime(dateTime);
   };
@@ -63,16 +37,16 @@ const MedicationTab = ({ patientId }) => {
       <div className={styles.header}>
         <h3>투약 기록</h3>
       </div>
+      <div className="record-toolbar"><SortControl value={sortOrder} onChange={setSortOrder} basis="투약일시" /></div>
 
-      {error && <div className={styles.error}>{error}</div>}
-
+      <RequestError className={styles.error} message={loadError} onRetry={loadError ? fetchMedications : undefined} />
 
       {/* 투약 이력 목록 */}
       <div className={styles.medicationList}>
         {medications.length === 0 ? (
           <div className={styles.empty}>등록된 투약 기록이 없습니다</div>
         ) : (
-          medications.map((medication) => (
+          sortRecords(medications, 'administeredAt', sortOrder).map((medication) => (
             <div key={medication.id} className={styles.medicationItem}>
               <div className={styles.medicationHeader}>
                 <div className={styles.medicationHeaderLeft}>
@@ -82,15 +56,6 @@ const MedicationTab = ({ patientId }) => {
                 <div className={styles.medicationHeaderRight}>
                   <span className={styles.time}>{formatTime(medication.administeredAt)}</span>
                   <span className={styles.nurse}>{medication.nurseName}</span>
-                  {medication.canEdit && (
-                    <button 
-                      className={styles.editButton}
-                      onClick={() => handleEdit(medication)}
-                      title="투약 수정"
-                    >
-                      수정
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -135,4 +100,3 @@ const MedicationTab = ({ patientId }) => {
 };
 
 export default MedicationTab;
-import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

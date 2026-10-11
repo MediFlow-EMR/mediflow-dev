@@ -1,5 +1,7 @@
 package com.mediflow.emr.service;
 
+import com.mediflow.emr.util.RecordUpdateGuard;
+
 import com.mediflow.emr.dto.NursingNoteRequest;
 import com.mediflow.emr.dto.NursingNoteResponse;
 import com.mediflow.emr.entity.NursingNote;
@@ -91,6 +93,9 @@ public class NursingNoteService {
         NursingNote note = nursingNoteRepository.findById(noteId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTE_NOT_FOUND));
 
+        patientAccessService.requireAccessiblePatient(nurseId, note.getPatient().getId());
+        RecordUpdateGuard.requireCurrent(note.getPatient().getId(), request.patientId(), note.getVersion(), request.version());
+
         // 권한 확인 (본인이 작성한 기록만 수정 가능)
         if (!note.getNurse().getId().equals(nurseId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 작성한 기록만 수정할 수 있습니다");
@@ -105,12 +110,13 @@ public class NursingNoteService {
         );
 
         log.info("간호기록 수정 완료 - id: {}", note.getId());
+        nursingNoteRepository.saveAndFlush(note);
         return toResponse(note, nurseId);
     }
 
     /**
      * 간호기록 삭제
-     * 의료법 제23조에 따라 의료 기록은 10년간 보존해야 하므로 삭제 불가
+     * 원본 보존 정책에 따라 직접 삭제하지 않는다.
      */
     @Transactional
     public void deleteNursingNote(Long noteId, Long nurseId) {
@@ -125,14 +131,11 @@ public class NursingNoteService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 작성한 기록만 삭제할 수 있습니다");
         }
 
-        // 의료법 제23조: 의료 기록은 10년간 보존 의무
+        // 원본 보존 정책.
         // 삭제 대신 예외를 발생시켜 삭제 불가 안내
-        log.warn("의료법 제23조에 따라 간호기록 삭제 불가 - noteId: {}", noteId);
+        log.warn("원본 보존 정책에 따라 간호기록 삭제 불가 - noteId: {}", noteId);
         throw new BusinessException(ErrorCode.MEDICAL_RECORD_CANNOT_BE_DELETED);
 
-        // 기존 삭제 코드 (주석 처리)
-        // nursingNoteRepository.delete(note);
-        // log.info("간호기록 삭제 완료 - id: {}", noteId);
     }
 
     /**
@@ -144,6 +147,7 @@ public class NursingNoteService {
         
         return NursingNoteResponse.builder()
                 .id(note.getId())
+                .version(note.getVersion())
                 .patientId(note.getPatient().getId())
                 .patientName(note.getPatient().getName())
                 .nurseId(note.getNurse().getId())

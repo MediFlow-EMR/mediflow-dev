@@ -11,36 +11,36 @@
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--ink-1f2937);
   }
 }
 
 .addButton {
   padding: 0.5rem 1rem;
-  background: #3b82f6;
-  color: white;
+  background: var(--surface-3b82f6);
+  color: var(--ink-ffffff);
   border: none;
   border-radius: 0.375rem;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--motion-fast);
 
   &:hover {
-    background: #2563eb;
+    background: var(--surface-2563eb);
   }
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
 }
 
 .error {
   padding: 0.75rem 1rem;
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--surface-fee2e2);
+  color: var(--ink-dc2626);
   border-radius: 0.375rem;
   margin-bottom: 1rem;
   font-size: 0.875rem;
@@ -49,14 +49,14 @@
 .empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: #9ca3af;
+  color: var(--ink-9ca3af);
   font-size: 0.875rem;
 }
 
 /* 투약 입력 폼 */
 .form {
-  background: linear-gradient(135deg, #eff6ff 0%, #f9fafb 100%);
-  border: 2px solid #dbeafe;
+  background: linear-gradient(135deg, var(--surface-eff6ff) 0%, var(--surface-f9fafb) 100%);
+  border: 2px solid var(--line-dbeafe);
   border-radius: 0.75rem;
   padding: 2rem;
   margin-bottom: 1.5rem;
@@ -77,26 +77,26 @@
   label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #1e40af;
+    color: var(--ink-1e40af);
     margin-bottom: 0.5rem;
   }
 
   input, select {
     padding: 0.625rem 0.875rem;
-    border: 2px solid #bfdbfe;
+    border: 2px solid var(--line-bfdbfe);
     border-radius: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
-    background: white;
-    transition: all 0.2s;
+    background: var(--surface-ffffff);
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
     &:hover {
-      border-color: #93c5fd;
+      border-color: var(--line-93c5fd);
     }
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--line-3b82f6);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
   }
@@ -108,7 +108,7 @@
   small {
     margin-top: 0.25rem;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--ink-6b7280);
   }
 }
 
@@ -122,8 +122,8 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 2px solid #3b82f6;
+  background: var(--surface-ffffff);
+  border: 2px solid var(--line-3b82f6);
   border-top: none;
   border-radius: 0 0 0.5rem 0.5rem;
   max-height: 200px;
@@ -135,26 +135,26 @@
 .searchResultItem {
   padding: 0.75rem 1rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--motion-fast);
 
   &:hover {
-    background: #eff6ff;
+    background: var(--surface-eff6ff);
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--line-e5e7eb);
   }
 }
 
 .drugName {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ink-1f2937);
 }
 
 .drugCompany {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
   margin-top: 0.25rem;
 }
 
@@ -167,17 +167,17 @@
 .submitButton {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--surface-10b981) 0%, var(--surface-059669) 100%);
+  color: var(--ink-ffffff);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
   &:hover {
-    transform: translateY(-2px);
+    transform: none;
     box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.4);
   }
 
@@ -189,17 +189,17 @@
 .cancelButton {
   flex: 1;
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--surface-6b7280) 0%, var(--surface-4b5563) 100%);
+  color: var(--ink-ffffff);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
   &:hover {
-    transform: translateY(-2px);
+    transform: none;
     box-shadow: 0 6px 8px -1px rgba(107, 114, 128, 0.4);
   }
 
@@ -216,17 +216,17 @@
 }
 
 .medicationItem {
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--surface-ffffff);
+  border: 2px solid var(--line-e5e7eb);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  transition: all 0.3s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
 
   &:hover {
-    border-color: #bfdbfe;
+    border-color: var(--line-bfdbfe);
     box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.2);
-    transform: translateY(-2px);
+    transform: none;
   }
 }
 
@@ -236,7 +236,7 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid var(--line-f3f4f6);
 }
 
 .medicationHeaderLeft {
@@ -248,13 +248,13 @@
 .drugName {
   font-size: 1rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--ink-1f2937);
 }
 
 .route {
   padding: 0.25rem 0.75rem;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #1e40af;
+  background: linear-gradient(135deg, var(--surface-dbeafe) 0%, var(--surface-bfdbfe) 100%);
+  color: var(--ink-1e40af);
   border-radius: 1rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -268,27 +268,27 @@
 
 .time {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
 }
 
 .nurse {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--ink-9ca3af);
 }
 
 .editButton {
   padding: 0.25rem 0.5rem;
-  background: #f59e0b;
-  color: white;
+  background: var(--surface-f59e0b);
+  color: var(--ink-ffffff);
   border: none;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--motion-fast);
 
   &:hover {
-    background: #d97706;
+    background: var(--surface-d97706);
   }
 }
 
@@ -303,19 +303,19 @@
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem 0.75rem;
-  background: #f9fafb;
+  background: var(--surface-f9fafb);
   border-radius: 0.375rem;
 }
 
 .detailLabel {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
   font-weight: 500;
 }
 
 .detailValue {
   font-size: 0.875rem;
-  color: #1f2937;
+  color: var(--ink-1f2937);
   font-weight: 600;
 }
 
@@ -335,3 +335,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+.header { gap: 12px; flex-wrap: wrap; h3 { flex-shrink: 0; } }
+
+.medicationItem { border-radius: 2px; box-shadow: none; &:hover { box-shadow: none; } }

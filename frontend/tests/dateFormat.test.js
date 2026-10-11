@@ -8,6 +8,7 @@ test('date-only values and calendar selections keep their original day', () => {
 });
 
 test('record timestamps use padded Korean dates and 24-hour time', () => {
+  assert.equal(formatDateTime('2026-10-11T13:00:00'), '2026.10.11 13:00');
   assert.equal(formatDateTime('2026-10-11T04:00:00Z'), '2026.10.11 13:00');
   assert.equal(formatDateTime('2026-10-10T15:00:00Z'), '2026.10.11 00:00');
 });

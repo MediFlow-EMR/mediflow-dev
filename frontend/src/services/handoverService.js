@@ -7,6 +7,7 @@ export const HandoverService = {
       null,
       {
         params: { departmentId, fromShiftId, toShiftId },
+        timeout: 120000,
         withCredentials: true
       }
     );
@@ -19,22 +20,23 @@ export const HandoverService = {
       null,
       {
         params: { fromShiftId },
+        timeout: 120000,
         withCredentials: true
       }
     );
     return { success: true, data: response.data.data };
   },
 
-  saveHandover: async ({ departmentId, fromShiftId, toShiftId, aiDraft, finalSummary }) => {
-    const response = await apiClient.post(
-      `/handovers`,
-      { departmentId, fromShiftId, toShiftId, aiDraft, finalSummary },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true
-      }
-    );
-    return { success: true, message: response.data.message };
+  saveHandover: async (payload, id = null) => {
+    const response = id
+      ? await apiClient.put(`/handovers/${id}`, payload)
+      : await apiClient.post('/handovers', payload);
+    return { success: true, data: response.data.data };
+  },
+
+  getRevisions: async (id) => {
+    const response = await apiClient.get(`/handovers/${id}/revisions`);
+    return { success: true, data: response.data.data };
   },
 
   getHandoversByDepartment: async (departmentId) => {

@@ -32,6 +32,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(code.getStatus()).body(ApiResponse.error(e.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConflict(Exception e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(ErrorCode.CONFLICT.getDefaultMessage()));
+    }
+
+    @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            jakarta.validation.ConstraintViolationException.class})
+    public ResponseEntity<ApiResponse<Void>> handleMalformedInput(Exception e) {
+        return ResponseEntity.badRequest().body(ApiResponse.error("입력 형식과 필수 항목을 확인해주세요."));
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleForbidden(Exception e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error("이 작업을 수행할 권한이 없습니다."));
+    }
+
     // 일반 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception e) {

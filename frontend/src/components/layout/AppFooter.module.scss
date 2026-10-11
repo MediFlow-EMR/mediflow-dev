@@ -1,6 +1,6 @@
 .footer {
-  border-top: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-top: 1px solid var(--line-e5e7eb);
+  background-color: var(--surface-f9fafb);
 }
 
 .container {
@@ -12,6 +12,6 @@
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--ink-6b7280);
 }
 

@@ -17,24 +17,23 @@ const ProtectedRoute = ({ children }) => {
   const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     const checkAuth = async () => {
       try {
-        // 쿠키가 유효한지 간단한 API 호출로 확인
-        await apiClient.get('/users/me');
-        
-        // API 호출 성공하면 쿠키가 유효함
-        setAuth(null, null, {});
+        const response = await apiClient.get('/users/me', { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setAuth(null, null, response.data.data);
         setIsValid(true);
-      } catch (error) {
-        console.error('인증 확인 실패:', error);
+      } catch {
+        if (controller.signal.aborted) return;
         clear();
         setIsValid(false);
       } finally {
-        setIsChecking(false);
+        if (!controller.signal.aborted) setIsChecking(false);
       }
     };
-
     checkAuth();
+    return () => controller.abort();
   }, [setAuth, clear]);
 
   // 인증 확인 중
@@ -47,7 +46,7 @@ const ProtectedRoute = ({ children }) => {
           alignItems: 'center',
           height: '100vh',
           fontSize: '18px',
-          color: '#6b7280',
+          color: 'var(--ink-6b7280)',
         }}
       >
         로딩중...

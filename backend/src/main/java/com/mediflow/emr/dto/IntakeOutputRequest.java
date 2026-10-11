@@ -29,6 +29,12 @@ public record IntakeOutputRequest(
         @Max(value = 5000, message = "배액량은 5000mL 이하여야 합니다")
         Integer outputDrain,
 
-        LocalDateTime recordedAt
+        LocalDateTime recordedAt,
+
+        @PositiveOrZero Long version
 ) {
+    @AssertTrue(message = "측정값을 하나 이상 입력해주세요")
+    public boolean isMeasurementPresent() {
+        return intakeOral != null || intakeIv != null || outputUrine != null || outputDrain != null;
+    }
 }

@@ -1,20 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useNavigationGuard } from '../../stores/navigationGuard';
+import { DrugDocument, CautionDocument } from './DrugDocument';
+import { formatDateTime as formatRecordDateTime, currentRecordDateTime } from '../../utils/dateFormat';
+import useUnsavedRecord from '../../hooks/useUnsavedRecord';
+import DateTimePicker from '../common/DateTimePicker';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import SortControl from '../common/SortControl';
+import { sortRecords } from '../../utils/sortRecords';
+import { useState, useRef, useEffect } from 'react';
 import apiClient from '../../services/apiClient';
 import styles from './OrderTab.module.scss';
 
-/**
- * 오더 조회 탭 컴포넌트
- */
 const OrderTab = ({ patientId }) => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { items: orders, setItems: setOrders, loading, loadError, refresh: fetchOrders } = useRecordList(`/orders/patient/${patientId}`, '오더 목록을 불러올 수 없습니다');
+
+  const saveLock = useRef(false);
+  const statusLock = useRef(false);
+  const drugRequest = useRef(null);
+  const [pendingOrderId, setPendingOrderId] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDrugInfo, setShowDrugInfo] = useState(false);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [loadingDrugInfo, setLoadingDrugInfo] = useState(false);
 
-  // 투약 등록 관련 상태
   const [completedOrderId, setCompletedOrderId] = useState(null);
   const [showMedicationForm, setShowMedicationForm] = useState(false);
   const [medicationFormData, setMedicationFormData] = useState({
@@ -22,7 +34,9 @@ const OrderTab = ({ patientId }) => {
     notes: '',
   });
 
-  // 투약 경로 매핑
+  useUnsavedRecord(showMedicationForm, undefined, saving || pendingOrderId !== null);
+  useEffect(() => () => drugRequest.current?.abort(), []);
+
   const routeLabels = {
     PO: '경구',
     IV: '정맥',
@@ -32,7 +46,6 @@ const OrderTab = ({ patientId }) => {
     INHALATION: '흡입',
   };
 
-  // 오더 상태 매핑
   const statusLabels = {
     PENDING: '대기',
     IN_PROGRESS: '진행중',
@@ -47,172 +60,38 @@ const OrderTab = ({ patientId }) => {
     CANCELLED: '#ef4444',
   };
 
-  // 식약처 허가정보는 긴 단일 문자열로 내려오므로 문장/번호 항목별로 나눠 표시한다.
-  const normalizeDrugText = (text) => text
-    .replaceAll('&nbsp;', ' ')
-    .replaceAll('&#x2022;', '•')
-    .replaceAll('&#x2981;', '•')
-    .replace(/\s*ㆍ\s*/g, '\n')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&amp;', '&');
-
-  const formatDrugDocument = (text) => {
-    if (!text) return null;
-
-    const items = normalizeDrugText(text)
-      .replace(/\s*(\[\[SECTION:[^\]]+\]\])\s*/g, '\n$1\n')
-      .replace(/\s+(?=○\s)/g, '\n')
-      .replace(/\s+(?=\d+[.)]\s)/g, '\n')
-      .split(/\n+|(?<=다\.)\s+(?=[가-힣A-Z0-9])/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    return (
-      <ul className={styles.documentList}>
-        {items.map((item, index) => {
-          const sectionMatch = item.match(/^\[\[SECTION:(.+)\]\]$/);
-          if (sectionMatch) {
-            return (
-              <li className={styles.clinicalDocumentHeading} key={`${index}-${item.slice(0, 12)}`}>
-                {sectionMatch[1].replace(/[<>]/g, '')}
-              </li>
-            );
-          }
-          const numberMatch = item.match(/^(\d+[.)])\s*(.*)$/);
-          if (numberMatch) {
-            return (
-              <li className={styles.clinicalNumberRow} key={`${index}-${item.slice(0, 12)}`}>
-                <span>{numberMatch[1]}</span>
-                <p>{numberMatch[2]}</p>
-              </li>
-            );
-          }
-          const topicMatch = item.match(
-            /^○\s*(유효균종|적응증|성인 및 12세 이상 소아|신생아|영ㆍ유아 및 소아(?:\([^)]*\))?|고령자|수막염|임질|수술 전ㆍ후 감염증예방|신장 및 간기능 장애)\s*[:：-]?\s*(.*)$/
-          );
-          if (topicMatch) {
-            const detailItems = topicMatch[1] === '적응증'
-              ? topicMatch[2].split(/\s+-\s+/).map((value) => value.trim()).filter(Boolean)
-              : [];
-            return (
-              <li className={styles.clinicalTopicRow} key={`${index}-${item.slice(0, 12)}`}>
-                <span>{topicMatch[1]}</span>
-                {detailItems.length > 1 ? (
-                  <div className={styles.indicationGrid}>
-                    {detailItems.map((value) => <span key={value}>{value}</span>)}
-                  </div>
-                ) : (
-                  <p>{topicMatch[2]}</p>
-                )}
-              </li>
-            );
-          }
-          if (item.startsWith('○')) {
-            return (
-              <li className={styles.clinicalTopicRow} key={`${index}-${item.slice(0, 12)}`}>
-                <p>{item.replace(/^○\s*/, '')}</p>
-              </li>
-            );
-          }
-          return <li key={`${index}-${item.slice(0, 12)}`}>{item}</li>;
-        })}
-      </ul>
-    );
-  };
-
-  const formatCautionDocument = (text) => {
-    if (!text) return null;
-
-    const rows = normalizeDrugText(text)
-      .replace(/\s*(\[\[SECTION:[^\]]+\]\])\s*/g, '\n$1\n')
-      .replace(/\s+(?=\d+\)\s)/g, '\n')
-      .split(/\n+/)
-      .map((row) => row.trim())
-      .filter(Boolean);
-
-    return (
-      <div className={styles.cautionRows}>
-        {rows.map((row, index) => {
-          const sectionMatch = row.match(/^\[\[SECTION:(.+)\]\]$/);
-          const match = row.match(/^(\d+\))\s*(.*)$/);
-
-          if (sectionMatch) {
-            return (
-              <div className={styles.cautionSectionTitle} key={`${index}-${row.slice(0, 12)}`}>
-                {sectionMatch[1].replace(/[<>]/g, '')}
-              </div>
-            );
-          }
-
-          return (
-            <div className={styles.cautionRow} key={`${index}-${row.slice(0, 12)}`}>
-              {match ? (
-                <>
-                  <span className={styles.cautionNumber}>{match[1]}</span>
-                  <p>{match[2]}</p>
-                </>
-              ) : (
-                <p className={styles.cautionIntro}>{row}</p>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // 오더 목록 조회
-  const fetchOrders = async () => {
-    if (!patientId) return;
-    
-    setError(null);
-    try {
-      const response = await apiClient.get(`/orders/patient/${patientId}`);
-      setOrders(response.data.data || []);
-      setLoading(false);
-    } catch (err) {
-      console.error('오더 목록 조회 실패:', err);
-      setError('오더 목록을 불러올 수 없습니다');
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (patientId) {
-      setLoading(true);
-      fetchOrders();
-    }
-  }, [patientId]);
-
-  // 오더 상태 변경
   const handleStatusChange = async (orderId, newStatus) => {
-    console.log('오더 상태 변경 시작:', { orderId, newStatus });
+    if (statusLock.current) return;
+    statusLock.current = true;
+    setPendingOrderId(orderId);
+    setError(null);
+    setNotice(null);
+
     try {
-      const response = await apiClient.patch(`/orders/${orderId}/status`, null, {
+      await apiClient.patch(`/orders/${orderId}/status`, null, {
         params: { status: newStatus },
       });
-      console.log('오더 상태 변경 성공:', response.data);
 
       // 오더 목록 새로고침
       await fetchOrders();
       setSelectedOrder(null);
     } catch (err) {
-      console.error('오더 상태 변경 실패:', err);
-      console.error('에러 상세:', err.response?.data);
-      alert(`오더 상태 변경에 실패했습니다: ${err.response?.data?.message || err.message}`);
-    }
+
+      setError(err.response?.data?.message || '오더 상태 변경에 실패했습니다');
+    } finally { statusLock.current = false; setPendingOrderId(null); }
   };
 
   // 완료 버튼 클릭 (투약 등록 버튼 표시)
   const handleComplete = (orderId) => {
-    console.log('완료 버튼 클릭 - orderId:', orderId);
+
     setCompletedOrderId(orderId);
   };
 
   // 투약 등록 버튼 클릭
   const handleOpenMedicationForm = (order) => {
-    console.log('투약 등록 버튼 클릭 - order:', order);
+    if (saving || statusLock.current) return;
+    setNotice(null);
+
     setSelectedOrder(order);
     setMedicationFormData({
       administeredAt: getCurrentDateTime(),
@@ -222,7 +101,12 @@ const OrderTab = ({ patientId }) => {
   };
 
   // 약품 상세 정보 보기
+  const closeDrugInfo = () => { drugRequest.current?.abort(); setShowDrugInfo(false); setLoadingDrugInfo(false); };
   const handleViewDrugInfo = async (order) => {
+    drugRequest.current?.abort();
+    const controller = new AbortController();
+    drugRequest.current = controller;
+    setLoadingDrugInfo(false);
     setSelectedOrder(order);
     setShowDrugInfo(true);
     
@@ -230,7 +114,8 @@ const OrderTab = ({ patientId }) => {
     if (!order.drugInfo) {
       setLoadingDrugInfo(true);
       try {
-        const response = await apiClient.get(`/orders/${order.id}/drug-detail`);
+        const response = await apiClient.get(`/orders/${order.id}/drug-detail`, { signal: controller.signal, timeout: 60000 });
+        if (controller.signal.aborted) return;
         const drugInfo = response.data.data;
         
         // 오더 목록에서 해당 오더의 drugInfo 업데이트
@@ -242,26 +127,16 @@ const OrderTab = ({ patientId }) => {
         
         // 선택된 오더도 업데이트
         setSelectedOrder({ ...order, drugInfo });
-      } catch (err) {
-        console.error('약품 상세 정보 조회 실패:', err);
+      } catch {
+        if (controller.signal.aborted) return;
         setSelectedOrder({ ...order, drugInfo: null });
       } finally {
-        setLoadingDrugInfo(false);
+        if (!controller.signal.aborted) setLoadingDrugInfo(false);
       }
     }
   };
 
-  // 현재 시간 가져오기
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
+  const getCurrentDateTime = currentRecordDateTime;
 
   // 투약 등록 폼 입력 변경
   const handleMedicationFormChange = (e) => {
@@ -274,7 +149,9 @@ const OrderTab = ({ patientId }) => {
     e.preventDefault();
     setError(null);
 
-    if (!selectedOrder) return;
+    if (!selectedOrder || saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
 
     try {
       const payload = {
@@ -294,7 +171,6 @@ const OrderTab = ({ patientId }) => {
       // 서버가 투약 기록과 처방 완료를 하나의 트랜잭션으로 처리한다.
       await fetchOrders();
 
-      // 폼 닫기 및 상태 초기화
       setShowMedicationForm(false);
       setCompletedOrderId(null);
       setSelectedOrder(null);
@@ -303,15 +179,17 @@ const OrderTab = ({ patientId }) => {
         notes: '',
       });
 
-      alert('투약이 등록되었습니다.');
+      setNotice('투약이 등록되었습니다.');
     } catch (err) {
-      console.error('투약 등록 실패:', err);
+
       setError(err.response?.data?.message || '투약 등록에 실패했습니다');
-    }
+    } finally { saveLock.current = false; setSaving(false); }
   };
 
   // 투약 등록 취소
   const handleCancelMedicationForm = () => {
+    if (saving) return;
+    useNavigationGuard.getState().requestNavigation(() => {
     setShowMedicationForm(false);
     setCompletedOrderId(null);
     setSelectedOrder(null);
@@ -319,9 +197,9 @@ const OrderTab = ({ patientId }) => {
       administeredAt: '',
       notes: '',
     });
+    });
   };
 
-  // 시간 포맷
   const formatTime = (dateTime) => {
     return formatRecordDateTime(dateTime);
   };
@@ -365,8 +243,10 @@ const OrderTab = ({ patientId }) => {
           </button>
         </div>
       </div>
+      <div className="record-toolbar"><SortControl value={sortOrder} onChange={setSortOrder} basis="처방일시" /></div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      {notice && <p role="status" className="record-notice">{notice}</p>}
+      <RequestError className={styles.error} message={error || loadError} onRetry={loadError ? fetchOrders : undefined} />
 
       {/* 오더 목록 */}
       <div className={styles.orderList}>
@@ -383,7 +263,7 @@ const OrderTab = ({ patientId }) => {
             {filterStatus === 'ALL' ? '등록된 오더가 없습니다' : `${statusLabels[filterStatus]} 오더가 없습니다`}
           </div>
         ) : (
-          filteredOrders.map((order) => (
+          sortRecords(filteredOrders, 'orderedAt', sortOrder).map((order) => (
             <div key={order.id} className={styles.orderItem}>
               <div className={styles.orderHeader}>
                 <div className={styles.orderHeaderLeft}>
@@ -442,7 +322,7 @@ const OrderTab = ({ patientId }) => {
                 )}
                 {order.status === 'PENDING' && (
                   <button
-                    className={styles.startButton}
+                    className={styles.startButton} disabled={pendingOrderId !== null || saving}
                     onClick={() => handleStatusChange(order.id, 'IN_PROGRESS')}
                   >
                     투약 시작
@@ -450,7 +330,7 @@ const OrderTab = ({ patientId }) => {
                 )}
                 {order.status === 'IN_PROGRESS' && completedOrderId !== order.id && (
                   <button
-                    className={styles.completeButton}
+                    className={styles.completeButton} disabled={pendingOrderId !== null || saving}
                     onClick={() => handleComplete(order.id)}
                   >
                     완료
@@ -458,7 +338,7 @@ const OrderTab = ({ patientId }) => {
                 )}
                 {completedOrderId === order.id && order.orderType === 'MEDICATION' && (
                   <button
-                    className={styles.registerMedicationButton}
+                    className={styles.registerMedicationButton} disabled={pendingOrderId !== null || saving}
                     onClick={() => handleOpenMedicationForm(order)}
                   >
                     투약 등록
@@ -472,14 +352,14 @@ const OrderTab = ({ patientId }) => {
 
       {/* 약품 상세 정보 모달 */}
       {showDrugInfo && selectedOrder && (
-        <div className={styles.modal} onClick={() => setShowDrugInfo(false)}>
-          <div className={`${styles.modalContent} ${styles.drugModalContent}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modal} onClick={closeDrugInfo}>
+          <div role="dialog" aria-modal="true" aria-label="약품정보 조회" className={`${styles.modalContent} ${styles.drugModalContent}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
                 <h3>약품정보 조회</h3>
                 <span className={styles.modalSubtitle}>처방 약품의 허가사항과 투약 정보를 확인합니다.</span>
               </div>
-              <button className={styles.closeButton} onClick={() => setShowDrugInfo(false)}>
+              <button className={styles.closeButton} onClick={closeDrugInfo}>
                 ✕
               </button>
             </div>
@@ -522,14 +402,14 @@ const OrderTab = ({ patientId }) => {
                     {selectedOrder.drugInfo.efcyQesitm && (
                       <section className={styles.clinicalPanel}>
                         <h4>효능·효과</h4>
-                        <div className={styles.documentText}>{formatDrugDocument(selectedOrder.drugInfo.efcyQesitm)}</div>
+                        <div className={styles.documentText}><DrugDocument text={selectedOrder.drugInfo.efcyQesitm} /></div>
                       </section>
                     )}
 
                     {selectedOrder.drugInfo.useMethodQesitm && (
                       <section className={styles.clinicalPanel}>
                         <h4>용법·용량</h4>
-                        <div className={styles.documentText}>{formatDrugDocument(selectedOrder.drugInfo.useMethodQesitm)}</div>
+                        <div className={styles.documentText}><DrugDocument text={selectedOrder.drugInfo.useMethodQesitm} /></div>
                       </section>
                     )}
                   </div>
@@ -537,14 +417,14 @@ const OrderTab = ({ patientId }) => {
                   {selectedOrder.drugInfo.atpnWarnQesitm && (
                     <details className={`${styles.documentDetails} ${styles.warningDetails}`} open>
                       <summary><span>중요 경고</span><small>식약처 허가정보</small></summary>
-                      <div className={styles.expandedDocument}>{formatCautionDocument(selectedOrder.drugInfo.atpnWarnQesitm)}</div>
+                      <div className={styles.expandedDocument}><CautionDocument text={selectedOrder.drugInfo.atpnWarnQesitm} /></div>
                     </details>
                   )}
 
                   {selectedOrder.drugInfo.atpnQesitm && (
                     <details className={styles.documentDetails} open>
                       <summary><span>상세 주의사항</span><small>식약처 허가정보</small></summary>
-                      <div className={styles.expandedDocument}>{formatCautionDocument(selectedOrder.drugInfo.atpnQesitm)}</div>
+                      <div className={styles.expandedDocument}><CautionDocument text={selectedOrder.drugInfo.atpnQesitm} /></div>
                     </details>
                   )}
 
@@ -577,7 +457,7 @@ const OrderTab = ({ patientId }) => {
       {/* 투약 등록 모달 */}
       {showMedicationForm && selectedOrder && (
         <div className={styles.modal} onClick={handleCancelMedicationForm}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-label="투약 등록" className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>투약 등록</h3>
               <button className={styles.closeButton} onClick={handleCancelMedicationForm}>
@@ -585,7 +465,8 @@ const OrderTab = ({ patientId }) => {
               </button>
             </div>
             <div className={styles.modalBody}>
-              <form onSubmit={handleMedicationSubmit}>
+              <form onSubmit={handleMedicationSubmit} aria-busy={saving}>
+                <fieldset className="record-form-fields" disabled={saving}>
                 {/* 자동 입력 정보 (읽기 전용) */}
                 <div className={styles.formSection}>
                   <h4>오더 정보</h4>
@@ -645,14 +526,7 @@ const OrderTab = ({ patientId }) => {
                   <h4>투약 정보 입력</h4>
                   <div className={styles.formGroup}>
                     <label>투약 시간 *</label>
-                    <input
-                      type="datetime-local"
-                      name="administeredAt"
-                      value={medicationFormData.administeredAt}
-                      onChange={handleMedicationFormChange}
-                      max={getCurrentDateTime()}
-                      required
-                    />
+                    <DateTimePicker id="administeredAt" label="투약 일시" value={medicationFormData.administeredAt} onChange={value => setMedicationFormData(prev => ({ ...prev, administeredAt: value }))} />
                   </div>
                   <div className={styles.formGroup}>
                     <label>특이사항</label>
@@ -667,7 +541,8 @@ const OrderTab = ({ patientId }) => {
                   </div>
                 </div>
 
-                {error && <div className={styles.error}>{error}</div>}
+                {notice && <p role="status" className="record-notice">{notice}</p>}
+      <RequestError className={styles.error} message={error || loadError} onRetry={loadError ? fetchOrders : undefined} />
 
                 <div className={styles.formActions}>
                   <button type="submit" className={styles.submitButton}>
@@ -681,6 +556,7 @@ const OrderTab = ({ patientId }) => {
                     취소
                   </button>
                 </div>
+                </fieldset>
               </form>
             </div>
           </div>
@@ -691,4 +567,3 @@ const OrderTab = ({ patientId }) => {
 };
 
 export default OrderTab;
-import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

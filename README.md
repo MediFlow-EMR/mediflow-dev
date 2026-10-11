@@ -1,5 +1,13 @@
 # MediFlow — 병동 간호·인수인계 EMR 연계 모듈
 
+## 현재 구현 상태 (2026-10-11)
+
+- 랜딩·로그인·메인·상세 화면은 라이트 기본값의 저장형 다크모드를 제공합니다. 데스크톱 가로형 배치를 유지하고 작은 화면의 일부 세로 배치, 버튼 줄바꿈 방지, 공통 포커스·움직임과 reduced-motion을 적용했습니다.
+- 담당·전체 환자는 이름/환자번호/진단·병실·알레르기·낙상·격리, 간호기록은 내용·기간·카테고리·작성자·중요 여부로 필터링합니다. 인수인계는 내용/작성자·기간·근무조·수기/AI·상태를 필터링합니다. 필터는 조회된 목록에 클라이언트에서 적용합니다.
+- 수기·AI 초안을 서버에 임시저장하고 다시 열어 수정·승인합니다. 승인 후 작성자 수정도 가능하며 원본 AI와 수정본, 버전별 스냅샷을 보존합니다. 초안은 작성자 전용, 승인본·이력은 같은 부서 조회입니다.
+- 운영 배포는 Flyway 마이그레이션 → Hibernate validate → 건강 상태 확인 순서입니다. 기존 DB의 최초 기준선 등록·백업·실패 대응은 저장소 `deploy/database/README.md`를 따릅니다. 기존 MariaDB를 보존하는 로컬 실행은 `local` 프로필입니다.
+- 최신 API는 저장소 `swagger.yaml` 1.3.0, DB 개요는 `assets/db.png`입니다. 소개 GIF는 2026.10.11 현재 UI 기준입니다. 설계 개념 그림의 후속 기능은 구현 범위와 구분해서 확인하세요.
+
 > 간호사의 실무 경험에서 출발해 입원환자 상태 확인, 간호 수행 기록, 근무조 인수인계를 한 흐름으로 연결한 포트폴리오용 PoC
 
 AWS 배포 시에는 [AWS 배포 가이드](deploy/aws/README.md)와 [배포 체크리스트](deploy/aws/CHECKLIST.md)를 먼저 확인하세요.
@@ -12,7 +20,7 @@ MediFlow는 병원 전체 업무를 대체하는 완제품 EMR이 아닙니다. 
 담당 환자 확인
   → 환자 식별·알레르기·최근 활력징후 확인
   → 오더 수행·투약·간호기록·I/O 입력
-  → 근무조 기록을 AI가 비식별 상태로 요약
+  → 이름·차트번호 대신 요청 내 가명 식별자로 근무조 기록을 AI에 전달
   → 간호사가 검토·수정한 뒤 인수인계 저장
 ```
 
@@ -28,6 +36,7 @@ MediFlow는 병원 전체 업무를 대체하는 완제품 EMR이 아닙니다. 
 
 - 접수·입퇴원·원무·EDI 청구·PACS·약제 등 병원 전체 EMR 기능은 범위 밖입니다.
 - AI 결과는 진료 판단이 아닌 인수인계 초안이며 의료인의 검토를 대체하지 않습니다.
+- 자유 입력 간호기록까지 자동으로 개인정보를 제거하는 기능은 없습니다. 실제 개인정보를 입력하지 마세요.
 - 실제 의료기관 적용에는 권한·감사·전자서명·표준용어·연계·인증에 대한 추가 검증이 필요합니다.
 
 ## 중요 주의사항
@@ -67,7 +76,7 @@ MediFlow는 병원 전체 업무를 대체하는 완제품 EMR이 아닙니다. 
 | 항목 | 버전 | 설치 확인 |
 |------|------|-----------|
 | Java | 21 | `java -version` |
-| Node.js | 18+ | `node -v` |
+| Node.js | 22 (CI 기준) | `node -v` |
 | MariaDB | 10.x | `mysql --version` |
 | Gradle | 8.x | `gradle -v` |
 
@@ -166,7 +175,7 @@ cp .env.example .env
 vim .env
 
 # Gradle 빌드 및 실행
-./gradlew bootRun
+bash ./gradlew bootRun --args='--spring.profiles.active=local'
 
 ```
 
@@ -197,9 +206,9 @@ npm run dev
 
 ## 테스트 계정
 
-### 로컬 개발 시 사용 가능한 더미 계정
+배포된 데모는 [MediFlow 로그인](https://www.mediflow-emr.cloud/auth/signin) → **이메일로 로그인**에서 아래 계정으로 체험할 수 있습니다. 로그인 화면의 **데모 계정 입력** 버튼은 응급실 계정 정보를 채웁니다. 회원가입이나 이메일 인증은 필요하지 않습니다.
 
-개발 환경(`application-dev.yml`)에서 자동으로 생성되는 테스트 계정입니다.
+`dev` 또는 `demo` 프로필에서 생성되는 공용 테스트 계정입니다. 실제 개인정보는 입력하지 마세요. 계정별 담당 환자는 다르지만 부서의 가상 환자·기록은 공유되므로, 다른 사용자의 변경이 보일 수 있습니다.
 
 **간호사 계정 (응급실):**
 ```
@@ -268,14 +277,14 @@ openssl rand -base64 32
 
 **로컬 환경:**
 ```
-http://localhost:9005/swagger-ui.html
+내장 Swagger UI는 현재 설치되어 있지 않습니다. 아래 Swagger Editor 또는 공식 Swagger UI 컨테이너로 swagger.yaml을 확인하세요.
 ```
 
 **Swagger Editor (온라인):**
 1. [https://editor.swagger.io](https://editor.swagger.io) 접속
 2. `swagger.yaml` 파일 내용 붙여넣기
 
-**상세 API 문서:** [docs/API_DOCUMENTATION.md](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/6.API_DOCUMENTATION.md)
+**상세 API 문서:** [현재 API 안내](portfolio-docs/6.API_DOCUMENTATION.md)
 
 ---
 
@@ -320,7 +329,7 @@ spring:
 ```bash
 # 데이터베이스 초기화 후 재시작
 mysql -u mediflow -p mediflowdb -e "DROP DATABASE mediflowdb; CREATE DATABASE mediflowdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-./gradlew bootRun
+bash ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 ---
@@ -462,7 +471,7 @@ mysql -h localhost -P 3306 -u mediflow -p mediflowdb
 spring:
   jpa:
     hibernate:
-      ddl-auto: create  # validate가 아닌 create여야 함
+      ddl-auto: validate  # 기존 DB 보존. 스키마 변경은 Flyway로 적용
 ```
 
 ---
@@ -502,12 +511,9 @@ spring:
 
 **문제: 빌드 실패**
 ```bash
-# node_modules 삭제 후 재설치
-rm -rf node_modules package-lock.json
-npm install
-
-# 캐시 삭제
-npm cache clean --force
+# 잠금 파일에 맞춰 의존성 재설치 후 빌드
+npm ci
+npm run build
 ```
 
 ---
@@ -538,7 +544,7 @@ chmod 600 frontend/.env
 
 # 환경 변수 확인 (Backend)
 cd backend
-./gradlew bootRun --debug
+bash ./gradlew bootRun --args='--spring.profiles.active=local' --debug
 
 # 환경 변수 확인 (Frontend)
 cd frontend
@@ -557,11 +563,9 @@ git rm --cached backend/.env
 git rm --cached frontend/.env
 git commit -m "chore: Remove .env files from Git"
 
-# 강제로 히스토리에서 제거 (주의: 위험한 작업)
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch backend/.env frontend/.env" \
-  --prune-empty --tag-name-filter cat -- --all
 ```
+
+노출된 키·비밀번호를 먼저 폐기·재발급하세요. 과거 커밋에서도 제거해야 할 때는 협업자와 범위를 확인한 뒤 별도로 진행합니다.
 
 ---
 
@@ -569,7 +573,24 @@ git filter-branch --force --index-filter \
 
 - **[프로젝트 개요](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/1.PROJECT_OVERVIEW.md)** - 전체 시스템 소개
 - **[기능명세서](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/3.FEATURES.md)** - 기능명세서
-- **[아키텍처](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/4.ARCHITECTURE.md)** - AWS 3-Tier 구조
+- **[아키텍처](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/4.ARCHITECTURE.md)** - AWS 배포 구조와 CI/CD
 - **[법적 고려사항](https://github.com/MediFlow-EMR/MediFlow-docs/blob/main/8.LEGAL_COMPLIANCE.md)** - 의료법/개인정보보호법
 
 ---
+
+
+최종 UI·정렬·저장 안정성 변경과 재현 가능한 검증 결과는 [품질 검증 기록](portfolio-docs/10.QUALITY_AND_VALIDATION.md)에 정리했습니다.
+
+## 현재 UI 시연
+
+2026.10.11 로컬 가상 계정의 실제 브라우저 조작 화면을 캡처한 GIF입니다. 로그인, 다중 필터, 날짜 정렬, 수기·AI 초안 저장과 승인 후 수정 이력을 보여줍니다.
+
+![로그인과 테마 전환](frontend/public/assets/login.gif)
+
+![환자 조회와 다중 병실 필터](frontend/public/assets/patientdashboard.gif)
+
+![간호기록·날짜·다중 카테고리](frontend/public/assets/nursingrecord.gif)
+
+![오더·약품 정보·투약 입력](frontend/public/assets/ordertab.gif)
+
+![수기·AI 초안·승인·수정 이력](frontend/public/assets/aihandover.gif)

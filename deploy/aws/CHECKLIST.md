@@ -46,4 +46,12 @@
 - [ ] CloudWatch 로그 확인
 - [ ] RDS 백업 확인
 - [ ] 비용 알림 확인
-- [ ] UI 완료 후 랜딩/README 영상 재녹화
+- [ ] 현재 UI의 로그인·환자 필터·간호기록·오더·인수인계 GIF와 Docs 반영 확인
+
+## DB 마이그레이션 배포 확인
+
+- 배포 전 RDS 백업·복구 상태와 연결 대상 DB, 스키마 권한을 확인합니다.
+- 기존 DB 최초 도입에만 FLYWAY_BASELINE_ON_MIGRATE=true로 20261010 기준선을 등록합니다. 이후 false로 유지합니다.
+- 새 JAR의 prod 시작 시 Flyway가 버전별 SQL을 실행하고 Hibernate validate 후 건강 상태를 확인합니다.
+- flyway_schema_history의 성공 기록 및 기존 인수인계 보존을 확인합니다. 체크섬 불일치·실패는 서버 기동을 막습니다.
+- 앱 롤백은 DB 변경을 되돌리지 않습니다. [마이그레이션 절차](../database/README.md)를 따릅니다.

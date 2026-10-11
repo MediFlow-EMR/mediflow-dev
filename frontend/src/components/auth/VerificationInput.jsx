@@ -1,284 +1,105 @@
 import { useRef, useEffect, useState } from 'react';
-import { debounce } from 'lodash';
 import styles from './SignUpForm.module.scss';
 import { EmailAuthService } from '../../services/authService';
 
 const VerificationInput = ({ email, onSuccess }) => {
-    // 완성된 인증코드를 상태관리
     const [codes, setCodes] = useState(['', '', '', '']);
-    // 에러 메시지 상태 관리
     const [error, setError] = useState('');
-    // 남은 시간 상태 관리 (초 단위)
     const [remainingSeconds, setRemainingSeconds] = useState(0);
-    // 로딩 상태 관리
     const [isLoading, setIsLoading] = useState(true);
-
-    // ref를 배열로 관리하는 법
+    const [verifying, setVerifying] = useState(false);
     const inputRefs = useRef([]);
-
-    // 수동으로 ref배열에 input태그들 저장하기
-    const bindRef = ($input, index) => {
-        inputRefs.current[index] = $input;
-    };
+    const successRef = useRef(onSuccess);
+    const expired = remainingSeconds <= 0;
+    useEffect(() => { successRef.current = onSuccess; }, [onSuccess]);
 
     useEffect(() => {
-        // 초기 남은 시간 조회
-        if (email) {
-            fetchRemainingTime();
-        }
+        let active = true;
+        setIsLoading(true);
+        setCodes(['', '', '', '']);
+        setError('');
+        setRemainingSeconds(0);
+        EmailAuthService.getRemainingTime(email)
+            .then(response => { if (active) setRemainingSeconds(Math.max(0, response.data.remainingSeconds || 0)); })
+            .catch(() => { if (active) setError('인증 만료 시간을 확인할 수 없습니다. 이전 화면에서 다시 요청해주세요.'); })
+            .finally(() => { if (active) setIsLoading(false); });
+        return () => { active = false; };
     }, [email]);
 
-    // 남은 시간 조회 함수
-    const fetchRemainingTime = async () => {
-        setIsLoading(true);
-        try {
-            const response = await EmailAuthService.getRemainingTime(email);
-            const seconds = response.data.remainingSeconds;
-            setRemainingSeconds(seconds);
-        } catch (error) {
-            console.error('남은 시간 조회 실패:', error);
-            // 서버 에러 시에도 기본값을 5분(300초)으로 설정
-            setRemainingSeconds(300);
-        } finally {
-            setIsLoading(false);
-            // 로딩 완료 후 첫번째 칸에 포커싱
-            setTimeout(() => {
-                if (inputRefs.current[0]) {
-                    inputRefs.current[0].focus();
-                }
-            }, 100);
-        }
-    };
-
-    // 타이머 설정
     useEffect(() => {
-        if (remainingSeconds <= 0) return;
+        if (!isLoading) inputRefs.current[0]?.focus();
+    }, [isLoading]);
 
-        const timer = setInterval(() => {
-            setRemainingSeconds((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    return 0;
+    useEffect(() => {
+        if (isLoading || remainingSeconds <= 0) return;
+        const timer = setTimeout(() => setRemainingSeconds(seconds => Math.max(0, seconds - 1)), 1000);
+        return () => clearTimeout(timer);
+    }, [remainingSeconds, isLoading]);
+
+    useEffect(() => {
+        const code = codes.join('');
+        let active = true;
+        setVerifying(false);
+        if (code.length !== 4 || expired) return;
+        const timer = setTimeout(async () => {
+            setVerifying(true);
+            try {
+                const response = await EmailAuthService.verifyCode(email, code);
+                if (!active) return;
+                if (response.data.isMatch) {
+                    setError('');
+                    successRef.current?.();
+                } else {
+                    const remaining = await EmailAuthService.getRemainingTime(email);
+                    if (!active) return;
+                    setRemainingSeconds(Math.max(0, remaining.data.remainingSeconds || 0));
+                    setError('새 인증코드를 재발송했습니다. 이메일을 다시 확인해주세요.');
+                    setCodes(['', '', '', '']);
+                    inputRefs.current[0]?.focus();
                 }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [remainingSeconds]);
-
-    // 초를 분:초 형식으로 변환
-    const formatTime = (seconds) => {
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    // 서버에 인증코드 전송
-    const fetchVerifying = debounce(async (verifyCode) => {
-        try {
-            const response = await EmailAuthService.verifyCode(email, verifyCode);
-            const { isMatch } = response.data;
-
-            // 검증에 실패했을 경우
-            if (!isMatch) {
-                // 에러메시지를 세팅
-                setError('유효하지 않거나 만료된 인증코드입니다. 인증코드를 재발송합니다.');
-                // 인증코드를 모두 빈칸으로 되돌림
-                setCodes(['', '', '', '']);
-                // input 값들도 초기화
-                inputRefs.current.forEach((input) => {
-                    if (input) input.value = '';
-                });
-                // 첫번째 칸으로 재 포커싱
-                inputRefs.current[0].focus();
-                return;
+            } catch {
+                if (active) setError('인증에 실패했습니다. 코드를 다시 입력해주세요.');
+            } finally {
+                if (active) setVerifying(false);
             }
+        }, 350);
+        return () => { active = false; clearTimeout(timer); };
+        // Expiration is handled by the input disable state; timer ticks must not restart verification.
+    }, [codes, email, expired]);
 
-            // 검증 성공시
-            setError('');
-            console.log('인증 성공!');
-
-            // 다음 스텝으로 이동
-            if (onSuccess) {
-                onSuccess();
-            }
-
-        } catch (error) {
-            console.error('인증 코드 검증 실패:', error);
-            setError('인증 코드 검증 중 오류가 발생했습니다.');
-        }
-    }, 1000);
-
-    // 다음 입력 칸으로 포커스 이동
-    const focusNextInput = (index) => {
-        // 인덱스 검증 - 마지막 칸에서는 포커스 이동대신 블러처리
-        if (index < inputRefs.current.length) {
-            // 한글자가 입력되면 포커스를 다음 칸으로 이동
-            inputRefs.current[index].focus();
-        } else {
-            // 포커스 아웃
-            inputRefs.current[index - 1].blur();
-        }
-    };
-
-    // 숫자 입력 이벤트
-    const handleNumber = (index, e) => {
-        const inputValue = e.target.value;
-
-        // 숫자가 아닌 경우 검증
-        if (inputValue && !/^\d$/.test(inputValue)) {
-            setError('숫자만 입력해주세요.');
-            e.target.value = ''; // 입력값 초기화
-            return;
-        }
-
-        // 에러 메시지 초기화
+    const updateCodes = (index, digits) => {
         setError('');
-
-        // 입력한 숫자를 하나로 연결하기
-        const copyCodes = [...codes];
-        copyCodes[index] = inputValue;
-
-        setCodes(copyCodes);
-
-        // 숫자가 입력된 경우에만 다음 칸으로 이동
-        if (inputValue) {
-            focusNextInput(index + 1);
-        }
-
-        // 모든 인증코드를 입력했을 때 서버에 인증코드를 전송
-        if (copyCodes.every((code) => code !== '')) {
-            console.log('모든 칸이 입력됨! ', copyCodes);
-            const verifyCode = copyCodes.join('');
-            console.log('전송할 인증코드: ', verifyCode);
-
-            // 서버에 전송
-            fetchVerifying(verifyCode);
+        const next = [...codes];
+        [...digits].slice(0, 4 - index).forEach((digit, offset) => { next[index + offset] = digit; });
+        if (!digits) next[index] = '';
+        setCodes(next);
+        inputRefs.current[Math.min(3, index + digits.length)]?.focus();
+    };
+    const keyDown = (index, event) => {
+        if (event.key === 'ArrowLeft' && index > 0) inputRefs.current[index - 1]?.focus();
+        if (event.key === 'ArrowRight' && index < 3) inputRefs.current[index + 1]?.focus();
+        if (event.key === 'Backspace' && !codes[index] && index > 0) {
+            event.preventDefault();
+            updateCodes(index - 1, '');
         }
     };
-
-    // 붙여넣기 이벤트 처리
-    const handlePaste = (index, e) => {
-        e.preventDefault();
-
-        // 붙여넣은 텍스트 가져오기
-        const pastedText = e.clipboardData.getData('text');
-
-        // 숫자만 추출
-        const numbers = pastedText.replace(/\D/g, '');
-
-        if (numbers.length === 0) {
-            setError('숫자만 입력해주세요.');
-            return;
-        }
-
-        // 에러 메시지 초기화
-        setError('');
-
-        // 각 칸에 숫자 입력
-        const copyCodes = [...codes];
-        const availableSlots = 4 - index; // 현재 칸부터 사용 가능한 칸 수
-        const numbersToFill = numbers.slice(0, availableSlots);
-
-        for (let i = 0; i < numbersToFill.length; i++) {
-            copyCodes[index + i] = numbersToFill[i];
-            if (inputRefs.current[index + i]) {
-                inputRefs.current[index + i].value = numbersToFill[i];
-            }
-        }
-
-        setCodes(copyCodes);
-
-        // 마지막으로 입력된 칸의 다음 칸으로 포커스 이동
-        const lastFilledIndex = index + numbersToFill.length - 1;
-        if (lastFilledIndex < 3) {
-            focusNextInput(lastFilledIndex + 1);
-        } else {
-            inputRefs.current[lastFilledIndex].blur();
-        }
-
-        // 모든 인증코드를 입력했을 때 서버에 인증코드를 전송
-        if (copyCodes.every((code) => code !== '')) {
-            console.log('모든 칸이 입력됨! ', copyCodes);
-            const verifyCode = copyCodes.join('');
-            console.log('전송할 인증코드: ', verifyCode);
-
-            // 서버에 전송
-            fetchVerifying(verifyCode);
-        }
-    };
-
-    // 키보드 이벤트 처리 (화살표, 백스페이스)
-    const handleKeyDown = (index, e) => {
-        // 왼쪽 화살표: 이전 칸으로 이동
-        if (e.key === 'ArrowLeft' && index > 0) {
-            e.preventDefault();
-            inputRefs.current[index - 1].focus();
-        }
-        // 오른쪽 화살표: 다음 칸으로 이동
-        else if (e.key === 'ArrowRight' && index < 3) {
-            e.preventDefault();
-            inputRefs.current[index + 1].focus();
-        }
-        // 백스페이스: 현재 칸이 비어있으면 이전 칸으로 이동하고 삭제
-        else if (e.key === 'Backspace' && !e.target.value && index > 0) {
-            e.preventDefault();
-            const copyCodes = [...codes];
-            copyCodes[index - 1] = '';
-            setCodes(copyCodes);
-            inputRefs.current[index - 1].value = '';
-            inputRefs.current[index - 1].focus();
-        }
-    };
-
-    return (
-        <>
-            {isLoading ? (
-                // 로딩 중 스켈레톤 UI
-                <>
-                    <p className={styles.infoText}>Step 2: 이메일로 전송된 인증번호 4자리를 입력해주세요.</p>
-                    <div className={styles.skeletonTimer}></div>
-                    <div className={styles.codeInputContainer}>
-                        {Array.from(new Array(4)).map((_, index) => (
-                            <div key={index} className={styles.skeletonInput}></div>
-                        ))}
-                    </div>
-                </>
-            ) : (
-                // 로딩 완료 후 실제 UI
-                <>
-                    <p className={styles.infoText}>Step 2: 이메일로 전송된 인증번호 4자리를 입력해주세요.</p>
-                    {remainingSeconds > 0 && (
-                        <p className={styles.timerText}>
-                            남은 시간: <span className={styles.timer}>{formatTime(remainingSeconds)}</span>
-                        </p>
-                    )}
-                    {remainingSeconds === 0 && email && (
-                        <p className={styles.expiredText}>인증 시간이 만료되었습니다. 다시 시도해주세요.</p>
-                    )}
-                    {error && <p className={styles.errorMessage}>{error}</p>}
-                    <div className={styles.codeInputContainer}>
-                        {Array.from(new Array(4)).map((_, index) => (
-                            <input
-                                ref={($input) => bindRef($input, index)}
-                                key={index}
-                                type='text'
-                                inputMode='numeric'
-                                pattern='[0-9]'
-                                className={styles.codeInput}
-                                maxLength={1}
-                                onChange={(e) => handleNumber(index, e)}
-                                onPaste={(e) => handlePaste(index, e)}
-                                onKeyDown={(e) => handleKeyDown(index, e)}
-                                disabled={remainingSeconds === 0}
-                            />
-                        ))}
-                    </div>
-                </>
-            )}
-        </>
-    );
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = String(remainingSeconds % 60).padStart(2, '0');
+    return <>
+        <p className={styles.infoText}>Step 2: 이메일로 전송된 인증번호 4자리를 입력해주세요.</p>
+        {isLoading ? <div className={styles.skeletonTimer} /> : remainingSeconds > 0 ?
+            <p className={styles.timerText}>남은 시간: <span className={styles.timer}>{minutes}:{seconds}</span></p> :
+            <p className={styles.expiredText}>인증 시간이 만료되었습니다. 이전 화면에서 다시 요청해주세요.</p>}
+        {error && <p role="alert" className={styles.errorMessage}>{error}</p>}
+        <div className={styles.codeInputContainer} aria-busy={verifying || isLoading}>
+            {codes.map((code, index) => <input key={index} ref={input => { inputRefs.current[index] = input; }}
+                type="text" inputMode="numeric" aria-label={`인증 코드 ${index + 1}번째 숫자`} pattern="[0-9]"
+                className={styles.codeInput} maxLength={1} value={code} disabled={isLoading || remainingSeconds === 0 || verifying}
+                onChange={event => updateCodes(index, event.target.value.replace(/\D/g, ''))}
+                onPaste={event => { event.preventDefault(); updateCodes(index, event.clipboardData.getData('text').replace(/\D/g, '')); }}
+                onKeyDown={event => keyDown(index, event)} />)}
+        </div>
+        {verifying && <p role="status" className={styles.timerText}>인증 확인 중…</p>}
+    </>;
 };
-
 export default VerificationInput;

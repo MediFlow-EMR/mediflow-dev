@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/common/ThemeToggle';
 import SignUpForm from '../components/auth/SignUpForm';
 import mediflowIcon from '../assets/mediflow-icon.svg';
 import styles from './RegisterPage.module.scss';
@@ -5,6 +6,7 @@ import styles from './RegisterPage.module.scss';
 export default function RegisterPage() {
     return (
         <div className={styles.container}>
+            <div className="page-theme-control"><ThemeToggle /></div>
             <div className={styles.wrapper}>
 
                 {/* 로고 섹션 */}

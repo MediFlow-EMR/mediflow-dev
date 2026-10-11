@@ -1,89 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer reset {
+*, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; border-color: #e5e7eb; }
+html { line-height: 1.5; -webkit-text-size-adjust: 100%; tab-size: 4; font-family: 'Inter', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+p, h1, h2, h3, h4, h5, h6, blockquote, figure, dl, dd { margin: 0; }
+a { color: inherit; text-decoration: inherit; }
+b, strong { font-weight: bolder; }
+button, input, optgroup, select, textarea { font: inherit; color: inherit; margin: 0; padding: 0; letter-spacing: inherit; }
+button, select { text-transform: none; }
+button, [type='button'], [type='reset'], [type='submit'] { appearance: auto; background-color: transparent; background-image: none; }
+button, [role='button'] { cursor: pointer; }
+:disabled { cursor: default; }
+fieldset { margin: 0; padding: 0; }
+legend { padding: 0; }
+ul, ol, menu { list-style: none; margin: 0; padding: 0; }
+textarea { resize: vertical; }
+input::placeholder, textarea::placeholder { opacity: 1; color: #9ca3af; }
+img, svg, video, canvas, audio, iframe, embed, object { display: block; vertical-align: middle; }
+img, video { max-width: 100%; height: auto; }
+table { text-indent: 0; border-color: inherit; border-collapse: collapse; }
+hr { height: 0; color: inherit; border-top-width: 1px; }
+[hidden]:not([hidden='until-found']) { display: none; }
 
-/* 글로벌 스타일 */
-@layer base {
-    html {
-        font-family: 'Inter', system-ui, sans-serif;
-    }
-
-    body {
-        @apply bg-gray-50 text-gray-900;
-    }
-
-    * {
-        @apply border-gray-200;
-    }
-}
-
-/* 컴포넌트 스타일 */
-@layer components {
-    .btn-primary {
-        @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
-    }
-
-    .btn-secondary {
-        @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
-    }
-
-    .btn-outline {
-        @apply border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
-    }
-
-    .input-field {
-        @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors duration-200;
-    }
-
-    .card {
-        @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
-    }
-
-    .card-hover {
-        @apply card hover:shadow-md transition-shadow duration-200;
-    }
-}
-
-/* 유틸리티 스타일 */
-@layer utilities {
-    .text-balance {
-        text-wrap: balance;
-    }
-
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-    }
-
-    .animate-fade-in {
-        animation: fadeIn 0.6s ease-in-out forwards;
-    }
-
-    .animate-slide-up {
-        animation: slideUp 0.4s ease-out forwards;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(12px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 }

@@ -102,14 +102,14 @@ public class CookieUtil {
      * - maxAgeSeconds: 쿠키 수명 설정 (0이면 즉시 삭제)
      */
     private ResponseCookie buildCookie(String name, String value, int maxAgeSeconds) {
-        return ResponseCookie.from(name, value)
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, value)
                 .httpOnly(props.isHttpOnly())
-                .secure(true)
-                .domain(props.getDomain())
+                .secure(props.isSecure())
                 .path("/")
-                .sameSite("None")
-                .maxAge(maxAgeSeconds)
-                .build();
+                .sameSite(props.getSameSite())
+                .maxAge(maxAgeSeconds);
+        if (props.getDomain() != null && !props.getDomain().isBlank()) builder.domain(props.getDomain());
+        return builder.build();
     }
 
     /**

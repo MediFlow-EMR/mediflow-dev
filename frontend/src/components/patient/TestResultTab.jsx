@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
-import apiClient from '../../services/apiClient';
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import SortControl from '../common/SortControl';
+import { sortRecords } from '../../utils/sortRecords';
+import { useState } from 'react';
 import styles from './TestResultTab.module.scss';
 
 /**
  * 검사 결과 탭 컴포넌트 (조회 전용)
  */
 const TestResultTab = ({ patientId }) => {
-  const [testResults, setTestResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { items: testResults, loading, loadError, refresh: fetchTestResults } = useRecordList(`/test-results/patient/${patientId}`, '검사 결과를 불러올 수 없습니다');
+
+  const [sortOrder, setSortOrder] = useState('desc');
   const [filterType, setFilterType] = useState('ALL');
 
   // 검사 유형 라벨
@@ -21,28 +25,6 @@ const TestResultTab = ({ patientId }) => {
     ULTRASOUND: '초음파',
   };
 
-  // 검사 결과 조회
-  const fetchTestResults = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/test-results/patient/${patientId}`);
-      setTestResults(response.data.data || []);
-    } catch (err) {
-      console.error('검사 결과 조회 실패:', err);
-      setError('검사 결과를 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (patientId) {
-      fetchTestResults();
-    }
-  }, [patientId]);
-
-  // 시간 포맷
   const formatDateTime = (dateTime) => {
     return formatRecordDateTime(dateTime);
   };
@@ -99,8 +81,9 @@ const TestResultTab = ({ patientId }) => {
           </button>
         </div>
       </div>
+      <div className="record-toolbar"><SortControl value={sortOrder} onChange={setSortOrder} basis="결과일시" /></div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <RequestError className={styles.error} message={loadError} onRetry={loadError ? fetchTestResults : undefined} />
 
       {/* 검사 결과 목록 */}
       <div className={styles.resultList}>
@@ -109,7 +92,7 @@ const TestResultTab = ({ patientId }) => {
             {filterType === 'ALL' ? '등록된 검사 결과가 없습니다' : `${testTypeLabels[filterType]} 결과가 없습니다`}
           </div>
         ) : (
-          filteredResults.map((result) => (
+          sortRecords(filteredResults, ['resultDate', 'testDate'], sortOrder).map((result) => (
             <div key={result.id} className={`${styles.resultItem} ${result.isAbnormal ? styles.abnormal : ''}`}>
               <div className={styles.resultHeader}>
                 <div className={styles.resultHeaderLeft}>
@@ -151,4 +134,3 @@ const TestResultTab = ({ patientId }) => {
 };
 
 export default TestResultTab;
-import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

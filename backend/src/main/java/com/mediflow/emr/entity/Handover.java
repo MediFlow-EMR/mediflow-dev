@@ -64,6 +64,19 @@ public class Handover extends BaseTimeEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Builder.Default
+    @Column(name = "source_type", nullable = false, length = 20)
+    private String sourceType = "AI";
+
+    public void updateContent(String aiDraft, String content, String source, String nextStatus, String model) {
+        this.aiSummary = aiDraft;
+        this.finalSummary = content;
+        this.sourceType = source;
+        this.aiModel = model;
+        this.status = nextStatus;
+        if ("APPROVED".equals(nextStatus)) this.approvedAt = LocalDateTime.now();
+    }
+
     /** 작성자 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)

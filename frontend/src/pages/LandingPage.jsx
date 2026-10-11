@@ -23,12 +23,13 @@ const LandingPage = () => {
             }
         );
 
-        sectionsRef.current.forEach((section) => {
+        const sections = sectionsRef.current;
+        sections.forEach((section) => {
             if (section) observer.observe(section);
         });
 
         return () => {
-            sectionsRef.current.forEach((section) => {
+            sections.forEach((section) => {
                 if (section) observer.unobserve(section);
             });
         };
@@ -52,12 +53,12 @@ const LandingPage = () => {
                         <h1 className={styles.heroTitle}>
                             간호사의 실무 경험을 기반으로 설계된
                             <br />
-                            <span className={styles.highlight}>차세대 전자의무기록 AI 시스템</span>
+                            <span className={styles.highlight}>병동 간호·인수인계 지원 시스템</span>
                         </h1>
                         <p className={styles.heroSubtitle}>
-                            환자 정보 통합 대시보드와 AI 기반 인수인계 자동화로
+                            환자 정보와 간호 기록을 한곳에서 확인하고
                             <br />
-                            간호사의 업무 효율을 극대화하는 EMR 시스템
+                            AI 인수인계 초안을 검토·저장하는 병동 간호 업무 데모
                         </p>
                         <button 
                             className={styles.ctaButton}
@@ -86,7 +87,7 @@ const LandingPage = () => {
                 <div className={styles.container}>
                     <h2 className={styles.sectionTitle}>핵심 기능</h2>
                     <p className={styles.sectionSubtitle}>
-                        간호사의 업무 효율을 극대화하는 실무 중심 설계
+                        환자 확인, 간호 수행 기록, 근무조 인수인계를 연결하는 실무 중심 설계
                     </p>
                     
                     <div className={styles.featuresGrid}>
@@ -101,9 +102,9 @@ const LandingPage = () => {
                             <div>
                                 <h3 className={styles.featureTitle}>통합 환자 뷰 (One-View Dashboard)</h3>
                                 <p className={styles.featureDescription}>
-                                    환자 한 명의 모든 정보를 한 화면에서 확인. 
-                                    바이탈 사인, I/O, 검사 결과, 투약 기록, 간호 기록까지 
-                                    5개 이상의 페이지 이동 없이 1번의 클릭으로 즉시 접근
+                                    담당·부서 환자를 선택해 최근 V/S와 알레르기를 확인하고,
+                                    오더, 간호 기록, 섭취·배설량, 투약, 검사 결과를
+                                    같은 화면의 탭에서 조회·기록합니다.
                                 </p>
                             </div>
                         </div>
@@ -117,11 +118,11 @@ const LandingPage = () => {
                                 />
                             </div>
                             <div>
-                                <h3 className={styles.featureTitle}>AI 인수인계 자동 요약</h3>
+                                <h3 className={styles.featureTitle}>AI 인수인계 초안</h3>
                                 <p className={styles.featureDescription}>
-                                    Google Gemini AI가 당일 간호 기록을 자동으로 분석하여 
-                                    핵심 내용만 요약. 수기 작성 시간을 절감하고 
-                                    정보 누락 위험을 최소화
+                                    근무조의 간호 기록과 수행 정보를 바탕으로 초안을 생성합니다.
+                                    환자별로 다시 생성할 수 있으며, 사용자가 내용을 검토·수정한 뒤
+                                    인수인계로 저장합니다.
                                 </p>
                             </div>
                         </div>
@@ -135,11 +136,11 @@ const LandingPage = () => {
                                 />
                             </div>
                             <div>
-                                <h3 className={styles.featureTitle}>실시간 의료 오더 & 약품 정보</h3>
+                                <h3 className={styles.featureTitle}>오더 관리와 약품 정보</h3>
                                 <p className={styles.featureDescription}>
-                                    의사 처방 오더를 실시간으로 조회하고, 
-                                    식약처 API를 통해 약품 정보를 즉시 확인. 
-                                    안전한 투약 관리 지원
+                                    데모 처방의 수행 상태를 관리하고, 식약처 의약품 API로
+                                    제품명·함량·효능효과·용법용량·주의사항을 확인합니다.
+                                    실제 병원 처방 시스템과의 연계는 구현 범위 밖입니다.
                                 </p>
                             </div>
                         </div>
@@ -172,10 +173,10 @@ const LandingPage = () => {
                             <div className={styles.valueIcon}>
                                 <FaClock />
                             </div>
-                            <h3 className={styles.valueTitle}>시간 절약</h3>
+                            <h3 className={styles.valueTitle}>한곳에서 환자 확인</h3>
                             <p className={styles.valueDescription}>
-                                기존 EMR은 환자 한 명의 상태 파악을 위해 최소 5개 이상의 페이지를 이동해야 했습니다. 
-                                MediFlow는 One-View 대시보드로 1번의 클릭만으로 모든 정보에 접근 가능합니다.
+                                환자 목록과 상세 정보를 나란히 배치해 환자를 바꿔가며 확인할 수 있습니다.
+                                간호 업무별 기록은 상세 화면의 탭으로 이동합니다.
                             </p>
                         </div>
 
@@ -183,11 +184,10 @@ const LandingPage = () => {
                             <div className={styles.valueIcon}>
                                 <FaCheckCircle />
                             </div>
-                            <h3 className={styles.valueTitle}>정보 누락 방지</h3>
+                            <h3 className={styles.valueTitle}>인수인계 검토 지원</h3>
                             <p className={styles.valueDescription}>
-                                수기 인수인계는 정보 누락 위험이 높습니다. 
-                                AI 자동 요약으로 당일 간호 기록의 핵심 내용을 빠짐없이 전달하여 
-                                환자 안전을 보장합니다.
+                                기록을 바탕으로 생성한 초안을 확인하며 인수인계를 작성합니다.
+                                AI 결과에는 오류나 누락이 있을 수 있어 사용자의 검토가 필요합니다.
                             </p>
                         </div>
 
@@ -195,11 +195,11 @@ const LandingPage = () => {
                             <div className={styles.valueIcon}>
                                 <FaUsers />
                             </div>
-                            <h3 className={styles.valueTitle}>신규 간호사 적응 지원</h3>
+                            <h3 className={styles.valueTitle}>간호 업무 흐름 체험</h3>
                             <p className={styles.valueDescription}>
                                 직관적인 UI/UX로 정보 위치를 쉽게 파악할 수 있어 
-                                신규 간호사도 빠르게 시스템에 적응하고 
-                                환자 상태를 정확히 파악할 수 있습니다.
+                                간호 기록과 오더의 흐름을 가상 환자로 체험할 수 있습니다.
+                                실제 업무 성과나 교육 효과를 검증한 제품은 아닙니다.
                             </p>
                         </div>
 
@@ -207,10 +207,10 @@ const LandingPage = () => {
                             <div className={styles.valueIcon}>
                                 <FaShieldAlt />
                             </div>
-                            <h3 className={styles.valueTitle}>AWS 기반 안정성</h3>
+                            <h3 className={styles.valueTitle}>AWS 기반 배포</h3>
                             <p className={styles.valueDescription}>
-                                AWS 3-Tier 아키텍처로 구축되어 높은 가용성과 확장성을 보장합니다. 
-                                RDS 자동 백업, CloudFront CDN으로 빠르고 안전한 서비스를 제공합니다.
+                                S3·CloudFront로 웹 화면을 제공하고 EC2·RDS로 서버와 데이터를 운영합니다.
+                                Lambda는 약품 정보 캐시를 생성하며, GitHub Actions로 웹·서버를 배포합니다.
                             </p>
                         </div>
                     </div>
@@ -233,7 +233,7 @@ const LandingPage = () => {
                         <div className={styles.footerLogo}>
                             <span className={styles.logoText}>MediFlow</span>
                             <p className={styles.footerTagline}>
-                                의료 업무의 새로운 기준
+                                가상 환자로 체험하는 병동 간호 업무
                             </p>
                         </div>
                         <div className={styles.footerLinks}>
@@ -242,7 +242,8 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className={styles.footerBottom}>
-                        <p>&copy; 2025 MediFlow. All rights reserved.</p>
+                        <p>포트폴리오용 PoC · 모든 환자 데이터는 가상입니다. 실제 의료정보를 입력하지 마세요.</p>
+                        <p>&copy; {new Date().getFullYear()} MediFlow. All rights reserved.</p>
                     </div>
                 </div>
             </footer>

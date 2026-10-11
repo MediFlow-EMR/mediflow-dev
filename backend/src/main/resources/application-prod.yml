@@ -3,6 +3,14 @@ spring:
     activate:
       on-profile: prod
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: 20261010
+    validate-on-migrate: true
+    clean-disabled: true
+
   datasource:
     # EC2 .env 파일의 변수 사용
     url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&sslMode=${DB_SSL_MODE:verify-full}&serverSslCert=${DB_SSL_CERT:/etc/pki/tls/certs/rds-global-bundle.pem}

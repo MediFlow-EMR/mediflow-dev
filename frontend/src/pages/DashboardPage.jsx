@@ -1,3 +1,7 @@
+import RequestError from '../components/common/RequestError';
+import { useNavigationGuard } from '../stores/navigationGuard';
+import FilterBar from '../components/common/FilterBar';
+import { filterPatients, patientFilterDefaults } from '../utils/filters';
 import React, { useEffect, useMemo, useState } from 'react';
 import useDashboardStore from '../stores/useDashboardStore';
 import PatientCard from '../components/dashboard/PatientCard';
@@ -5,40 +9,18 @@ import PatientDetail from '../components/dashboard/PatientDetail';
 import HandoverTab from '../components/handover/HandoverTab';
 import styles from './DashboardPage.module.scss';
 
-/**
- * 메인 대시보드 페이지
- *
- * ===================================================================
- * 성능 최적화 적용 사항
- * ===================================================================
- *
- * [문제점] 중복 API 호출
- * - 컴포넌트 마운트 시:
- *   1. 첫 번째 useEffect에서 fetchMyPatients() 호출
- *   2. 두 번째 useEffect에서 activeTab이 'my'이므로 또 fetchMyPatients() 호출
- *   → 동일한 API를 2번 호출! (불필요한 네트워크 비용)
- *
- * [해결책] useEffect 통합
- * - 두 개의 useEffect를 하나로 통합:
- *   1. activeTab 변경을 감지하는 단일 useEffect
- *   2. 초기 마운트 시에도 activeTab('my')에 따라 자동 호출
- *   → API 호출 1번으로 감소! (50% 절감)
- *
- * [추가 효과]
- * - 부서 요약 정보(fetchDepartmentSummary)는 한 번만 호출
- * - 탭 전환 시에도 불필요한 재호출 없음
- *
- * ===================================================================
- */
 const DashboardPage = () => {
   const PATIENTS_PER_PAGE = 5;
   const [patientPage, setPatientPage] = useState(1);
+  const [filters, setFilters] = useState(patientFilterDefaults);
+  const dirty = useNavigationGuard(state => Object.keys(state.owners).length > 0);
   const {
     myPatients,
     allPatients,
     selectedPatient,
     loading,
     error,
+    summaryError,
     activeTab,
     fetchMyPatients,
     fetchAllPatients,
@@ -46,33 +28,19 @@ const DashboardPage = () => {
     selectPatient,
     setActiveTab,
   } = useDashboardStore();
-
-  // ===================================================================
-  // 부서 요약 정보는 최초 한 번만 로드
-  // ===================================================================
   useEffect(() => {
     fetchDepartmentSummary();
   }, [fetchDepartmentSummary]);
-
-  // ===================================================================
-  // 성능 최적화: 초기 로드와 탭 변경을 하나의 useEffect로 통합
-  // ===================================================================
   useEffect(() => {
-    // 현재 탭에 따라 해당하는 환자 목록만 조회
-    // [초기 마운트] activeTab = 'my' → fetchMyPatients() 호출
-    // [탭 클릭] activeTab = 'all' → fetchAllPatients() 호출
     if (activeTab === 'my') {
       fetchMyPatients();
     } else if (activeTab === 'all') {
       fetchAllPatients();
     }
-
-    // 의존성 배열에 activeTab 포함 → 탭이 바뀌면 자동으로 재실행
   }, [activeTab, fetchMyPatients, fetchAllPatients]);
-
-  // 현재 탭에 따라 표시할 환자 목록 선택
-  // (API에서 받아온 데이터 중 어떤 것을 보여줄지 결정)
-  const displayPatients = activeTab === 'my' ? myPatients : allPatients;
+  const sourcePatients = activeTab === 'my' ? myPatients : allPatients;
+  const displayPatients = useMemo(() => filterPatients(sourcePatients, filters), [sourcePatients, filters]);
+  const rooms = [...new Set(sourcePatients.map(patient => String(patient.roomNumber ?? '')).filter(Boolean))].sort();
   const totalPatientPages = Math.max(1, Math.ceil(displayPatients.length / PATIENTS_PER_PAGE));
   const visiblePatients = useMemo(() => {
     const start = (patientPage - 1) * PATIENTS_PER_PAGE;
@@ -81,7 +49,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     setPatientPage(1);
-  }, [activeTab]);
+  }, [activeTab, filters]);
 
   useEffect(() => {
     if (patientPage > totalPatientPages) {
@@ -90,16 +58,15 @@ const DashboardPage = () => {
   }, [patientPage, totalPatientPages]);
 
   useEffect(() => {
-    if (activeTab === 'handover' || loading) return;
-
-    const selectedPatientIsVisible = displayPatients.some(
-      (patient) => patient.patientId === selectedPatient?.patientId
-    );
-
-    if (!selectedPatientIsVisible) {
+    if (activeTab === 'handover' || loading || dirty) return;
+    if (!displayPatients.some(patient => patient.patientId === selectedPatient?.patientId)) {
       selectPatient(displayPatients[0] || null);
     }
-  }, [activeTab, displayPatients, loading, selectedPatient?.patientId, selectPatient]);
+  }, [activeTab, displayPatients, loading, dirty, selectedPatient?.patientId, selectPatient]);
+
+  const changeTab = tab => {
+    if (tab !== activeTab) useNavigationGuard.getState().requestNavigation(() => setActiveTab(tab));
+  };
 
   return (
     <div className={`${styles.dashboardPage} ${activeTab === 'handover' ? styles.handoverMode : ''}`}>
@@ -113,32 +80,45 @@ const DashboardPage = () => {
               <div className={styles.tabs}>
                 <button
                   className={`${styles.tab} ${activeTab === 'my' ? styles.activeTab : ''}`}
-                  onClick={() => setActiveTab('my')}
+                  onClick={() => changeTab('my')}
                 >
                   내 담당
                 </button>
                 <button
                   className={`${styles.tab} ${activeTab === 'all' ? styles.activeTab : ''}`}
-                  onClick={() => setActiveTab('all')}
+                  onClick={() => changeTab('all')}
                 >
                   전체 환자
                 </button>
                 <button
                   className={`${styles.tab} ${activeTab === 'handover' ? styles.activeTab : ''}`}
-                  onClick={() => setActiveTab('handover')}
+                  onClick={() => changeTab('handover')}
                 >
                   인수인계
                 </button>
               </div>
             </div>
 
+            {activeTab !== 'handover' && <FilterBar label="환자" values={filters} onChange={next => { useNavigationGuard.getState().requestNavigation(() => setFilters(next)); }}
+              onReset={() => { useNavigationGuard.getState().requestNavigation(() => setFilters(patientFilterDefaults)); }} searchPlaceholder="이름 · 환자번호 · 진단"
+              count={displayPatients.length} total={sourcePatients.length} fields={[
+                { key: 'room', label: '병실', type: 'select', options: rooms.map(room => ({ value: room, label: `${room}호` })) },
+                { key: 'allergy', label: '알레르기 있음', type: 'checkbox' },
+                { key: 'fallRisk', label: '낙상 고위험', type: 'checkbox' },
+                { key: 'isolation', label: '격리 환자', type: 'checkbox' },
+              ]} />}
+
             {loading && <div className={styles.loading}>로딩중...</div>}
 
-            {error && <div className={styles.error}>{error}</div>}
+            <RequestError className={styles.error} message={error || summaryError} onRetry={() => {
+              fetchDepartmentSummary();
+              if (activeTab === 'my') fetchMyPatients();
+              else if (activeTab === 'all') fetchAllPatients();
+            }} />
 
             {!loading && !error && displayPatients.length === 0 && activeTab !== 'handover' && (
               <div className={styles.empty}>
-                {activeTab === 'my' ? '배정된 환자가 없습니다.' : '부서에 환자가 없습니다.'}
+                {sourcePatients.length ? '필터에 맞는 환자가 없습니다.' : activeTab === 'my' ? '배정된 환자가 없습니다.' : '부서에 환자가 없습니다.'}
               </div>
             )}
 
@@ -150,7 +130,7 @@ const DashboardPage = () => {
                   key={patient.patientId}
                   patient={patient}
                   isSelected={selectedPatient?.patientId === patient.patientId}
-                  onClick={() => selectPatient(patient)}
+                  onClick={() => { if (patient.patientId !== selectedPatient?.patientId) useNavigationGuard.getState().requestNavigation(() => selectPatient(patient)); }}
                 />
               ))}
 

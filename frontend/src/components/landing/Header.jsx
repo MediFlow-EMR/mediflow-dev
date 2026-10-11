@@ -1,3 +1,4 @@
+import ThemeToggle from '../common/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.scss';
 
@@ -15,6 +16,7 @@ const Header = () => {
                     <span className={styles.logoText}>MediFlow</span>
                 </div>
                 <nav className={styles.nav}>
+                <ThemeToggle />
                     <button 
                         className={styles.loginButton}
                         onClick={handleLoginClick}

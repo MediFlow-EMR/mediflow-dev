@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { formatDateTime } from '../../utils/dateFormat';
+import useUnsavedRecord from '../../hooks/useUnsavedRecord';
+import DateTimePicker from '../common/DateTimePicker';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import SortControl from '../common/SortControl';
+import { sortRecords } from '../../utils/sortRecords';
+import { useState, useRef } from 'react';
 import apiClient from '../../services/apiClient';
 import TimeSeriesChart from '../common/TimeSeriesChart';
 import styles from './VitalTab.module.scss';
 
-/**
- * 바이탈 사인 탭 컴포넌트
- */
-const VitalTab = ({ patientId }) => {
+const VitalTab = ({ patientId, onDirtyChange }) => {
   // 바이탈 메트릭 정의
   const vitalMetrics = [
     { key: 'systolicBp', label: '수축기 혈압', color: '#ef4444', unit: 'mmHg' },
@@ -16,23 +20,19 @@ const VitalTab = ({ patientId }) => {
     { key: 'respiratoryRate', label: '호흡', color: '#3b82f6', unit: '회/분' },
     { key: 'spo2', label: 'SpO2', color: '#10b981', unit: '%' },
   ];
-  const [vitals, setVitals] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { items: vitals, loading, loadError, refresh: fetchVitals } = useRecordList(`/vitals/patient/${patientId}`, '바이탈 목록을 불러올 수 없습니다');
+
+  const chronological = sortRecords(vitals, 'measuredAt', 'desc');
+  const previousVitals = new Map(chronological.map((vital, index) => [vital.id, chronological[index + 1]]));
+  const [sortOrder, setSortOrder] = useState('desc');
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
+  const [editingVersion, setEditingVersion] = useState(null);
 
   // 현재 시간 (한국 시간)
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
 
-  // 바이탈 입력 폼 상태
   const [formData, setFormData] = useState({
     systolicBp: '',
     diastolicBp: '',
@@ -43,34 +43,12 @@ const VitalTab = ({ patientId }) => {
     measuredAt: '', // 측정시간
   });
 
-  // 수정 모드 상태
   const [editingVitalId, setEditingVitalId] = useState(null);
-  
-  // 차트 표시 상태
+
   const [showChart, setShowChart] = useState(false);
 
-  // 바이탈 목록 조회
-  const fetchVitals = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/vitals/patient/${patientId}`);
-      setVitals(response.data.data || []);
-    } catch (err) {
-      console.error('바이탈 목록 조회 실패:', err);
-      setError('바이탈 목록을 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useUnsavedRecord(showForm, onDirtyChange, saving);
 
-  useEffect(() => {
-    if (patientId) {
-      fetchVitals();
-    }
-  }, [patientId]);
-
-  // 입력값 변경 핸들러
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -79,11 +57,15 @@ const VitalTab = ({ patientId }) => {
   // 바이탈 등록/수정
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
     setError(null);
 
     try {
       const payload = {
         patientId,
+        version: editingVersion,
         systolicBp: formData.systolicBp ? parseInt(formData.systolicBp) : null,
         diastolicBp: formData.diastolicBp ? parseInt(formData.diastolicBp) : null,
         heartRate: formData.heartRate ? parseInt(formData.heartRate) : null,
@@ -94,23 +76,21 @@ const VitalTab = ({ patientId }) => {
       };
 
       if (editingVitalId) {
-        // 수정
+
         await apiClient.put(`/vitals/${editingVitalId}`, payload);
       } else {
-        // 등록
+
         await apiClient.post('/vitals', payload);
       }
-      
-      // 폼 초기화 및 목록 새로고침
+
       resetForm();
       fetchVitals();
     } catch (err) {
-      console.error('바이탈 저장 실패:', err);
+
       setError(err.response?.data?.message || '바이탈 저장에 실패했습니다');
-    }
+    } finally { saveLock.current = false; setSaving(false); }
   };
 
-  // 폼 초기화
   const resetForm = () => {
     setFormData({
       systolicBp: '',
@@ -122,10 +102,10 @@ const VitalTab = ({ patientId }) => {
       measuredAt: '',
     });
     setEditingVitalId(null);
+    setEditingVersion(null);
     setShowForm(false);
   };
 
-  // 수정 모드로 전환
   const handleEdit = (vital) => {
     setFormData({
       systolicBp: vital.systolicBp || '',
@@ -137,15 +117,13 @@ const VitalTab = ({ patientId }) => {
       measuredAt: vital.measuredAt ? vital.measuredAt.slice(0, 16) : '',
     });
     setEditingVitalId(vital.id);
+    setEditingVersion(vital.version);
     setShowForm(true);
     setShowChart(false); // 차트 닫기
   };
 
-  // 차트 데이터 준비
   const prepareChartData = () => {
-    return vitals
-      .slice()
-      .reverse() // 시간순 정렬 (오래된 것부터)
+    return sortRecords(vitals, 'measuredAt', 'asc')
       .map(vital => ({
         time: vital.measuredAt,
         systolicBp: vital.systolicBp,
@@ -196,7 +174,6 @@ const VitalTab = ({ patientId }) => {
     );
   };
 
-  // 시간 포맷 (한국 시간대)
   const formatTime = (dateTime) => {
     return formatDateTime(dateTime);
   };
@@ -217,7 +194,7 @@ const VitalTab = ({ patientId }) => {
             {showChart ? '목록 보기' : '한눈에 보기'}
           </button>
           <button 
-            className={styles.addButton}
+            className={styles.addButton} disabled={saving}
             onClick={() => {
               if (showForm) {
                 resetForm();
@@ -226,25 +203,21 @@ const VitalTab = ({ patientId }) => {
               }
             }}
           >
-            {showForm ? '취소' : '+ V/S 등록'}
+            {saving ? '저장 중…' : showForm ? '취소' : '+ V/S 등록'}
           </button>
         </div>
       </div>
+      <div className="record-toolbar"><SortControl value={sortOrder} onChange={setSortOrder} basis="측정일시" /></div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <RequestError className={styles.error} message={error || loadError} onRetry={loadError ? fetchVitals : undefined} />
 
       {/* 바이탈 입력 폼 */}
       {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} aria-busy={saving}>
+          <fieldset className="record-form-fields" disabled={saving}>
           <div className={styles.formGroup}>
             <label>측정시간</label>
-            <input
-              type="datetime-local"
-              name="measuredAt"
-              value={formData.measuredAt}
-              onChange={handleChange}
-              max={getCurrentDateTime()}
-            />
+            <DateTimePicker id="measuredAt" label="측정 일시" value={formData.measuredAt} onChange={value => setFormData(prev => ({ ...prev, measuredAt: value }))} />
             <small>측정 시간을 입력하세요 (미입력 시 현재 시간, 미래 시간 입력 불가)</small>
           </div>
 
@@ -255,6 +228,7 @@ const VitalTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="systolicBp"
+                  aria-label="수축기 혈압 (mmHg)"
                   value={formData.systolicBp}
                   onChange={handleChange}
                   placeholder="수축기"
@@ -265,6 +239,7 @@ const VitalTab = ({ patientId }) => {
                 <input
                   type="number"
                   name="diastolicBp"
+                  aria-label="이완기 혈압 (mmHg)"
                   value={formData.diastolicBp}
                   onChange={handleChange}
                   placeholder="이완기"
@@ -280,6 +255,7 @@ const VitalTab = ({ patientId }) => {
               <input
                 type="number"
                 name="heartRate"
+                  aria-label="맥박 (회/분)"
                 value={formData.heartRate}
                 onChange={handleChange}
                 placeholder="60-100"
@@ -295,6 +271,7 @@ const VitalTab = ({ patientId }) => {
                 type="number"
                 step="0.1"
                 name="bodyTemp"
+                  aria-label="체온 (°C)"
                 value={formData.bodyTemp}
                 onChange={handleChange}
                 placeholder="36.5"
@@ -309,6 +286,7 @@ const VitalTab = ({ patientId }) => {
               <input
                 type="number"
                 name="respiratoryRate"
+                  aria-label="호흡 (회/분)"
                 value={formData.respiratoryRate}
                 onChange={handleChange}
                 placeholder="12-20"
@@ -323,6 +301,7 @@ const VitalTab = ({ patientId }) => {
               <input
                 type="number"
                 name="spo2"
+                  aria-label="산소포화도 (%)"
                 value={formData.spo2}
                 onChange={handleChange}
                 placeholder="95-100"
@@ -347,6 +326,7 @@ const VitalTab = ({ patientId }) => {
               </button>
             )}
           </div>
+        </fieldset>
         </form>
       )}
 
@@ -364,8 +344,8 @@ const VitalTab = ({ patientId }) => {
         {vitals.length === 0 ? (
           <div className={styles.empty}>등록된 V/S 정보가 없습니다</div>
         ) : (
-          vitals.map((vital, index) => {
-            const prevVital = vitals[index + 1];
+          sortRecords(vitals, 'measuredAt', sortOrder).map(vital => {
+            const prevVital = previousVitals.get(vital.id);
             
             return (
               <div key={vital.id} className={styles.vitalItem}>
@@ -457,4 +437,3 @@ const VitalTab = ({ patientId }) => {
 };
 
 export default VitalTab;
-import { formatDateTime } from '../../utils/dateFormat';

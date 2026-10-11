@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn var(--motion-enter);
 }
 
 @keyframes fadeIn {
@@ -22,7 +22,7 @@
 }
 
 .modalContent {
-  background: white;
+  background: var(--surface-ffffff);
   padding: 2rem 3rem;
   border-radius: 1rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -30,7 +30,7 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp var(--motion-enter);
 }
 
 @keyframes slideUp {
@@ -47,7 +47,7 @@
 .iconWrapper {
   width: 4rem;
   height: 4rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--surface-10b981) 0%, var(--surface-059669) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -72,14 +72,14 @@
 .checkIcon {
   width: 2.5rem;
   height: 2.5rem;
-  color: white;
+  color: var(--ink-ffffff);
   stroke-width: 3;
 }
 
 .message {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ink-1f2937);
   margin: 0;
   text-align: center;
 }

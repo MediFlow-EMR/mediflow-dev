@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
+      - 'deploy/ec2/**'
 
 concurrency:
   group: production-backend
@@ -46,13 +47,15 @@ jobs:
           JAR_PATH="$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' -print -quit)"
           test -n "$JAR_PATH"
           aws s3 cp "$JAR_PATH" "s3://${{ vars.S3_DEPLOY_BUCKET }}/${RELEASE_KEY}"
+          aws s3 cp ../deploy/ec2/deploy.sh "s3://${{ vars.S3_DEPLOY_BUCKET }}/backend/releases/${GITHUB_SHA}-deploy.sh"
+          aws s3 cp ../deploy/ec2/database-backup.py "s3://${{ vars.S3_DEPLOY_BUCKET }}/backend/releases/${GITHUB_SHA}-database-backup.py"
           echo "release_key=${RELEASE_KEY}" >> "$GITHUB_OUTPUT"
       - name: Deploy through SSM
         id: ssm
         working-directory: .
         shell: bash
         run: |
-          jq -n --arg command "sudo /opt/mediflow/bin/deploy.sh 's3://${{ vars.S3_DEPLOY_BUCKET }}/${{ steps.artifact.outputs.release_key }}'" \
+          jq -n --arg command "sudo aws s3 cp 's3://${{ vars.S3_DEPLOY_BUCKET }}/backend/releases/${GITHUB_SHA}-deploy.sh' /opt/mediflow/bin/deploy.sh && sudo aws s3 cp 's3://${{ vars.S3_DEPLOY_BUCKET }}/backend/releases/${GITHUB_SHA}-database-backup.py' /opt/mediflow/bin/database-backup.py && sudo chmod 750 /opt/mediflow/bin/deploy.sh /opt/mediflow/bin/database-backup.py && sudo /opt/mediflow/bin/deploy.sh 's3://${{ vars.S3_DEPLOY_BUCKET }}/${{ steps.artifact.outputs.release_key }}' '${{ vars.FLYWAY_BASELINE_ON_MIGRATE || 'false' }}'" \
             '{commands: [$command]}' > "$RUNNER_TEMP/mediflow-ssm-parameters.json"
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ vars.EC2_INSTANCE_ID }}" \

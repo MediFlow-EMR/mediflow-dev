@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class IntakeOutputResponse {
 
     private Long id;
+    private Long version;
     private Long patientId;
     private String patientName;
     private Long nurseId;

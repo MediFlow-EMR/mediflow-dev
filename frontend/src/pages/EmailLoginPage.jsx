@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/common/ThemeToggle';
 import LoginForm from '../components/auth/LoginForm';
 import mediflowIcon from '../assets/mediflow-icon.svg';
 import styles from './EmailLoginPage.module.scss';
@@ -5,6 +6,7 @@ import styles from './EmailLoginPage.module.scss';
 export default function EmailLoginPage() {
     return (
         <div className={styles.container}>
+            <div className="page-theme-control"><ThemeToggle /></div>
             <div className={styles.wrapper}>
 
                 {/* 로고 섹션 */}

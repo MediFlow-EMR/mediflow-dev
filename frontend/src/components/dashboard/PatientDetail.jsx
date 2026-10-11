@@ -1,3 +1,4 @@
+import { useNavigationGuard } from '../../stores/navigationGuard';
 import { useEffect, useState } from 'react';
 import apiClient from '../../services/apiClient';
 import OrderTab from '../patient/OrderTab';
@@ -121,7 +122,7 @@ const PatientDetail = ({ patient }) => {
           <button
             key={tab.id}
             className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { if (tab.id !== activeTab) useNavigationGuard.getState().requestNavigation(() => setActiveTab(tab.id)); }}
           >
             {tab.label}
           </button>
@@ -129,12 +130,12 @@ const PatientDetail = ({ patient }) => {
       </div>
 
       <div className={styles.content}>
-        {activeTab === 'orders' && <OrderTab patientId={patient.patientId} />}
-        {activeTab === 'notes' && <NursingNoteTab patientId={patient.patientId} />}
-        {activeTab === 'vitals' && <VitalTab patientId={patient.patientId} />}
-        {activeTab === 'io' && <IntakeOutputTab patientId={patient.patientId} />}
-        {activeTab === 'medications' && <MedicationTab patientId={patient.patientId} />}
-        {activeTab === 'testResults' && <TestResultTab patientId={patient.patientId} />}
+        {activeTab === 'orders' && <OrderTab key={patient.patientId} patientId={patient.patientId} />}
+        {activeTab === 'notes' && <NursingNoteTab key={patient.patientId} patientId={patient.patientId} />}
+        {activeTab === 'vitals' && <VitalTab key={patient.patientId} patientId={patient.patientId} />}
+        {activeTab === 'io' && <IntakeOutputTab key={patient.patientId} patientId={patient.patientId} />}
+        {activeTab === 'medications' && <MedicationTab key={patient.patientId} patientId={patient.patientId} />}
+        {activeTab === 'testResults' && <TestResultTab key={patient.patientId} patientId={patient.patientId} />}
         {activeTab === 'handover' && (
           <div className={styles.comingSoon}>
             {tabs.find((t) => t.id === activeTab)?.label} 기능은 곧 추가됩니다.

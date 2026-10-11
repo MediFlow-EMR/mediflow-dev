@@ -1,0 +1,39 @@
+body {
+    background: var(--surface-f9fafb);
+    color: var(--ink-1f2937);
+}
+button, input, select, textarea { font-family: inherit; }
+button { white-space: nowrap; flex-shrink: 0; }
+input, select, textarea { color: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid #0284c7;
+    outline-offset: 3px;
+}
+button:disabled { cursor: not-allowed; }
+.page-theme-control {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    background-color: var(--surface-ffffff);
+}
+h1, h2, h3, h4, label { word-break: keep-all; }
+.record-toolbar { display: flex; justify-content: flex-end; margin: 10px 0 12px; }
+.retry-request { margin-left: 12px; padding: 6px 10px; border: 1px solid var(--line-cbd5e1); border-radius: 5px; color: var(--ink-0369a1); background: var(--surface-ffffff); cursor: pointer; }
+
+.record-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+.route-loading { padding: 3rem; text-align: center; color: var(--ink-64748b); }
+
+.record-notice { padding: 10px 12px; margin-bottom: 12px; color: var(--ink-166534); background: var(--surface-f0fdf4); border: 1px solid var(--line-bbf7d0); border-radius: 6px; font-size: 13px; }

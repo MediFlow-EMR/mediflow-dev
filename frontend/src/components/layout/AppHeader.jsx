@@ -1,3 +1,7 @@
+import { calendarDate } from '../../utils/calendar';
+import { currentRecordDateTime } from '../../utils/dateFormat';
+import { useNavigationGuard } from '../../stores/navigationGuard';
+import ThemeToggle from '../common/ThemeToggle';
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useDashboardStore from '../../stores/useDashboardStore';
@@ -11,27 +15,27 @@ const AppHeader = () => {
     const location = useLocation();
     const { departmentSummary } = useDashboardStore();
     const { clear } = useAuthStore();
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(() => calendarDate(currentRecordDateTime()));
 
-    const handleLogoClick = () => {
+    const handleLogoClick = () => useNavigationGuard.getState().requestNavigation(() => {
         // /app 경로가 아닌 페이지에서만 navigate 실행
         if (location.pathname !== '/app') {
             navigate('/app');
         }
         // /app 경로에서는 탭을 'my'로 변경
         useDashboardStore.getState().setActiveTab('my');
-    };
+    });
 
-    const handleLogout = async () => {
+    const handleLogout = () => useNavigationGuard.getState().requestNavigation(async () => {
         try {
             await AuthService.logout();
-        } catch (error) {
-            console.error('로그아웃 실패:', error);
+        } catch {
+            // Clear local authentication when the logout endpoint is unavailable.
         } finally {
             clear();
             navigate('/');
         }
-    };
+    });
 
     const handleDateChange = (date) => {
         setSelectedDate(date);
@@ -61,12 +65,7 @@ const AppHeader = () => {
             </div>
 
             <div className={styles.right}>
-                {/*<button
-                    className={styles.aiTestBtn}
-                    onClick={() => navigate('/app/ai-test')}
-                >
-                    🤖 AI 테스트
-                </button>*/}
+                <ThemeToggle />
                 <div className={styles.userInfo}>
                     <div className={styles.nurseName}>
                         {departmentSummary?.nurseName || '사용자'}

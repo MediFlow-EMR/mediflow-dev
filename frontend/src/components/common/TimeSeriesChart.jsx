@@ -13,8 +13,8 @@ const TimeSeriesChart = ({ data, metrics, title }) => {
 
   // 메트릭 선택/해제
   const toggleMetric = (key) => {
-    setSelectedMetrics(prev => 
-      prev.includes(key) 
+    setSelectedMetrics(prev =>
+      prev.includes(key)
         ? prev.filter(k => k !== key)
         : [...prev, key]
     );
@@ -37,7 +37,7 @@ const TimeSeriesChart = ({ data, metrics, title }) => {
   return (
     <div className={styles.chartContainer}>
       {title && <h4 className={styles.chartTitle}>{title}</h4>}
-      
+
       {/* 메트릭 필터 */}
       <div className={styles.metricFilters}>
         {metrics.map(metric => (
@@ -48,11 +48,11 @@ const TimeSeriesChart = ({ data, metrics, title }) => {
             }`}
             onClick={() => toggleMetric(metric.key)}
             style={{
-              borderColor: selectedMetrics.includes(metric.key) ? metric.color : '#d1d5db'
+              borderColor: selectedMetrics.includes(metric.key) ? metric.color : 'var(--line-d1d5db)'
             }}
           >
-            <span 
-              className={styles.colorDot} 
+            <span
+              className={styles.colorDot}
               style={{ backgroundColor: metric.color }}
             />
             {metric.label}
@@ -62,45 +62,46 @@ const TimeSeriesChart = ({ data, metrics, title }) => {
 
       {/* 차트 */}
       <ResponsiveContainer width="100%" height={350}>
-        <LineChart 
-          data={data} 
+        <LineChart
+          data={data}
           margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis 
-            dataKey="time" 
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--line-e5e7eb)" />
+          <XAxis
+            dataKey="time"
             tickFormatter={formatTime}
             angle={-30}
             textAnchor="end"
             height={60}
-            tick={{ fontSize: 11, fill: '#6b7280' }}
-            stroke="#d1d5db"
+            tick={{ fontSize: 11, fill: 'var(--ink-6b7280)' }}
+            stroke="var(--line-d1d5db)"
           />
-          <YAxis 
-            tick={{ fontSize: 11, fill: '#6b7280' }}
-            stroke="#d1d5db"
+          <YAxis
+            tick={{ fontSize: 11, fill: 'var(--ink-6b7280)' }}
+            stroke="var(--line-d1d5db)"
           />
-          <Tooltip 
+          <Tooltip
             labelFormatter={formatTime}
-            contentStyle={{ 
-              backgroundColor: 'white', 
-              border: '1px solid #e5e7eb',
+            contentStyle={{
+              backgroundColor: 'var(--surface-ffffff)',
+              color: 'var(--ink-1f2937)',
+              border: '1px solid var(--line-e5e7eb)',
               borderRadius: '0.375rem',
               fontSize: '0.875rem',
               padding: '0.5rem'
             }}
-            labelStyle={{ 
-              fontWeight: 600, 
+            labelStyle={{
+              fontWeight: 600,
               marginBottom: '0.25rem',
               fontSize: '0.75rem'
             }}
           />
-          <Legend 
+          <Legend
             wrapperStyle={{ fontSize: '0.75rem' }}
             iconSize={10}
           />
-          
-          {metrics.map(metric => 
+
+          {metrics.map(metric =>
             selectedMetrics.includes(metric.key) && (
               <Line
                 key={metric.key}

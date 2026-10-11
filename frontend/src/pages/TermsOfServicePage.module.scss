@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, #eff6ff, #ffffff, #f0f9ff);
+  background: linear-gradient(to bottom right, var(--surface-eff6ff), var(--surface-ffffff), var(--surface-f0f9ff));
   padding: 3rem 1rem;
 }
 
@@ -27,18 +27,18 @@
   .title {
     font-size: 1.875rem;
     font-weight: 700;
-    color: #0369a1;
+    color: var(--ink-0369a1);
     margin-bottom: 0.5rem;
   }
 
   .date {
-    color: #4b5563;
+    color: var(--ink-4b5563);
     font-size: 0.875rem;
   }
 }
 
 .content {
-  background: white;
+  background: var(--surface-ffffff);
   border-radius: 1rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 2rem;
@@ -54,12 +54,12 @@
   h2 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--ink-1f2937);
     margin-bottom: 0.75rem;
   }
 
   p {
-    color: #374151;
+    color: var(--ink-374151);
     line-height: 1.75;
     margin-bottom: 0.5rem;
   }
@@ -67,7 +67,7 @@
   ul {
     list-style-type: disc;
     list-style-position: inside;
-    color: #374151;
+    color: var(--ink-374151);
 
     li {
       margin-bottom: 0.5rem;
@@ -92,11 +92,11 @@
 .footer {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--line-e5e7eb);
 
   p {
     font-size: 0.875rem;
-    color: #4b5563;
+    color: var(--ink-4b5563);
 
     strong {
       font-weight: 600;
@@ -113,34 +113,36 @@
 
 .secondaryButton {
   padding: 0.75rem 1.5rem;
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--surface-ffffff);
+  color: var(--ink-374151);
+  border: 1px solid var(--line-d1d5db);
   border-radius: 0.5rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   cursor: pointer;
   font-size: 1rem;
 
   &:hover {
-    background-color: #f9fafb;
+    background-color: var(--surface-f9fafb);
   }
 }
 
 .primaryButton {
   padding: 0.75rem 1.5rem;
-  background-color: #0ea5e9;
-  color: white;
+  background-color: var(--surface-0ea5e9);
+  color: var(--ink-ffffff);
   border-radius: 0.5rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border: none;
   cursor: pointer;
   font-size: 1rem;
 
   &:hover {
-    background-color: #0284c7;
+    background-color: var(--surface-0284c7);
   }
 }
 
+
+.container { position: relative; padding-top: 68px; padding-bottom: 32px; }

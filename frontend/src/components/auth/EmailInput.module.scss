@@ -1,3 +1,5 @@
+@use '../../styles/auth-controls' as controls;
+
 .container {
   display: flex;
   flex-direction: column;
@@ -6,15 +8,15 @@
 
 .infoBox {
   font-size: 0.875rem;
-  color: #4b5563;
-  background-color: #f0f9ff;
+  color: var(--ink-4b5563);
+  background-color: var(--surface-f0f9ff);
   padding: 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--line-bae6fd);
 
   .label {
     font-weight: 600;
-    color: #0369a1;
+    color: var(--ink-0369a1);
   }
 }
 
@@ -27,29 +29,27 @@
     display: block;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #374151;
+    color: var(--ink-374151);
   }
 
   input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--line-d1d5db);
     border-radius: 0.5rem;
-    transition: all 0.2s;
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
     &:focus {
-      outline: none;
-      ring: 2px;
-      ring-color: #0ea5e9;
-      border-color: transparent;
+      @include controls.field-focus;
     }
   }
 
   .invalidInput {
-    border-color: #ef4444;
+    border-color: var(--line-ef4444);
 
     &:focus {
-      ring-color: #ef4444;
+      border-color: var(--line-ef4444);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--line-ef4444) 20%, transparent);
     }
   }
 }
@@ -59,7 +59,7 @@
 }
 
 .errorMessage {
-  color: #ef4444;
+  color: var(--ink-ef4444);
   font-size: 0.875rem;
   margin: 0 0 0.5rem 0;
   line-height: 1.5;
@@ -67,57 +67,57 @@
 
 .errorMessageLink {
   display: block;
-  color: #ef4444;
+  color: var(--ink-ef4444);
   font-size: 0.875rem;
   margin: 0.5rem 0 0 0;
   line-height: 1.5;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   font-weight: 500;
 
   &:hover {
-    color: #dc2626;
+    color: var(--ink-dc2626);
     text-decoration: underline;
   }
 
   &:active {
-    color: #b91c1c;
+    color: var(--ink-b91c1c);
   }
 }
 
 .loginLink {
   display: inline-block;
   font-size: 0.875rem;
-  color: #0ea5e9;
+  color: var(--ink-0ea5e9);
   text-decoration: underline;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--motion-fast);
   font-weight: 500;
 
   &:hover {
-    color: #0284c7;
+    color: var(--ink-0284c7);
   }
 }
 
 .submitButton {
   width: 100%;
   padding: 0.75rem 1rem;
-  background-color: #0ea5e9;
-  color: white;
+  background-color: var(--surface-0ea5e9);
+  color: var(--ink-ffffff);
   border: none;
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--motion-fast);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 
-  &:hover {
-    background-color: #0284c7;
+  &:hover:not(:disabled) {
+    background-color: var(--surface-0284c7);
   }
 
   &:disabled {
-    background-color: #94a3b8;
+    background-color: var(--surface-94a3b8);
     cursor: not-allowed;
   }
 }

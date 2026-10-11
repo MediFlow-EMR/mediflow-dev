@@ -12,7 +12,7 @@
 }
 
 .modalContent {
-  background: white;
+  background: var(--surface-ffffff);
   border-radius: 8px;
   padding: 2rem;
   max-width: 400px;
@@ -22,12 +22,12 @@
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1a1a1a;
+    color: var(--ink-1a1a1a);
     margin-bottom: 1rem;
   }
 
   p {
-    color: #666;
+    color: var(--ink-666666);
     line-height: 1.6;
     margin-bottom: 1.5rem;
   }
@@ -44,26 +44,28 @@
       font-size: 0.95rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
     }
 
     .cancelButton {
-      background: #f8f9fa;
-      color: #666;
-      border: 1px solid #ddd;
+      background: var(--surface-f8f9fa);
+      color: var(--ink-666666);
+      border: 1px solid var(--line-dddddd);
 
       &:hover {
-        background: #e9ecef;
+        background: var(--surface-e9ecef);
       }
     }
 
     .confirmButton {
-      background: #dc3545;
-      color: white;
+      background: var(--surface-dc3545);
+      color: var(--ink-ffffff);
 
       &:hover {
-        background: #c82333;
+        background: var(--surface-c82333);
       }
     }
   }
 }
+
+.modalContent .actions .primaryConfirmButton { background: var(--surface-0369a1); color: var(--ink-ffffff); &:hover { background: var(--surface-075985); } }

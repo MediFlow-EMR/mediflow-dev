@@ -3,10 +3,10 @@ $primary-color: #2563EB;
 $secondary-color: #3B82F6;
 $accent-color: #0EA5E9;
 
-$background-color: #F9FAFB;
-$text-primary: #1F2937;
-$text-secondary: #6B7280;
-$text-light: #9CA3AF;
+$background-color: var(--surface-f9fafb);
+$text-primary: var(--ink-1f2937);
+$text-secondary: var(--ink-6b7280);
+$text-light: var(--ink-9ca3af);
 
 $success-color: #10B981;
 $warning-color: #F59E0B;

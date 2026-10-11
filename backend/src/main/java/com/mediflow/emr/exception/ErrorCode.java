@@ -15,6 +15,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "invalid token"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "unauthorized"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "forbidden"),
+    CONFLICT(HttpStatus.CONFLICT, "다른 화면에서 변경된 기록입니다. 최신 내용을 다시 열어주세요."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "bad request"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "internal error"),
 

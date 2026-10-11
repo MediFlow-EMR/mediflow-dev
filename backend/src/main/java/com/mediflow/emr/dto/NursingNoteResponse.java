@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 public class NursingNoteResponse {
 
     private Long id;
+    private Long version;
     private Long patientId;
     private String patientName;
     private Long nurseId;

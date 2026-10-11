@@ -1,3 +1,4 @@
+@use 'variables' as *;
 // Responsive breakpoints
 @mixin respond-to($breakpoint) {
     @if $breakpoint == 'mobile' {
@@ -65,14 +66,14 @@
 
 // Card utilities
 @mixin card {
-    background: white;
+    background: var(--surface-ffffff);
     border-radius: $radius-lg;
     box-shadow: $shadow-md;
     padding: $spacing-lg;
 }
 
 @mixin card-hover {
-    transition: all $transition-base;
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
     
     &:hover {
         transform: translateY(-4px);
@@ -90,7 +91,7 @@
     border-radius: $radius-md;
     font-weight: 600;
     cursor: pointer;
-    transition: all $transition-base;
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
     
     &:disabled {
         opacity: 0.5;
@@ -101,7 +102,7 @@
 @mixin button-primary {
     @include button-base;
     @include gradient-primary;
-    color: white;
+    color: var(--ink-ffffff);
     
     &:hover:not(:disabled) {
         transform: translateY(-2px);
@@ -111,7 +112,7 @@
 
 // Animation utilities
 @mixin fade-in($duration: 0.3s) {
-    animation: fadeIn $duration ease-in;
+    animation: fadeIn var(--motion-enter);
 }
 
 @keyframes fadeIn {
@@ -124,7 +125,7 @@
 }
 
 @mixin slide-up($duration: 0.3s) {
-    animation: slideUp $duration ease-out;
+    animation: slideUp var(--motion-enter);
 }
 
 @keyframes slideUp {
@@ -161,7 +162,7 @@
 
 // Glass morphism effect
 @mixin glass-morphism {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgb(var(--surface-rgb) / 0.7);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }

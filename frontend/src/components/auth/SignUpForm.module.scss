@@ -1,9 +1,11 @@
+@use '../../styles/auth-controls' as controls;
+
 .signupForm {
   width: 100%;
 }
 
 .formStepActive {
-  animation: fadeIn 0.3s ease-in;
+  animation: fadeIn var(--motion-enter);
 }
 
 @keyframes fadeIn {
@@ -19,20 +21,20 @@
 
 .infoText {
   font-size: 0.875rem;
-  color: #4b5563;
-  background-color: #f0f9ff;
+  color: var(--ink-4b5563);
+  background-color: var(--surface-f0f9ff);
   padding: 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--line-bae6fd);
   margin-bottom: 1.5rem;
 
   font-weight: 600;
-  color: #0369a1;
+  color: var(--ink-0369a1);
 }
 
 .timerText {
   font-size: 0.875rem;
-  color: #059669;
+  color: var(--ink-059669);
   text-align: center;
   margin-bottom: 1rem;
   font-weight: 500;
@@ -40,25 +42,25 @@
   .timer {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #0ea5e9;
+    color: var(--ink-0ea5e9);
     margin-left: 0.5rem;
   }
 }
 
 .expiredText {
-  color: #ef4444;
+  color: var(--ink-ef4444);
   font-size: 0.875rem;
   text-align: center;
   margin-bottom: 1rem;
   font-weight: 600;
-  background-color: #fee2e2;
+  background-color: var(--surface-fee2e2);
   padding: 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--line-fecaca);
 }
 
 .errorMessage {
-  color: #ef4444;
+  color: var(--ink-ef4444);
   font-size: 0.875rem;
   text-align: center;
   margin-bottom: 1rem;
@@ -78,18 +80,16 @@
   text-align: center;
   font-size: 1.5rem;
   font-weight: 600;
-  border: 2px solid #d1d5db;
+  border: 1px solid var(--line-d1d5db);
   border-radius: 0.5rem;
-  transition: all 0.2s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
   &:focus {
-    outline: none;
-    border-color: #0ea5e9;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    @include controls.field-focus;
   }
 
   &:disabled {
-    background-color: #f3f4f6;
+    background-color: var(--surface-f3f4f6);
     cursor: not-allowed;
   }
 }
@@ -110,9 +110,9 @@
   margin: 0 auto 1rem;
   background: linear-gradient(
     90deg,
-    #f3f4f6 25%,
-    #e5e7eb 50%,
-    #f3f4f6 75%
+    var(--surface-f3f4f6) 25%,
+    var(--surface-e5e7eb) 50%,
+    var(--surface-f3f4f6) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -124,9 +124,9 @@
   height: 3.5rem;
   background: linear-gradient(
     90deg,
-    #f3f4f6 25%,
-    #e5e7eb 50%,
-    #f3f4f6 75%
+    var(--surface-f3f4f6) 25%,
+    var(--surface-e5e7eb) 50%,
+    var(--surface-f3f4f6) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -147,29 +147,27 @@
   width: 100%;
   padding: 0.875rem 3rem 0.875rem 1rem;
   font-size: 1rem;
-  border: 2px solid #d1d5db;
+  border: 1px solid var(--line-d1d5db);
   border-radius: 0.5rem;
-  transition: all 0.2s;
-  background-color: #ffffff;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
+  background-color: var(--surface-ffffff);
 
   &::placeholder {
-    color: #9ca3af;
+    color: var(--ink-9ca3af);
   }
 
   &:focus {
-    outline: none;
-    border-color: #0ea5e9;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    @include controls.field-focus;
   }
 
-  &:hover {
-    border-color: #9ca3af;
+  &:hover:not(:focus) {
+    border-color: var(--line-9ca3af);
   }
 }
 
 .invalidInput {
-  border-color: #ef4444 !important;
-  background-color: #fef2f2;
+  border-color: var(--line-ef4444) !important;
+  background-color: var(--surface-fef2f2);
 
   &:focus {
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
@@ -185,8 +183,8 @@
   border: none;
   cursor: pointer;
   padding: 0.5rem;
-  color: #6b7280;
-  transition: color 0.2s;
+  color: var(--ink-6b7280);
+  transition: color var(--motion-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,12 +195,14 @@
   }
 
   &:hover {
-    color: #0ea5e9;
+    color: var(--ink-0ea5e9);
   }
 
-  &:focus {
-    outline: none;
-    color: #0ea5e9;
+  &:focus-visible {
+    outline: 2px solid var(--line-0ea5e9);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+    color: var(--ink-0ea5e9);
   }
 }
 
@@ -223,8 +223,8 @@
   height: 0.375rem;
   flex: 1;
   border-radius: 0.25rem;
-  background-color: #e5e7eb;
-  transition: background-color 0.3s;
+  background-color: var(--surface-e5e7eb);
+  transition: background-color var(--motion-fast);
 
   &.active {
     animation: fillBar 0.3s ease-out;
@@ -254,12 +254,12 @@
   margin-top: 2rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+  color: var(--ink-ffffff);
+  background: linear-gradient(135deg, var(--surface-0ea5e9) 0%, var(--surface-06b6d4) 100%);
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
   box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
 
   &:hover:not(:disabled) {
@@ -284,7 +284,7 @@
   }
 
   // 버튼 나타날 때 애니메이션
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp var(--motion-enter);
 }
 
 @keyframes slideUp {
@@ -298,3 +298,11 @@
   }
 }
 
+
+.backLink { @include controls.back-link; }
+.backLinkContainer { width: 100%; }
+
+@media (max-width: 480px) {
+  .codeInputContainer { gap: 0.625rem; }
+  .codeInput, .skeletonInput { width: min(3.5rem, 18vw); }
+}

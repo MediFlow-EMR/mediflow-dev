@@ -1,5 +1,7 @@
 package com.mediflow.emr.service;
 
+import com.mediflow.emr.util.RecordUpdateGuard;
+
 import com.mediflow.emr.dto.VitalSignRequest;
 import com.mediflow.emr.dto.VitalSignResponse;
 import com.mediflow.emr.entity.Patient;
@@ -121,6 +123,9 @@ public class VitalService {
         VitalSign vitalSign = vitalSignRepository.findById(vitalId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.VITAL_NOT_FOUND));
 
+        patientAccessService.requireAccessiblePatient(nurseId, vitalSign.getPatient().getId());
+        RecordUpdateGuard.requireCurrent(vitalSign.getPatient().getId(), request.patientId(), vitalSign.getVersion(), request.version());
+
         // 권한 확인 (본인이 등록한 바이탈만 수정 가능)
         if (!vitalSign.getNurse().getId().equals(nurseId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 바이탈만 수정할 수 있습니다");
@@ -148,12 +153,13 @@ public class VitalService {
         );
 
         log.info("바이탈 사인 수정 완료 - id: {}", vitalSign.getId());
-        return toResponse(vitalSign);
+        vitalSignRepository.saveAndFlush(vitalSign);
+        return toResponse(vitalSign, nurseId);
     }
 
     /**
      * 바이탈 사인 삭제
-     * 의료법 제23조에 따라 의료 기록은 10년간 보존해야 하므로 삭제 불가
+     * 원본 보존 정책에 따라 직접 삭제하지 않는다.
      */
     @Transactional
     public void deleteVitalSign(Long vitalId, Long nurseId) {
@@ -168,14 +174,11 @@ public class VitalService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "본인이 등록한 바이탈만 삭제할 수 있습니다");
         }
 
-        // 의료법 제23조: 의료 기록은 10년간 보존 의무
+        // 원본 보존 정책.
         // 삭제 대신 예외를 발생시켜 삭제 불가 안내
-        log.warn("의료법 제23조에 따라 바이탈 사인 삭제 불가 - vitalId: {}", vitalId);
+        log.warn("원본 보존 정책에 따라 바이탈 사인 삭제 불가 - vitalId: {}", vitalId);
         throw new BusinessException(ErrorCode.MEDICAL_RECORD_CANNOT_BE_DELETED);
 
-        // 기존 삭제 코드 (주석 처리)
-        // vitalSignRepository.delete(vitalSign);
-        // log.info("바이탈 사인 삭제 완료 - id: {}", vitalId);
     }
 
     /**
@@ -194,6 +197,7 @@ public class VitalService {
         
         return VitalSignResponse.builder()
                 .id(vitalSign.getId())
+                .version(vitalSign.getVersion())
                 .patientId(vitalSign.getPatient().getId())
                 .patientName(vitalSign.getPatient().getName())
                 .nurseId(vitalSign.getNurse().getId())

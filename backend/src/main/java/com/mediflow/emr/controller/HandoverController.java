@@ -59,37 +59,33 @@ public class HandoverController {
         return ResponseEntity.ok(ApiResponse.ok(aiSummary));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<Void>> saveHandover(
-            Authentication authentication,
-            @Valid @RequestBody HandoverSaveRequest request) {
-        
-        String providerId = authentication.getName();
-        User user = userRepository.findByProviderId(providerId)
+    private User currentUser(Authentication authentication) {
+        return userRepository.findByProviderId(authentication.getName())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        
-        handoverService.saveHandover(
-                request.departmentId(),
-                request.fromShiftId(),
-                request.toShiftId(),
-                request.aiDraft(),
-                request.finalSummary(),
-                user
-        );
-        
-        return ResponseEntity.ok(ApiResponse.ok(null, "인수인계가 저장되었습니다"));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<HandoverDto>> saveHandover(Authentication authentication,
+            @Valid @RequestBody HandoverSaveRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(handoverService.saveHandover(request, currentUser(authentication))));
+    }
+
+    @PutMapping("/{handoverId}")
+    public ResponseEntity<ApiResponse<HandoverDto>> updateHandover(Authentication authentication,
+            @PathVariable Long handoverId, @Valid @RequestBody HandoverSaveRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(handoverService.updateHandover(handoverId, request, currentUser(authentication))));
+    }
+
+    @GetMapping("/{handoverId}/revisions")
+    public ResponseEntity<ApiResponse<List<com.mediflow.emr.entity.HandoverRevision>>> getRevisions(
+            Authentication authentication, @PathVariable Long handoverId) {
+        return ResponseEntity.ok(ApiResponse.ok(handoverService.getRevisions(handoverId, currentUser(authentication))));
     }
 
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<ApiResponse<List<HandoverDto>>> getHandoversByDepartment(
-            @PathVariable Long departmentId) {
-        
-        List<Handover> handovers = handoverService.getHandoversByDepartment(departmentId);
-        List<HandoverDto> handoverDtos = handovers.stream()
-                .map(HandoverDto::from)
-                .collect(Collectors.toList());
-        
-        return ResponseEntity.ok(ApiResponse.ok(handoverDtos));
+            Authentication authentication, @PathVariable Long departmentId) {
+        return ResponseEntity.ok(ApiResponse.ok(handoverService.getHandoversByDepartment(departmentId, currentUser(authentication))));
     }
 
     @DeleteMapping("/{handoverId}")

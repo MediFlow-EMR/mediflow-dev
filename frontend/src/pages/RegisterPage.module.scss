@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: linear-gradient(to bottom right, #eff6ff, #ffffff, #f0f9ff);
+  background: linear-gradient(to bottom right, var(--surface-eff6ff), var(--surface-ffffff), var(--surface-f0f9ff));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,18 +30,18 @@
   .title {
     font-size: 1.875rem;
     font-weight: 700;
-    color: #0369a1;
+    color: var(--ink-0369a1);
     margin-bottom: 0.5rem;
   }
 
   .subtitle {
-    color: #0284c7;
+    color: var(--ink-0284c7);
     font-size: 0.875rem;
   }
 }
 
 .card {
-  background: white;
+  background: var(--surface-ffffff);
   border-radius: 1rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 2rem;
@@ -50,8 +50,14 @@
 .cardTitle {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--ink-1f2937);
   text-align: center;
   margin-bottom: 1.5rem;
 }
 
+
+.container { position: relative; padding-top: 68px; padding-bottom: 32px; }
+
+@media (max-width: 480px) {
+  .card { padding: 1.5rem 1.25rem; }
+}

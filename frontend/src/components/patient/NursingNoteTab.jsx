@@ -1,19 +1,30 @@
-import { useState, useEffect } from 'react';
+import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';
+import { sanitizeClinicalHtml } from '../../utils/clinicalHtml';
+import useUnsavedRecord from '../../hooks/useUnsavedRecord';
+import CustomSelect from '../common/CustomSelect';
+import useRecordList from '../../hooks/useRecordList';
+import RequestError from '../common/RequestError';
+import { sortRecords } from '../../utils/sortRecords';
+import FilterBar from '../common/FilterBar';
+import { filterNotes, noteFilterDefaults } from '../../utils/filters';
+import { useState, useRef } from 'react';
 import apiClient from '../../services/apiClient';
 import RichTextEditor from '../common/RichTextEditor';
 import styles from './NursingNoteTab.module.scss';
 
-/**
- * 간호기록 탭 컴포넌트
- */
-const NursingNoteTab = ({ patientId }) => {
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(false);
+const NursingNoteTab = ({ patientId, onDirtyChange }) => {
+  const { items: notes, loading, loadError, refresh: fetchNotes } = useRecordList(`/nursing-notes/patient/${patientId}`, '간호기록 목록을 불러올 수 없습니다');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [filters, setFilters] = useState(noteFilterDefaults);
+  const filteredNotes = sortRecords(filterNotes(notes, filters), 'createdAt', sortOrder);
+
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
+  const [editingVersion, setEditingVersion] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
 
-  // 간호기록 입력 폼 상태
   const [formData, setFormData] = useState({
     content: '',
     plainText: '',
@@ -21,37 +32,16 @@ const NursingNoteTab = ({ patientId }) => {
     isImportant: false,
   });
 
-  // 카테고리 옵션
   const categories = [
     { value: 'OBSERVATION', label: '관찰' },
     { value: 'TREATMENT', label: '처치' },
     { value: 'MEDICATION', label: '투약' },
     { value: 'EDUCATION', label: '교육' },
-    { value: 'OTHER', label: '기타' },
+    { value: 'CONSULTATION', label: '상담' },
   ];
 
-  // 간호기록 목록 조회
-  const fetchNotes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/nursing-notes/patient/${patientId}`);
-      setNotes(response.data.data || []);
-    } catch (err) {
-      console.error('간호기록 목록 조회 실패:', err);
-      setError('간호기록 목록을 불러올 수 없습니다');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useUnsavedRecord(showForm, onDirtyChange, saving);
 
-  useEffect(() => {
-    if (patientId) {
-      fetchNotes();
-    }
-  }, [patientId]);
-
-  // 에디터 내용 변경 핸들러
   const handleEditorChange = (html, text) => {
     setFormData(prev => ({
       ...prev,
@@ -60,7 +50,6 @@ const NursingNoteTab = ({ patientId }) => {
     }));
   };
 
-  // 입력값 변경 핸들러
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -72,9 +61,13 @@ const NursingNoteTab = ({ patientId }) => {
   // 간호기록 등록/수정
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saveLock.current) return;
+    saveLock.current = true;
+    setSaving(true);
     setError(null);
 
     if (!formData.content.trim()) {
+      saveLock.current = false; setSaving(false);
       setError('기록 내용을 입력해주세요');
       return;
     }
@@ -82,6 +75,7 @@ const NursingNoteTab = ({ patientId }) => {
     try {
       const payload = {
         patientId,
+        version: editingVersion,
         content: formData.content,
         plainText: formData.plainText,
         category: formData.category,
@@ -97,12 +91,11 @@ const NursingNoteTab = ({ patientId }) => {
       resetForm();
       fetchNotes();
     } catch (err) {
-      console.error('간호기록 저장 실패:', err);
+
       setError(err.response?.data?.message || '간호기록 저장에 실패했습니다');
-    }
+    } finally { saveLock.current = false; setSaving(false); }
   };
 
-  // 폼 초기화
   const resetForm = () => {
     setFormData({
       content: '',
@@ -111,10 +104,10 @@ const NursingNoteTab = ({ patientId }) => {
       isImportant: false,
     });
     setEditingNoteId(null);
+    setEditingVersion(null);
     setShowForm(false);
   };
 
-  // 수정 모드로 전환
   const handleEdit = (note) => {
     setFormData({
       content: note.content || '',
@@ -123,10 +116,10 @@ const NursingNoteTab = ({ patientId }) => {
       isImportant: note.isImportant || false,
     });
     setEditingNoteId(note.id);
+    setEditingVersion(note.version);
     setShowForm(true);
   };
 
-  // 시간 포맷
   const formatTime = (dateTime) => {
     return formatRecordDateTime(dateTime);
   };
@@ -140,7 +133,7 @@ const NursingNoteTab = ({ patientId }) => {
       <div className={styles.header}>
         <h3>간호기록</h3>
         <button 
-          className={styles.addButton}
+          className={styles.addButton} disabled={saving}
           onClick={() => {
             if (showForm) {
               resetForm();
@@ -149,30 +142,20 @@ const NursingNoteTab = ({ patientId }) => {
             }
           }}
         >
-          {showForm ? '취소' : '+ 기록 작성'}
+          {saving ? '저장 중…' : showForm ? '취소' : '+ 기록 작성'}
         </button>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <RequestError className={styles.error} message={error || loadError} onRetry={loadError ? fetchNotes : undefined} />
 
       {/* 간호기록 입력 폼 */}
       {showForm && (
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} aria-busy={saving}>
+          <fieldset className="record-form-fields" disabled={saving}>
           <div className={styles.formHeader}>
             <div className={styles.formGroup}>
               <label>카테고리</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className={styles.select}
-              >
-                {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect label="기록 카테고리" value={formData.category} options={categories} onChange={category => setFormData(prev => ({ ...prev, category }))} />
             </div>
 
             <div className={styles.formGroup}>
@@ -191,6 +174,7 @@ const NursingNoteTab = ({ patientId }) => {
           <div className={styles.formGroup}>
             <label>기록 내용</label>
             <RichTextEditor
+              disabled={saving}
               value={formData.content}
               onChange={handleEditorChange}
               placeholder="간호기록을 작성하세요..."
@@ -211,15 +195,23 @@ const NursingNoteTab = ({ patientId }) => {
               </button>
             )}
           </div>
+        </fieldset>
         </form>
       )}
 
+      <FilterBar sortValue={sortOrder} onSortChange={setSortOrder} sortBasis="기록일" label="간호기록" values={filters} onChange={setFilters} onReset={() => setFilters(noteFilterDefaults)}
+        searchPlaceholder="기록 내용 검색" count={filteredNotes.length} total={notes.length} fields={[
+          { key: 'from', label: '시작일', type: 'date' }, { key: 'to', label: '종료일', type: 'date' },
+          { key: 'category', label: '카테고리', type: 'select', options: categories },
+          { key: 'author', label: '작성자', type: 'select', options: [...new Set(notes.map(note => note.nurseName).filter(Boolean))].map(name => ({ value: name, label: name })) },
+          { key: 'important', label: '중요 기록만', type: 'checkbox' },
+        ]} />
       {/* 간호기록 이력 목록 */}
       <div className={styles.noteList}>
-        {notes.length === 0 ? (
-          <div className={styles.empty}>등록된 간호기록이 없습니다</div>
+        {filteredNotes.length === 0 ? (
+          <div className={styles.empty}>{notes.length ? '필터에 맞는 간호기록이 없습니다' : '등록된 간호기록이 없습니다'}</div>
         ) : (
-          notes.map((note) => (
+          filteredNotes.map((note) => (
             <div key={note.id} className={styles.noteItem}>
               <div className={styles.noteHeader}>
                 <div className={styles.noteHeaderLeft}>
@@ -250,7 +242,7 @@ const NursingNoteTab = ({ patientId }) => {
 
               <div 
                 className={styles.noteContent}
-                dangerouslySetInnerHTML={{ __html: note.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeClinicalHtml(note.content) }}
               />
 
               {note.updatedAt && note.updatedAt !== note.createdAt && (
@@ -269,4 +261,3 @@ const NursingNoteTab = ({ patientId }) => {
 };
 
 export default NursingNoteTab;
-import { formatDateTime as formatRecordDateTime } from '../../utils/dateFormat';

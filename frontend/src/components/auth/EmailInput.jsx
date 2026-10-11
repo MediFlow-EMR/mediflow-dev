@@ -5,34 +5,35 @@ import styles from './EmailInput.module.scss';
 
 const EmailInput = ({ onSuccess }) => {
     const emailRef = useRef();
+    const checkController = useRef(null);
     const debounceTimerRef = useRef(null);
 
-    // 에러 상태메시지를 관리
     const [error, setError] = useState('');
     const [email, setEmail] = useState('');
     const [isChecking, setIsChecking] = useState(false);
     const [isEmailValid, setIsEmailValid] = useState(false);
     const [isDuplicate, setIsDuplicate] = useState(false);
 
-    // 화면이 렌더링되자마자 입력창에 포커싱
     useEffect(() => {
         emailRef.current.focus();
     }, []);
 
-    // 컴포넌트 언마운트 시 타이머 정리
     useEffect(() => {
         return () => {
+            checkController.current?.abort();
             if (debounceTimerRef.current) {
                 clearTimeout(debounceTimerRef.current);
             }
         };
     }, []);
 
-    // 이메일 중복 확인 함수
     const checkEmailDuplicate = async (emailValue) => {
+        const controller = new AbortController();
+        checkController.current = controller;
         try {
             setIsChecking(true);
-            const response = await apiClient.get(`/auth/email/check?email=${emailValue}`);
+            const response = await apiClient.get('/auth/email/check', { params: { email: emailValue }, signal: controller.signal });
+            if (controller.signal.aborted) return;
             const { isDuplicate, message } = response.data;
 
             if (isDuplicate) {
@@ -44,35 +45,34 @@ const EmailInput = ({ onSuccess }) => {
                 setIsEmailValid(true);
                 setIsDuplicate(false);
             }
-        } catch (err) {
-            console.error('이메일 중복 확인 실패:', err);
+        } catch {
+            if (controller.signal.aborted) return;
+
             setError('이메일 중복 확인에 실패했습니다.');
             setIsEmailValid(false);
             setIsDuplicate(false);
         } finally {
-            setIsChecking(false);
+            if (!controller.signal.aborted) setIsChecking(false);
         }
     };
 
-    // 이메일 입력 이벤트
     const handleEmail = (e) => {
-        const inputValue = e.target.value;
+        checkController.current?.abort();
+        const inputValue = e.target.value.trim();
+        setIsDuplicate(false);
         setEmail(inputValue);
         setIsEmailValid(false); // 이메일 변경 시 유효성 초기화
 
-        // 기존 타이머 취소
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
         }
 
-        // 입력값이 없으면 에러 메시지 초기화
         if (!inputValue) {
             setError('');
             setIsChecking(false);
             return;
         }
 
-        // 이메일 패턴 검증
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailPattern.test(inputValue)) {
             setError('이메일이 올바르지 않습니다.');
@@ -80,13 +80,11 @@ const EmailInput = ({ onSuccess }) => {
             return;
         }
 
-        // 패턴이 올바르면 중복 확인 (디바운싱 적용)
         debounceTimerRef.current = setTimeout(() => {
             checkEmailDuplicate(inputValue);
         }, 500); // 0.5초 대기
     };
 
-    // 인증 코드 요청 핸들러
     const handleSubmit = () => {
         if (!email) {
             setError('이메일을 입력해주세요.');
@@ -97,15 +95,10 @@ const EmailInput = ({ onSuccess }) => {
             return;
         }
 
-        // 이메일이 유효하고 중복이 아닌 경우
-        console.log('인증 코드 요청:', email);
-
-        // 다음 단계로 이동 (인증 코드 입력 페이지)
         if (onSuccess) {
             onSuccess(email);
         }
     };
-
 
     return (
         <div className={styles.container}>
@@ -121,12 +114,15 @@ const EmailInput = ({ onSuccess }) => {
                     className={error ? styles.invalidInput : ''}
                     type='email'
                     name='email'
+                    autoComplete='email'
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'signup-email-error' : undefined}
                     placeholder='example@email.com'
                     value={email}
                     onChange={handleEmail}
                 />
                 {error && isDuplicate ? (
-                    <Link to="/login" className={styles.errorMessageLink}>
+                    <Link id="signup-email-error" to="/login" className={styles.errorMessageLink}>
                         {error.split('\n').map((line, index) => (
                             <span key={index}>
                                 {line}
@@ -135,7 +131,7 @@ const EmailInput = ({ onSuccess }) => {
                         ))}
                     </Link>
                 ) : error ? (
-                    <p className={styles.errorMessage}>{error}</p>
+                    <p id="signup-email-error" role="alert" className={styles.errorMessage}>{error}</p>
                 ) : null}
             </div>
             

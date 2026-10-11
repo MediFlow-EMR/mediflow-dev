@@ -50,9 +50,11 @@ public class MedicalOrderService {
      * 특정 오더의 약품 상세 정보 조회
      */
     @Transactional(readOnly = true)
-    public DrugDetailInfo getOrderDrugDetail(Long orderId) {
+    public DrugDetailInfo getOrderDrugDetail(Long orderId, Long userId) {
         MedicalOrder order = medicalOrderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        patientAccessService.requireAccessiblePatient(userId, order.getPatient().getId());
         
         if (!"MEDICATION".equals(order.getOrderType()) || order.getOrderName() == null) {
             return null;
@@ -168,9 +170,11 @@ public class MedicalOrderService {
      * 오더 삭제
      */
     @Transactional
-    public void deleteOrder(Long orderId) {
+    public void deleteOrder(Long orderId, Long userId) {
         MedicalOrder order = medicalOrderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+        patientAccessService.requireAccessiblePatient(userId, order.getPatient().getId());
         
         medicalOrderRepository.delete(order);
     }

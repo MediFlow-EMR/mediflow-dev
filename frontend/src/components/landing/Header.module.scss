@@ -1,5 +1,5 @@
-@import '../../styles/variables';
-@import '../../styles/mixins';
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
 
 .header {
     position: sticky;
@@ -7,10 +7,10 @@
     left: 0;
     right: 0;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgb(var(--surface-rgb) / 0.95);
     backdrop-filter: blur(10px);
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
 
     &:hover {
         box-shadow: 0 2px 30px rgba(0, 0, 0, 0.08);
@@ -62,13 +62,13 @@
 .loginButton {
     padding: 0.75rem 2rem;
     background: linear-gradient(135deg, $primary-color, $secondary-color);
-    color: white;
+    color: var(--ink-ffffff);
     border: none;
     border-radius: 50px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast), box-shadow var(--motion-fast), transform var(--motion-fast);
     box-shadow: 0 4px 15px rgba($primary-color, 0.3);
 
     &:hover {
@@ -85,3 +85,5 @@
         font-size: 0.9rem;
     }
 }
+
+:global([data-theme="dark"]) { .logoText { background-image: linear-gradient(135deg, #60a5fa, #38bdf8); } }
