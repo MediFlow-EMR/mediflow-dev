@@ -1,0 +1,22 @@
+name: Inspect production
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Inspect migration prerequisites
+        shell: bash
+        run: |
+          jq -n --arg command 'sudo bash -c '\''systemctl is-active mediflow; command -v mariadb || true; command -v mariadb-dump || command -v mysqldump || true; command -v python3; python3 -c "import pymysql; print(\"PyMySQL available\")" 2>/dev/null || true; test -f /etc/mediflow/mediflow.env && echo "Environment file present"; df -h /opt/mediflow'\''' '{commands: [$command]}' > "$RUNNER_TEMP/parameters.json"
+          command_id=$(aws ssm send-command --instance-ids '${{ vars.EC2_INSTANCE_ID }}' --document-name AWS-RunShellScript --parameters "file://$RUNNER_TEMP/parameters.json" --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$command_id" --instance-id '${{ vars.EC2_INSTANCE_ID }}'
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id '${{ vars.EC2_INSTANCE_ID }}' --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}'
