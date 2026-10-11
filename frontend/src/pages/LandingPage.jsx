@@ -44,7 +44,7 @@ const LandingPage = () => {
             <Header />
 
             {/* Hero Section */}
-            <section 
+            <section
                 className={`${styles.section} ${styles.heroSection}`}
                 ref={(el) => (sectionsRef.current[0] = el)}
             >
@@ -60,7 +60,7 @@ const LandingPage = () => {
                             <br />
                             AI 인수인계 초안을 검토·저장하는 병동 간호 업무 데모
                         </p>
-                        <button 
+                        <button
                             className={styles.ctaButton}
                             onClick={handleCTAClick}
                         >
@@ -69,9 +69,9 @@ const LandingPage = () => {
                     </div>
                     <div className={styles.heroVisual}>
                         <div className={styles.demoContainer}>
-                            <img 
+                            <img
                                 src="/assets/aihandover.gif?v=20261011-2"
-                                alt="MediFlow AI 초안 편집과 수정 이력 데모" 
+                                alt="MediFlow AI 초안 편집과 수정 이력 데모"
                                 className={styles.demoImage}
                             />
                         </div>
@@ -80,7 +80,7 @@ const LandingPage = () => {
             </section>
 
             {/* Features Section */}
-            <section 
+            <section
                 className={`${styles.section} ${styles.featuresSection}`}
                 ref={(el) => (sectionsRef.current[1] = el)}
             >
@@ -89,13 +89,13 @@ const LandingPage = () => {
                     <p className={styles.sectionSubtitle}>
                         환자 확인, 간호 수행 기록, 근무조 인수인계를 연결하는 실무 중심 설계
                     </p>
-                    
+
                     <div className={styles.featuresGrid}>
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
-                                <img 
+                                <img
                                     src="/assets/patientdashboard.gif?v=20261011-2"
-                                    alt="통합 환자 뷰" 
+                                    alt="통합 환자 뷰"
                                     className={styles.featureImage}
                                 />
                             </div>
@@ -111,9 +111,9 @@ const LandingPage = () => {
 
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
-                                <img 
+                                <img
                                     src="/assets/nursingrecord.gif?v=20261011-2"
-                                    alt="AI 인수인계" 
+                                    alt="AI 인수인계"
                                     className={styles.featureImage}
                                 />
                             </div>
@@ -129,9 +129,9 @@ const LandingPage = () => {
 
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
-                                <img 
+                                <img
                                     src="/assets/ordertab.gif?v=20261011-2"
-                                    alt="의료 오더" 
+                                    alt="의료 오더"
                                     className={styles.featureImage}
                                 />
                             </div>
@@ -147,7 +147,7 @@ const LandingPage = () => {
                     </div>
 
                     <div className={styles.ctaContainer}>
-                        <button 
+                        <button
                             className={styles.ctaButton}
                             onClick={handleCTAClick}
                         >
@@ -158,7 +158,7 @@ const LandingPage = () => {
             </section>
 
             {/* Value Proposition Section */}
-            <section 
+            <section
                 className={`${styles.section} ${styles.valueSection}`}
                 ref={(el) => (sectionsRef.current[2] = el)}
             >
@@ -197,7 +197,7 @@ const LandingPage = () => {
                             </div>
                             <h3 className={styles.valueTitle}>간호 업무 흐름 체험</h3>
                             <p className={styles.valueDescription}>
-                                직관적인 UI/UX로 정보 위치를 쉽게 파악할 수 있어 
+                                직관적인 UI/UX로 정보 위치를 쉽게 파악할 수 있어
                                 간호 기록과 오더의 흐름을 가상 환자로 체험할 수 있습니다.
                                 실제 업무 성과나 교육 효과를 검증한 제품은 아닙니다.
                             </p>
@@ -216,7 +216,7 @@ const LandingPage = () => {
                     </div>
 
                     <div className={styles.ctaContainer}>
-                        <button 
+                        <button
                             className={styles.ctaButton}
                             onClick={handleCTAClick}
                         >
