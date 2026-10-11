@@ -1,21 +1,20 @@
-import { calendarDate } from '../../utils/calendar';
-import { currentRecordDateTime } from '../../utils/dateFormat';
+import { calendarDate, dateValue } from '../../utils/calendar';
 import { useNavigationGuard } from '../../stores/navigationGuard';
 import ThemeToggle from '../common/ThemeToggle';
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useDashboardStore from '../../stores/useDashboardStore';
 import { useAuthStore } from '../../stores/authStore';
 import { AuthService } from '../../services/authService';
 import DatePicker from '../common/DatePicker';
+import CustomSelect from '../common/CustomSelect';
 import styles from './AppHeader.module.scss';
 
 const AppHeader = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { departmentSummary } = useDashboardStore();
+    const { departmentSummary, selectedDate, selectedShiftType, setContext } = useDashboardStore();
     const { clear } = useAuthStore();
-    const [selectedDate, setSelectedDate] = useState(() => calendarDate(currentRecordDateTime()));
 
     const handleLogoClick = () => useNavigationGuard.getState().requestNavigation(() => {
         // /app 경로가 아닌 페이지에서만 navigate 실행
@@ -38,7 +37,8 @@ const AppHeader = () => {
     });
 
     const handleDateChange = (date) => {
-        setSelectedDate(date);
+        const nextDate = dateValue(date);
+        if (nextDate && nextDate !== selectedDate) useNavigationGuard.getState().requestNavigation(() => setContext(nextDate));
     };
 
     return (
@@ -74,7 +74,11 @@ const AppHeader = () => {
                         {departmentSummary?.shiftType || '근무조'} 근무
                     </div>
                 </div>
-                <DatePicker selectedDate={selectedDate} onDateChange={handleDateChange} />
+                <DatePicker selectedDate={calendarDate(selectedDate)} onDateChange={handleDateChange} />
+                <CustomSelect label="조회 근무조" value={selectedShiftType} options={[
+                    { value: '', label: '현재 시간 근무조' }, { value: 'DAY', label: 'Day 근무' },
+                    { value: 'EVENING', label: 'Evening 근무' }, { value: 'NIGHT', label: 'Night 근무' },
+                ]} onChange={type => { if (type !== selectedShiftType) useNavigationGuard.getState().requestNavigation(() => setContext(selectedDate, type)); }} />
                 <button className={styles.logoutBtn} onClick={handleLogout}>
                     로그아웃
                 </button>

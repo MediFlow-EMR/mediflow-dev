@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.time.LocalDate;
+import com.mediflow.emr.entity.enums.ShiftType;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * 대시보드 컨트롤러
@@ -38,7 +42,7 @@ public class DashboardController {
      * 설명:
      * - 현재 로그인한 간호사에게 배정된 환자만 조회
      * - 현재 근무조(주간/초번/야간) 기준
-     * - 오늘 날짜 기준
+     * - 선택 날짜·근무조 기준 (생략하면 현재 날짜·근무조)
      *
      * 응답:
      * - 환자 기본 정보 (이름, 나이, 성별, 진단명 등)
@@ -46,7 +50,9 @@ public class DashboardController {
      * - 주담당 여부 (isPrimary)
      */
     @GetMapping("/my-patients")
-    public ResponseEntity<ApiResponse<List<MyPatientResponse>>> getMyPatients(Authentication authentication) {
+    public ResponseEntity<ApiResponse<List<MyPatientResponse>>> getMyPatients(Authentication authentication,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) ShiftType shiftType) {
         
         String providerId = authentication.getName(); // JWT subject (providerId)
         log.info("내 담당 환자 목록 조회 요청: providerId={}", providerId);
@@ -55,7 +61,7 @@ public class DashboardController {
         User user = userRepository.findByProviderId(providerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
-        List<MyPatientResponse> patients = dashboardService.getMyPatients(user.getId());
+        List<MyPatientResponse> patients = dashboardService.getMyPatients(user.getId(), date, shiftType);
         
         return ResponseEntity.ok(ApiResponse.ok(patients));
     }
@@ -103,7 +109,9 @@ public class DashboardController {
      * 부서 요약 정보 조회
      */
     @GetMapping("/department-summary")
-    public ResponseEntity<ApiResponse<DepartmentSummaryResponse>> getDepartmentSummary(Authentication authentication) {
+    public ResponseEntity<ApiResponse<DepartmentSummaryResponse>> getDepartmentSummary(Authentication authentication,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) ShiftType shiftType) {
         
         String providerId = authentication.getName(); // JWT subject (providerId)
         log.info("부서 요약 정보 조회 요청: providerId={}", providerId);
@@ -112,7 +120,7 @@ public class DashboardController {
         User user = userRepository.findByProviderId(providerId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         
-        DepartmentSummaryResponse summary = dashboardService.getDepartmentSummary(user.getId());
+        DepartmentSummaryResponse summary = dashboardService.getDepartmentSummary(user.getId(), date, shiftType);
         
         return ResponseEntity.ok(ApiResponse.ok(summary));
     }

@@ -14,7 +14,7 @@ import styles from './HandoverTab.module.scss';
 
 const HandoverTab = ({ onDirtyChange }) => {
   const { user } = useAuthStore();
-  const { myPatients, allPatients, departmentSummary } = useDashboardStore();
+  const { myPatients, allPatients, departmentSummary, selectedDate } = useDashboardStore();
   const departmentId = departmentSummary?.departmentId || user?.department?.id;
   const [activeTab, setActiveTab] = useState('previous');
   const [sourceType, setSourceType] = useState('AI');
@@ -198,7 +198,7 @@ const HandoverTab = ({ onDirtyChange }) => {
         {sourceType === 'AI' && !aiSummary && <button className={styles.generateButton} onClick={generate} disabled={busy}>{isGenerating ? '생성 중...' : 'AI 자동 요약 생성'}</button>}
         {(sourceType === 'MANUAL' || aiSummary) && <div className={styles.summarySection}>
           <div className={styles.summaryHeader}>
-            <div><span className={styles.eyebrow}>{fromShiftType || '-'} → {toShiftType || '-'}</span><h3>{approvedEdit ? '승인된 인수인계 수정' : sourceType === 'AI' ? 'AI 인수인계 초안 편집' : '수기 인수인계 초안'}</h3></div>
+            <div><span className={styles.eyebrow}>{formatDate(editingRecord?.handoverDate || selectedDate)} · {fromShiftType || '-'} → {toShiftType || '-'}</span><h3>{approvedEdit ? '승인된 인수인계 수정' : sourceType === 'AI' ? 'AI 인수인계 초안 편집' : '수기 인수인계 초안'}</h3></div>
             <span className={styles.draftBadge}>{approvedEdit ? '이력 보존' : '검토 필요'}</span>
           </div>
           <div className={styles.reviewNotice}>{approvedEdit ? '수정 전 내용은 이력에 보존됩니다.' : '내용을 확인한 뒤 임시저장하거나 검토 완료 및 승인해주세요.'}</div>

@@ -15,6 +15,8 @@ const DashboardPage = () => {
   const [filters, setFilters] = useState(patientFilterDefaults);
   const dirty = useNavigationGuard(state => Object.keys(state.owners).length > 0);
   const {
+    selectedDate,
+    selectedShiftType,
     myPatients,
     allPatients,
     selectedPatient,
@@ -30,14 +32,14 @@ const DashboardPage = () => {
   } = useDashboardStore();
   useEffect(() => {
     fetchDepartmentSummary();
-  }, [fetchDepartmentSummary]);
+  }, [fetchDepartmentSummary, selectedDate, selectedShiftType]);
   useEffect(() => {
-    if (activeTab === 'my') {
+    if (activeTab === 'my' || activeTab === 'handover') {
       fetchMyPatients();
     } else if (activeTab === 'all') {
       fetchAllPatients();
     }
-  }, [activeTab, fetchMyPatients, fetchAllPatients]);
+  }, [activeTab, fetchMyPatients, fetchAllPatients, selectedDate, selectedShiftType]);
   const sourcePatients = activeTab === 'my' ? myPatients : allPatients;
   const displayPatients = useMemo(() => filterPatients(sourcePatients, filters), [sourcePatients, filters]);
   const rooms = [...new Set(sourcePatients.map(patient => String(patient.roomNumber ?? '')).filter(Boolean))].sort();
@@ -49,7 +51,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     setPatientPage(1);
-  }, [activeTab, filters]);
+  }, [activeTab, filters, selectedDate, selectedShiftType]);
 
   useEffect(() => {
     if (patientPage > totalPatientPages) {
@@ -167,9 +169,9 @@ const DashboardPage = () => {
       {/* 우측 패널 - 환자 상세 또는 인수인계 */}
       <div className={styles.rightPanel}>
         {activeTab === 'handover' ? (
-          <HandoverTab />
+          <HandoverTab key={`${selectedDate}:${selectedShiftType}`} />
         ) : (
-          <PatientDetail patient={selectedPatient} />
+          <PatientDetail key={`${selectedDate}:${selectedShiftType}`} patient={selectedPatient} />
         )}
       </div>
     </div>

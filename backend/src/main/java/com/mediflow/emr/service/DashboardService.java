@@ -37,15 +37,19 @@ public class DashboardService {
      * 내 담당 환자 목록 조회
      */
     public List<MyPatientResponse> getMyPatients(Long userId) {
+        return getMyPatients(userId, null, null);
+    }
+
+    public List<MyPatientResponse> getMyPatients(Long userId, LocalDate date, ShiftType shiftType) {
         // 사용자 조회
         User nurse = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 오늘 날짜
-        LocalDate today = LocalDate.now();
+        LocalDate today = date == null ? LocalDate.now() : date;
 
         // 현재 시간 기준 근무조 확인
-        ShiftType currentShiftType = getCurrentShiftType();
+        ShiftType currentShiftType = shiftType == null ? getCurrentShiftType() : shiftType;
 
         // 오늘 날짜의 현재 근무조 조회
         Shift currentShift = shiftRepository.findByDateAndType(today, currentShiftType)
@@ -208,6 +212,10 @@ public class DashboardService {
      * 부서 요약 정보 조회
      */
     public DepartmentSummaryResponse getDepartmentSummary(Long userId) {
+        return getDepartmentSummary(userId, null, null);
+    }
+
+    public DepartmentSummaryResponse getDepartmentSummary(Long userId, LocalDate date, ShiftType shiftType) {
         // 사용자 조회
         User nurse = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -221,12 +229,12 @@ public class DashboardService {
                 nurse.getDepartment().getId(), true).size();
 
         // 내 담당 환자 수
-        Long myPatients = (long) getMyPatients(userId).size();
+        Long myPatients = (long) getMyPatients(userId, date, shiftType).size();
 
         // 현재 근무조
-        ShiftType currentShiftType = getCurrentShiftType();
+        ShiftType currentShiftType = shiftType == null ? getCurrentShiftType() : shiftType;
         String shiftTypeName = getShiftTypeName(currentShiftType);
-        LocalDate today = LocalDate.now();
+        LocalDate today = date == null ? LocalDate.now() : date;
         ShiftType nextShiftType = switch (currentShiftType) {
             case DAY -> ShiftType.EVENING;
             case EVENING -> ShiftType.NIGHT;
@@ -259,11 +267,14 @@ public class DashboardService {
      * 현재 시간 기준 근무조 타입 반환
      */
     private ShiftType getCurrentShiftType() {
-        LocalTime now = LocalTime.now();
+        return shiftTypeAt(LocalTime.now());
+    }
+
+    static ShiftType shiftTypeAt(LocalTime now) {
         
-        if (now.isAfter(LocalTime.of(8, 0)) && now.isBefore(LocalTime.of(16, 0))) {
+        if (!now.isBefore(LocalTime.of(8, 0)) && now.isBefore(LocalTime.of(16, 0))) {
             return ShiftType.DAY;
-        } else if (now.isAfter(LocalTime.of(16, 0)) || now.equals(LocalTime.MIDNIGHT)) {
+        } else if (!now.isBefore(LocalTime.of(16, 0))) {
             return ShiftType.EVENING;
         } else {
             return ShiftType.NIGHT;
