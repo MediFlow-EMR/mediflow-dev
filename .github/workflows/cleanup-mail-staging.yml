@@ -1,11 +1,11 @@
-name: Clear private mail staging
+name: Verify private mail staging
 on:
   workflow_dispatch:
 permissions:
   contents: read
   id-token: write
 jobs:
-  cleanup:
+  verify:
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -13,43 +13,26 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
-      - shell: bash
+      - name: Check all staging versions without reading credentials
+        shell: bash
         env:
           DEPLOY_BUCKET: ${{ vars.S3_DEPLOY_BUCKET }}
-          INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
         run: |
           python3 - <<'PY'
-          import json, os, subprocess, tempfile
-          bucket = os.environ['DEPLOY_BUCKET']
-          def aws(*args):
-              result = subprocess.run(['aws', *args],capture_output=True,text=True)
-              if result.returncode: raise RuntimeError('AWS permission denied for ' + args[0] + ' ' + args[1])
-              return json.loads(result.stdout) if result.stdout.strip() else {}
-          import re
-          commands = aws('ssm','list-commands','--filters',json.dumps([{'key':'InvokedAfter','value':'2026-10-11T07:35:00Z'}]))['Commands']
-          keys = set()
-          for command in commands:
-              for text in command.get('Parameters',{}).get('commands',[]):
-                  keys.update(re.findall(r"'(backend/releases/private-mail-[0-9a-f-]+\.json)'",text))
-          items = [{'Key':key} for key in keys]
-          print('Private staging objects located: ' + str(len(items)))
-          pending = []
-          with tempfile.NamedTemporaryFile() as empty:
-              for item in items:
-                  key = item['Key']
-                  metadata = aws('s3api','head-object','--bucket',bucket,'--key',key)
-                  version = metadata.get('VersionId')
-                  if version and version != 'null':
-                      try:
-                          aws('s3api','delete-object','--bucket',bucket,'--key',key,'--version-id',version)
-                      except RuntimeError:
-                          pending.append({'key':key,'versionId':version})
-                  else:
-                      aws('s3api','put-object','--bucket',bucket,'--key',key,'--body',empty.name,'--server-side-encryption','AES256')
-                      assert aws('s3api','head-object','--bucket',bucket,'--key',key)['ContentLength'] == 0
-                      print('Unversioned staging content cleared')
-          if pending:
-              print('Versioned staging requires administrator deletion: ' + json.dumps(pending))
-              raise SystemExit(1)
-          print('No credentials remain in staging objects')
+          import json, os, subprocess
+          result = subprocess.run([
+              'aws', 's3api', 'list-object-versions',
+              '--bucket', os.environ['DEPLOY_BUCKET'],
+              '--prefix', 'backend/releases/private-mail-',
+              '--output', 'json',
+          ], capture_output=True, text=True)
+          if result.returncode:
+              raise SystemExit('Unable to verify staging: check AWS credentials and s3:ListBucketVersions permission. No objects were changed.')
+          data = json.loads(result.stdout)
+          versions = len(data.get('Versions', []))
+          markers = len(data.get('DeleteMarkers', []))
+          print(json.dumps({'versions': versions, 'deleteMarkers': markers}))
+          if versions or markers:
+              raise SystemExit('Staging versions or delete markers remain; administrator review required. No objects were changed.')
+          print('Verified: no staging versions or delete markers remain.')
           PY

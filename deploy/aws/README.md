@@ -423,3 +423,18 @@ e약은요·허가정보 조회 경로를 표시합니다. API 오류는 `TEMPOR
 SMTP 535는 인증 거절입니다. 운영 계정의 SMTP 허용 설정과 인증 정보를 확인하고 EC2 `/etc/mediflow/mediflow.env`의 `MAIL_USERNAME`, `MAIL_PASSWORD`를 보안 세션에서 갱신한 뒤 `sudo systemctl restart mediflow`를 실행합니다. 비밀번호를 커밋·이슈·워크플로 입력값·채팅에 남기지 않습니다. 코드 재배포는 이 파일의 비밀값을 자동 변경하지 않습니다.
 
 앱 비밀번호를 production 환경의 `MAIL_PASSWORD` Secret으로 관리하는 경우 `Update mail credentials` 워크플로가 비공개 암호화 임시 객체로 전달하고 EC2 파일을 갱신합니다. SSM 명령에는 비밀번호 대신 임시 객체 위치만 포함합니다. 운영 적용 전에 빈 객체로 삭제 권한을 검사하며, 버전 관리 버킷에서는 해당 임시 접두사에 대한 `s3:DeleteObjectVersion`이 필요합니다. 권한이 없으면 EC2 보안 세션에서 직접 갱신합니다.
+
+
+### SMTP 임시 파일 삭제 후 확인
+
+S3 콘솔에서 `backend/releases/private-mail-` 접두사의 임시 파일을 **버전 표시** 상태로 모든 버전까지 삭제합니다. 버전 관리 버킷에서 일반 삭제만 하면 삭제 마커 뒤에 기존 비밀값이 남을 수 있습니다. 아래는 CloudShell에서 실행하는 읽기 전용 확인 명령입니다. 비밀번호 파일 내용은 읽지 않습니다.
+
+```bash
+aws s3api list-object-versions \
+  --bucket <배포 버킷명> \
+  --prefix backend/releases/private-mail- \
+  --query '{Versions:length(Versions || `[]`),DeleteMarkers:length(DeleteMarkers || `[]`)}' \
+  --output json
+```
+
+두 값이 모두 0일 때만 모든 버전 정리가 확인됩니다. 권한 오류는 빈 목록으로 간주하지 않습니다. `Verify private mail staging` 워크플로도 같은 범위를 읽기 전용으로 확인하며, `s3:ListBucketVersions` 권한이 없으면 실패합니다. 이 워크플로는 객체를 생성·덮어쓰기·삭제하거나 비밀번호를 읽지 않습니다. 과거 일회성 정리 워크플로를 이 읽기 전용 검사로 대체했습니다.
