@@ -1,0 +1,47 @@
+name: Clear private mail staging
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - shell: bash
+        env:
+          DEPLOY_BUCKET: ${{ vars.S3_DEPLOY_BUCKET }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, tempfile
+          bucket = os.environ['DEPLOY_BUCKET']
+          def aws(*args):
+              result = subprocess.run(['aws', *args],capture_output=True,text=True)
+              if result.returncode: raise RuntimeError('AWS permission denied for ' + args[0] + ' ' + args[1])
+              return json.loads(result.stdout) if result.stdout.strip() else {}
+          items = aws('s3api','list-objects-v2','--bucket',bucket,'--prefix','backend/releases/private-mail-').get('Contents',[])
+          pending = []
+          with tempfile.NamedTemporaryFile() as empty:
+              for item in items:
+                  key = item['Key']
+                  metadata = aws('s3api','head-object','--bucket',bucket,'--key',key)
+                  version = metadata.get('VersionId')
+                  if version and version != 'null':
+                      try:
+                          aws('s3api','delete-object','--bucket',bucket,'--key',key,'--version-id',version)
+                      except RuntimeError:
+                          pending.append({'key':key,'versionId':version})
+                  else:
+                      aws('s3api','put-object','--bucket',bucket,'--key',key,'--body',empty.name,'--server-side-encryption','AES256')
+                      assert aws('s3api','head-object','--bucket',bucket,'--key',key)['ContentLength'] == 0
+                      print('Unversioned staging content cleared')
+          if pending:
+              print('Versioned staging requires administrator deletion: ' + json.dumps(pending))
+              raise SystemExit(1)
+          print('No credentials remain in staging objects')
+          PY
