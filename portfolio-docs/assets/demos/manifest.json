@@ -17,8 +17,8 @@
     {
       "file": "patientdashboard.gif",
       "caption": "담당·부서 환자와 날짜·근무조 전환",
-      "sha256": "13837deef2899ca64b6ace16641d8cc8b901957dff7eddc03f6ef5509925f670",
-      "bytes": 319513,
+      "sha256": "ae34e83d1517b40e2442165c203da1663220bcb849f695bf3099f9b6976954dc",
+      "bytes": 323724,
       "frames": 4,
       "width": 390,
       "height": 844,
@@ -47,8 +47,8 @@
     {
       "file": "aihandover.gif",
       "caption": "AI 초안 편집·미저장 보호·승인 기록 이력",
-      "sha256": "91c5d9585f22f35c4a4230210ecd659be03930f1697804b82bc3524e460c4535",
-      "bytes": 679748,
+      "sha256": "9a20495bb7db765bb6568dead39e6eeaba543b7c4efb71c97892c526bbb50797",
+      "bytes": 687602,
       "frames": 7,
       "width": 390,
       "height": 844,

@@ -34,7 +34,7 @@
 
 ### 2. 담당·부서 환자와 날짜·근무조 전환
 
-![담당·부서 환자와 날짜·근무조 전환](assets/demos/patientdashboard.gif?v=13837deef289)
+![담당·부서 환자와 날짜·근무조 전환](assets/demos/patientdashboard.gif?v=ae34e83d1517)
 
 ### 3. 간호기록 다중 카테고리 필터
 
@@ -46,7 +46,7 @@
 
 ### 5. AI 초안 편집·미저장 보호·승인 기록 이력
 
-![AI 초안 편집·미저장 보호·승인 기록 이력](assets/demos/aihandover.gif?v=91c5d9585f22)
+![AI 초안 편집·미저장 보호·승인 기록 이력](assets/demos/aihandover.gif?v=9a20495bb7db)
 
 [캡처 정보·프레임 수·SHA-256 검증값](assets/demos/manifest.json)
 

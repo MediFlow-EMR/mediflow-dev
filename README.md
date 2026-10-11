@@ -589,10 +589,10 @@ git commit -m "chore: Remove .env files from Git"
 
 ![이메일 로그인과 데모 체험](frontend/public/assets/login.gif?v=84579e31d4b5)
 
-![담당·부서 환자와 날짜·근무조 전환](frontend/public/assets/patientdashboard.gif?v=13837deef289)
+![담당·부서 환자와 날짜·근무조 전환](frontend/public/assets/patientdashboard.gif?v=ae34e83d1517)
 
 ![간호기록 다중 카테고리 필터](frontend/public/assets/nursingrecord.gif?v=7972abf1ece9)
 
 ![오더 날짜 정렬과 약품 정보 조회](frontend/public/assets/ordertab.gif?v=299fa3949df9)
 
-![AI 초안 편집·미저장 보호·승인 기록 이력](frontend/public/assets/aihandover.gif?v=91c5d9585f22)
+![AI 초안 편집·미저장 보호·승인 기록 이력](frontend/public/assets/aihandover.gif?v=9a20495bb7db)

@@ -10,7 +10,13 @@ for name in ('login', 'patientdashboard', 'nursingrecord', 'ordertab', 'aihandov
     paths = sorted((frames_root / name).glob('*.png'))
     if len(paths) < 2:
         raise ValueError(f'Missing capture sequence: {name}')
-    frames = [Image.open(path).convert('RGB').quantize(colors=256) for path in paths]
+    captures = [Image.open(path).convert('RGB') for path in paths]
+    canvas_size = (max(frame.width for frame in captures), max(frame.height for frame in captures))
+    frames = []
+    for capture in captures:
+        canvas = Image.new('RGB', canvas_size, capture.getpixel((0, 0)))
+        canvas.paste(capture, ((canvas.width - capture.width) // 2, 0))
+        frames.append(canvas.quantize(colors=256))
     target = output / f'{name}.gif'
     frames[0].save(target, save_all=True, append_images=frames[1:], duration=1800, loop=0, optimize=True, disposal=2)
     print(f'{name}: {len(frames)} frames, {target.stat().st_size:,} bytes')
