@@ -408,12 +408,12 @@ CREATE INDEX idx_vital_good ON vital_sign(
 
 2026.10.11 로컬 가상 계정의 실제 브라우저 조작 화면을 캡처한 GIF입니다. 로그인, 다중 필터, 날짜 정렬, 수기·AI 초안 저장과 승인 후 수정 이력을 보여줍니다.
 
-![로그인과 테마 전환](assets/demos/login.gif)
+![이메일 로그인과 데모 체험](assets/demos/login.gif)
 
-![환자 조회와 다중 병실 필터](assets/demos/patientdashboard.gif)
+![담당·부서 환자와 날짜·근무조 전환](assets/demos/patientdashboard.gif)
 
-![간호기록·날짜·다중 카테고리](assets/demos/nursingrecord.gif)
+![간호기록 다중 카테고리 필터](assets/demos/nursingrecord.gif)
 
-![오더·약품 정보·투약 입력](assets/demos/ordertab.gif)
+![오더 날짜 정렬과 약품 정보 조회](assets/demos/ordertab.gif)
 
-![수기·AI 초안·승인·수정 이력](assets/demos/aihandover.gif)
+![AI 초안 편집·미저장 보호·승인 기록 이력](assets/demos/aihandover.gif)
