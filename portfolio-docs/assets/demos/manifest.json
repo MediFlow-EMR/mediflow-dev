@@ -1,0 +1,58 @@
+{
+  "capturedOn": "2026-10-11",
+  "environment": "https://www.mediflow-emr.cloud",
+  "data": "가상 데모 데이터",
+  "scope": "실제 운영 브라우저 화면 캡처. 인수인계는 기록 없음 초안 편집 및 기존 검증 기록의 이력 조회를 포함하며 실제 Gemini 응답이나 모든 저장 단계를 연속 녹화한 영상은 아닙니다.",
+  "gifs": [
+    {
+      "file": "login.gif",
+      "caption": "이메일 로그인과 데모 체험",
+      "sha256": "84579e31d4b5bedf6dba42550fdb9b99458fce2c7b7fc6fdc5e6ab988d04d67a",
+      "bytes": 291828,
+      "frames": 4,
+      "width": 375,
+      "height": 812,
+      "durationMs": 7200
+    },
+    {
+      "file": "patientdashboard.gif",
+      "caption": "담당·부서 환자와 날짜·근무조 전환",
+      "sha256": "13837deef2899ca64b6ace16641d8cc8b901957dff7eddc03f6ef5509925f670",
+      "bytes": 319513,
+      "frames": 4,
+      "width": 390,
+      "height": 844,
+      "durationMs": 7200
+    },
+    {
+      "file": "nursingrecord.gif",
+      "caption": "간호기록 다중 카테고리 필터",
+      "sha256": "7972abf1ece9edabe5359330d195bf5cfdddf031870e3ae5531eb9977524481f",
+      "bytes": 267807,
+      "frames": 3,
+      "width": 375,
+      "height": 812,
+      "durationMs": 5400
+    },
+    {
+      "file": "ordertab.gif",
+      "caption": "오더 날짜 정렬과 약품 정보 조회",
+      "sha256": "299fa3949df97595f0594a26833faa50001df5938d395b5885e373c79df39bd1",
+      "bytes": 307510,
+      "frames": 3,
+      "width": 375,
+      "height": 812,
+      "durationMs": 5400
+    },
+    {
+      "file": "aihandover.gif",
+      "caption": "AI 초안 편집·미저장 보호·승인 기록 이력",
+      "sha256": "91c5d9585f22f35c4a4230210ecd659be03930f1697804b82bc3524e460c4535",
+      "bytes": 679748,
+      "frames": 7,
+      "width": 390,
+      "height": 844,
+      "durationMs": 12600
+    }
+  ]
+}
