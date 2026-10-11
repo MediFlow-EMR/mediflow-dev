@@ -1,0 +1,42 @@
+name: Restore frontend assets
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Previously verified release commit to restore hashed assets from
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-frontend
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Restore hashed assets only
+        run: |
+          aws s3 sync dist/assets/ "s3://${{ vars.S3_FRONTEND_BUCKET }}/assets/" --exclude '*' --include '*-*.js' --include '*-*.css' --include '*-*.svg' --cache-control "public,max-age=31536000,immutable"
+          aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths '/assets/*'

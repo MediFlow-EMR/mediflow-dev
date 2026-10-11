@@ -48,3 +48,5 @@ Vite HMR WebSocket의 “Page entered Back-Forward Cache” 메시지는 개발 
 화면은 CSS Modules/SCSS와 공통 CSS로 구성합니다. 미사용 Tailwind·개발 전용 페이지·Markdown/STOMP 의존성은 제거했습니다. 라우트와 차트 번들을 나누며 랜딩 진입 시 차트 번들을 미리 로드하지 않습니다. HTML 정제는 DOMPurify, DOM 기반 보안 테스트는 개발 의존성 jsdom을 사용합니다.
 
 검증 명령은 `npm test`, `npm run lint`, `npm run build`, `npm audit`입니다. 상세 결과와 범위는 [검증 기록](../portfolio-docs/10.QUALITY_AND_VALIDATION.md)을 참고하세요.
+
+배포는 assets 업로드 → 기타 정적 파일 → index.html 교체 순서로 진행하며 이전 해시 번들을 보존합니다. 배포 전에 열린 화면의 동적 import가 이전 번들을 계속 사용할 수 있습니다.
