@@ -13,6 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +43,7 @@ class HandoverGenerationTest {
     void assignedPatient() {
         Patient patient = Patient.builder().id(10L).name("가상환자").chartNumber("DEMO001")
                 .age(60).gender(Gender.M).department(DepartmentEntity.builder().name("시연부서").build()).build();
-        Shift shift = Shift.builder().id(99L).startTime(LocalTime.of(16, 0)).endTime(LocalTime.MIDNIGHT).build();
+        Shift shift = Shift.builder().id(99L).date(LocalDate.of(2026, 10, 9)).startTime(LocalTime.of(16, 0)).endTime(LocalTime.MIDNIGHT).build();
         when(shifts.findById(99L)).thenReturn(Optional.of(shift));
         when(assignments.findByNurseIdAndShiftId(1L, 99L))
                 .thenReturn(List.of(Assignment.builder().patient(patient).build()));
@@ -77,4 +79,35 @@ class HandoverGenerationTest {
         when(gemini.generateContent(anyString())).thenReturn("### [임의환자 (60세/남)]\n- 주요 변화: 임의 내용.");
         assertThatThrownBy(() -> service.generateAiSummary(1L, 99L)).isInstanceOf(BusinessException.class);
     }
+    @Test
+    void selectedHistoricalShiftControlsAllRecordQueries() {
+        service.generateAiSummary(1L, 99L);
+        var start = LocalDateTime.of(2026,10,9,16,0);
+        var last = LocalDateTime.of(2026,10,10,0,0).minusNanos(1);
+        verify(vitals).findByPatientIdAndMeasuredAtBetween(10L,start,last);
+        verify(medications).findByPatientIdAndAdministeredAtBetween(10L,start,last);
+        verify(intakeOutputs).findByPatientIdAndRecordedAtBetween(10L,start,last);
+    }
+
+    @Test
+    void patientRegenerationUsesHistoricalNightCrossingMidnight() {
+        when(shifts.findById(99L)).thenReturn(Optional.of(Shift.builder().id(99L)
+                .date(LocalDate.of(2026,10,9)).startTime(LocalTime.of(23,0)).endTime(LocalTime.of(7,0)).build()));
+        service.generatePatientAiSummary(1L, 99L, 10L);
+        verify(vitals).findByPatientIdAndMeasuredAtBetween(10L,LocalDateTime.of(2026,10,9,23,0),
+                LocalDateTime.of(2026,10,10,7,0).minusNanos(1));
+    }
+
+    @Test
+    void testResultsOutsideShiftOrMissingTimeAreExcluded() {
+        when(testResults.findByPatientIdOrderByResultDateDesc(10L)).thenReturn(List.of(
+                TestResult.builder().resultDate(LocalDateTime.of(2026,10,9,16,0)).testName("selected-start").resultValue("in-shift").build(),
+                TestResult.builder().resultDate(LocalDateTime.of(2026,10,10,0,0)).testName("next-shift").resultValue("excluded-end").build(),
+                TestResult.builder().resultDate(LocalDateTime.of(2026,10,9,15,59)).testName("before-shift").resultValue("excluded-before").build(),
+                TestResult.builder().testName("missing-time").resultValue("excluded-null").build()));
+        when(gemini.generateContent(anyString())).thenReturn("**[환자-001 (60세/남)]**\n- 주요 변화: 검사 확인.");
+        service.generateAiSummary(1L,99L);
+        verify(gemini).generateContent(argThat(prompt -> prompt.contains("in-shift") && !prompt.contains("excluded-")));
+    }
+
 }

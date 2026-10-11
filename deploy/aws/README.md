@@ -421,3 +421,5 @@ e약은요·허가정보 조회 경로를 표시합니다. API 오류는 `TEMPOR
 `Inspect production` 워크플로는 SMTP 설정 존재 여부, 메일 예외 종류·SMTP 상태 코드의 발생 수와 TCP 연결 결과만 출력합니다. 인증 정보·코드·수신 주소는 출력하지 않습니다. 중복 조회는 SMTP 연결 없이 동작하고 인증 메일은 명시적 POST 요청에서만 발송합니다.
 
 SMTP 535는 인증 거절입니다. 운영 계정의 SMTP 허용 설정과 인증 정보를 확인하고 EC2 `/etc/mediflow/mediflow.env`의 `MAIL_USERNAME`, `MAIL_PASSWORD`를 보안 세션에서 갱신한 뒤 `sudo systemctl restart mediflow`를 실행합니다. 비밀번호를 커밋·이슈·워크플로 입력값·채팅에 남기지 않습니다. 코드 재배포는 이 파일의 비밀값을 자동 변경하지 않습니다.
+
+앱 비밀번호를 production 환경의 `MAIL_PASSWORD` Secret으로 관리하는 경우 `Update mail credentials` 워크플로가 비공개 암호화 임시 객체로 전달하고 EC2 파일을 갱신합니다. SSM 명령에는 비밀번호 대신 임시 객체 위치만 포함합니다. 운영 적용 전에 빈 객체로 삭제 권한을 검사하며, 버전 관리 버킷에서는 해당 임시 접두사에 대한 `s3:DeleteObjectVersion`이 필요합니다. 권한이 없으면 EC2 보안 세션에서 직접 갱신합니다.

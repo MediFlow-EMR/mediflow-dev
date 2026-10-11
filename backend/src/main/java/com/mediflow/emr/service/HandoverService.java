@@ -48,7 +48,7 @@ public class HandoverService {
         Shift fromShift = shiftRepository.findById(fromShiftId)
             .orElseThrow(() -> new IllegalArgumentException("근무조를 찾을 수 없습니다."));
 
-        LocalDate today = LocalDate.now();
+        LocalDate shiftDate = fromShift.getDate();
 
         // 해당 근무조에 배정된 환자 조회
         List<Assignment> assignments = assignmentRepository.findByNurseIdAndShiftId(nurseId, fromShiftId);
@@ -70,8 +70,8 @@ public class HandoverService {
         // 부서 정보는 첫 번째 환자의 부서로 설정
         DepartmentEntity department = patients.get(0).getDepartment();
 
-        final LocalDateTime shiftStart = LocalDateTime.of(today, fromShift.getStartTime());
-        LocalDateTime tempEnd = LocalDateTime.of(today, fromShift.getEndTime());
+        final LocalDateTime shiftStart = LocalDateTime.of(shiftDate, fromShift.getStartTime());
+        LocalDateTime tempEnd = LocalDateTime.of(shiftDate, fromShift.getEndTime());
         
         if (fromShift.getEndTime().isBefore(fromShift.getStartTime())) {
             tempEnd = tempEnd.plusDays(1);
@@ -113,9 +113,9 @@ public class HandoverService {
                 "현재 근무조에 배정된 환자만 다시 생성할 수 있습니다."
             ));
 
-        LocalDate today = LocalDate.now();
-        LocalDateTime shiftStart = LocalDateTime.of(today, fromShift.getStartTime());
-        LocalDateTime shiftEnd = LocalDateTime.of(today, fromShift.getEndTime());
+        LocalDate shiftDate = fromShift.getDate();
+        LocalDateTime shiftStart = LocalDateTime.of(shiftDate, fromShift.getStartTime());
+        LocalDateTime shiftEnd = LocalDateTime.of(shiftDate, fromShift.getEndTime());
         if (fromShift.getEndTime().isBefore(fromShift.getStartTime())) {
             shiftEnd = shiftEnd.plusDays(1);
         }
@@ -184,21 +184,21 @@ public class HandoverService {
 
         data.notes = nursingNoteRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId())
             .stream()
-            .filter(n -> !n.getCreatedAt().isBefore(start) && !n.getCreatedAt().isAfter(end))
+            .filter(n -> n.getCreatedAt() != null && !n.getCreatedAt().isBefore(start) && n.getCreatedAt().isBefore(end))
             .collect(Collectors.toList());
 
         data.important = data.notes.stream().anyMatch(NursingNote::getIsImportant);
 
-        data.vitals = vitalSignRepository.findByPatientIdAndMeasuredAtBetween(patient.getId(), start, end);
+        data.vitals = vitalSignRepository.findByPatientIdAndMeasuredAtBetween(patient.getId(), start, end.minusNanos(1));
         data.important = data.important || data.vitals.stream().anyMatch(this::isAbnormal);
 
-        data.medications = medicationRepository.findByPatientIdAndAdministeredAtBetween(patient.getId(), start, end);
-        data.intakeOutputs = intakeOutputRepository.findByPatientIdAndRecordedAtBetween(patient.getId(), start, end);
+        data.medications = medicationRepository.findByPatientIdAndAdministeredAtBetween(patient.getId(), start, end.minusNanos(1));
+        data.intakeOutputs = intakeOutputRepository.findByPatientIdAndRecordedAtBetween(patient.getId(), start, end.minusNanos(1));
         data.important = data.important || data.intakeOutputs.stream().anyMatch(this::hasImbalance);
 
         data.testResults = testResultRepository.findByPatientIdOrderByResultDateDesc(patient.getId())
             .stream()
-            .filter(r -> r.getResultDate().toLocalDate().equals(LocalDate.now()))
+            .filter(r -> r.getResultDate() != null && !r.getResultDate().isBefore(start) && r.getResultDate().isBefore(end))
             .collect(Collectors.toList());
 
         return data;
@@ -250,7 +250,13 @@ public class HandoverService {
 
             if (!data.testResults.isEmpty()) {
                 sb.append("- 검사결과: ");
-                data.testResults.forEach(t -> sb.append(t.getTestType()).append(" ").append(t.getTestName()).append(", "));
+                data.testResults.forEach(t -> {
+                    sb.append(t.getTestName());
+                    if (t.getResultValue() != null) sb.append(": ").append(t.getResultValue());
+                    if (t.getReferenceRange() != null) sb.append(" (참고치 ").append(t.getReferenceRange()).append(")");
+                    if (Boolean.TRUE.equals(t.getIsAbnormal())) sb.append(" [이상]");
+                    sb.append(", ");
+                });
                 sb.append("\n");
             }
 
@@ -352,7 +358,7 @@ public class HandoverService {
         Shift to = shiftRepository.findById(request.toShiftId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST, "인수 근무조를 찾을 수 없습니다."));
         Handover record = Handover.builder().department(department).fromShift(from).toShift(to)
-                .handoverDate(LocalDate.now()).createdBy(user).build();
+                .handoverDate(from.getDate()).createdBy(user).build();
         applyContent(record, request);
         Handover saved = handoverRepository.saveAndFlush(record);
         snapshot(saved, user);

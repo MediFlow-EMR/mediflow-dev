@@ -38,8 +38,8 @@ class HandoverEditingTest {
     DepartmentEntity department = DepartmentEntity.builder().id(1L).name("시연부서").build();
     User author = User.builder().id(10L).name("작성자").department(department).build();
     User colleague = User.builder().id(20L).name("동료").department(department).build();
-    Shift from = Shift.builder().id(1L).type(ShiftType.DAY).build();
-    Shift to = Shift.builder().id(2L).type(ShiftType.EVENING).build();
+    Shift from = Shift.builder().id(1L).date(java.time.LocalDate.of(2026,10,9)).type(ShiftType.DAY).build();
+    Shift to = Shift.builder().id(2L).date(java.time.LocalDate.of(2026,10,9)).type(ShiftType.EVENING).build();
 
     Handover record(String status) {
         Handover result = Handover.builder().id(100L).department(department).fromShift(from).toShift(to)
@@ -66,6 +66,7 @@ class HandoverEditingTest {
         persist();
         var saved = service.saveHandover(request("DRAFT", null), author);
         assertThat(saved.getStatus()).isEqualTo("DRAFT");
+        assertThat(saved.getHandoverDate()).isEqualTo(java.time.LocalDate.of(2026,10,9));
         assertThat(saved.getAiSummary()).isNull();
         assertThat(saved.getAiModel()).isNull();
         assertThat(saved.getApprovedAt()).isNull();
