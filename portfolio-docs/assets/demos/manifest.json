@@ -1,58 +1,63 @@
 {
   "capturedOn": "2026-10-11",
   "environment": "https://www.mediflow-emr.cloud",
+  "formFactor": "desktop",
+  "browserViewport": {
+    "width": 1280,
+    "height": 720
+  },
   "data": "가상 데모 데이터",
-  "scope": "실제 운영 브라우저 화면 캡처. 인수인계는 기록 없음 초안 편집 및 기존 검증 기록의 이력 조회를 포함하며 실제 Gemini 응답이나 모든 저장 단계를 연속 녹화한 영상은 아닙니다.",
+  "scope": "운영 브라우저 PC 화면 캡처. 라이트·다크 가로형 UI, 실제 날짜/근무조 전환·다중 필터·정렬, 수기 초안 서버 저장·재조회·승인·작성자 수정·버전 0/1/2, 과거 DAY 근무조의 실제 Gemini 초안 생성·편집·원본 비교·임시저장을 촬영했습니다. 환자 상태의 임상적 정확성이나 소셜 로그인 성공을 검증한 영상은 아닙니다.",
   "gifs": [
     {
       "file": "login.gif",
       "caption": "이메일 로그인과 데모 체험",
-      "sha256": "84579e31d4b5bedf6dba42550fdb9b99458fce2c7b7fc6fdc5e6ab988d04d67a",
-      "bytes": 291828,
+      "sha256": "741473d5d45135b55d0728692aa3ee914d245793723e846e432515633c429a3c",
+      "bytes": 479311,
       "frames": 4,
-      "width": 375,
-      "height": 812,
+      "width": 1265,
+      "height": 712,
       "durationMs": 7200
     },
     {
       "file": "patientdashboard.gif",
-      "caption": "담당·부서 환자와 날짜·근무조 전환",
-      "sha256": "ae34e83d1517b40e2442165c203da1663220bcb849f695bf3099f9b6976954dc",
-      "bytes": 323724,
-      "frames": 4,
-      "width": 390,
-      "height": 844,
-      "durationMs": 7200
+      "caption": "PC 가로형 대시보드·날짜·근무조·병실 다중 필터",
+      "sha256": "9f182fc7427f0bab0ae5d568ffbc37c18f06f405ce5313e7cc551e2a61943fe1",
+      "bytes": 1251236,
+      "frames": 6,
+      "width": 1280,
+      "height": 720,
+      "durationMs": 10800
     },
     {
       "file": "nursingrecord.gif",
-      "caption": "간호기록 다중 카테고리 필터",
-      "sha256": "7972abf1ece9edabe5359330d195bf5cfdddf031870e3ae5531eb9977524481f",
-      "bytes": 267807,
-      "frames": 3,
-      "width": 375,
-      "height": 812,
-      "durationMs": 5400
+      "caption": "간호기록 카테고리·작성자 다중 필터와 기간 달력",
+      "sha256": "3add0a565cf4fab1d0614635c06c779c4bf2f056db835bc1672ab9b4382ee18d",
+      "bytes": 1021799,
+      "frames": 5,
+      "width": 1265,
+      "height": 712,
+      "durationMs": 9000
     },
     {
       "file": "ordertab.gif",
       "caption": "오더 날짜 정렬과 약품 정보 조회",
-      "sha256": "299fa3949df97595f0594a26833faa50001df5938d395b5885e373c79df39bd1",
-      "bytes": 307510,
-      "frames": 3,
-      "width": 375,
-      "height": 812,
-      "durationMs": 5400
+      "sha256": "239b10e590dce329b2a6e0dd902c5f88a6cdc6b89bd99605bcfbfc8227951413",
+      "bytes": 845361,
+      "frames": 4,
+      "width": 1265,
+      "height": 712,
+      "durationMs": 7200
     },
     {
       "file": "aihandover.gif",
-      "caption": "AI 초안 편집·미저장 보호·승인 기록 이력",
-      "sha256": "9a20495bb7db765bb6568dead39e6eeaba543b7c4efb71c97892c526bbb50797",
-      "bytes": 687602,
-      "frames": 7,
-      "width": 390,
-      "height": 844,
-      "durationMs": 12600
+      "caption": "수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집",
+      "sha256": "0aa3a93cb45278956911d29ec88baa6c53f7610c14fe7c715e0c9154b0269824",
+      "bytes": 1729445,
+      "frames": 13,
+      "width": 1280,
+      "height": 720,
+      "durationMs": 23400
     }
   ]
 }

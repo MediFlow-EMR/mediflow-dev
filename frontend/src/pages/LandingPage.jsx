@@ -70,7 +70,7 @@ const LandingPage = () => {
                     <div className={styles.heroVisual}>
                         <div className={styles.demoContainer}>
                             <img
-                                src="/assets/aihandover.gif?v=9a20495bb7db"
+                                src="/assets/aihandover.gif?v=0aa3a93cb452"
                                 alt="MediFlow AI 초안 편집과 수정 이력 데모"
                                 className={styles.demoImage}
                             />
@@ -94,7 +94,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img
-                                    src="/assets/patientdashboard.gif?v=ae34e83d1517"
+                                    src="/assets/patientdashboard.gif?v=9f182fc7427f"
                                     alt="통합 환자 뷰"
                                     className={styles.featureImage}
                                 />
@@ -112,7 +112,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img
-                                    src="/assets/nursingrecord.gif?v=7972abf1ece9"
+                                    src="/assets/nursingrecord.gif?v=3add0a565cf4"
                                     alt="AI 인수인계"
                                     className={styles.featureImage}
                                 />
@@ -130,7 +130,7 @@ const LandingPage = () => {
                         <div className={styles.featureCard}>
                             <div className={styles.featurePreview}>
                                 <img
-                                    src="/assets/ordertab.gif?v=299fa3949df9"
+                                    src="/assets/ordertab.gif?v=239b10e590dc"
                                     alt="의료 오더"
                                     className={styles.featureImage}
                                 />

@@ -102,6 +102,7 @@ const HandoverTab = ({ onDirtyChange }) => {
       setEditingRecord(response.data);
       setBaseline({ content: editedSummary, ai: aiSummary });
       setHistories({});
+      setHistoryId(null);
       setSuccessMessage(status === 'DRAFT' ? '초안을 서버에 임시저장했습니다.' : approvedEdit ? '수정 내용과 이력을 저장했습니다.' : '검토 완료된 인수인계를 승인했습니다.');
       if (status === 'APPROVED') setActiveTab('previous');
       else await loadPreviousHandovers();

@@ -585,14 +585,14 @@ git commit -m "chore: Remove .env files from Git"
 
 ## 현재 UI 시연
 
-2026.10.11 배포된 사이트에서 가상 계정으로 조작한 화면을 캡처했습니다. 로그인·날짜/근무조 전환·다중 필터·정렬·초안 편집과 기존 승인 기록의 이력 조회를 보여줍니다. AI 영상에는 해당 근무조의 기록 없음 초안이 포함되며, 실제 Gemini 응답이나 모든 저장 단계를 연속 녹화한 영상은 아닙니다. [캡처 정보 및 파일 검증값](portfolio-docs/assets/demos/manifest.json)을 확인하세요.
+2026.10.11 배포 사이트의 가상 계정으로 촬영한 최신 PC 화면입니다. 가로형 대시보드, 날짜·근무조 전환, 병실·카테고리·작성자 다중 필터, 정렬·약품 조회를 보여줍니다. 인수인계 영상은 수기 초안 임시저장·재조회·승인·작성자 수정·버전 이력과 실제 Gemini 초안 생성·편집·원본 비교·임시저장을 포함합니다. [캡처 정보 및 파일 검증값](portfolio-docs/assets/demos/manifest.json)을 확인하세요.
 
-![이메일 로그인과 데모 체험](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/login.gif)
+![이메일 로그인과 데모 체험](frontend/public/assets/login.gif?v=741473d5d451)
 
-![담당·부서 환자와 날짜·근무조 전환](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/patientdashboard.gif)
+![PC 가로형 대시보드·날짜·근무조·병실 다중 필터](frontend/public/assets/patientdashboard.gif?v=9f182fc7427f)
 
-![간호기록 다중 카테고리 필터](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/nursingrecord.gif)
+![간호기록 카테고리·작성자 다중 필터와 기간 달력](frontend/public/assets/nursingrecord.gif?v=3add0a565cf4)
 
-![오더 날짜 정렬과 약품 정보 조회](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/ordertab.gif)
+![오더 날짜 정렬과 약품 정보 조회](frontend/public/assets/ordertab.gif?v=239b10e590dc)
 
-![AI 초안 편집·미저장 보호·승인 기록 이력](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/2100440a7ba08300c63abed8d32da4f4a8c5a939/frontend/public/assets/aihandover.gif)
+![수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집](frontend/public/assets/aihandover.gif?v=0aa3a93cb452)
