@@ -10,7 +10,6 @@ import { EmailAuthService } from '../../services/authService.js';
 const SignUpForm = () => {
     const navigate = useNavigate();
 
-    // 현재 어떤 스텝인지 확인
     const [step, setStep] = useState(1);
 
     const [email, setEmail] = useState('');
@@ -47,20 +46,18 @@ const SignUpForm = () => {
 
             await EmailAuthService.signup(email, password);
 
-            // 성공 모달 표시
             setShowSuccessModal(true);
         } catch (error) {
 
             const errorMessage = error.response?.data?.message
                 || error.response?.data?.error
                 || '회원가입 중 오류가 발생했습니다.';
-            setError(errorMessage);
+            setError(errorMessage === 'email not verified' ? '이메일 인증이 만료되었습니다. 이메일을 다시 인증해주세요.' : errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // 성공 모달이 닫힐 때 메인 페이지로 이동
     const handleModalClose = () => {
         setShowSuccessModal(false);
         navigate('/');
@@ -81,9 +78,10 @@ const SignUpForm = () => {
                 {step === 3 && (
                     <>
                         <PasswordInput onPasswordChange={passwordChangeHandler} />
-                        {/* 에러 메시지 표시 */}
-                        {error && <p className={styles.errorMessage}>{error}</p>}
-                        {/* 비밀번호 강도가 3 이상(보통 이상)일 때만 회원가입 버튼 표시 */}
+                        <button type="button" className={styles.backLink} disabled={isLoading} onClick={() => {
+                            setPassword(''); setIsPasswordValid(false); setPasswordStrength(0); setError(''); setStep(2);
+                        }}>이메일 다시 인증</button>
+                        {error && <p role="alert" className={styles.errorMessage}>{error}</p>}
                         {passwordStrength >= 3 && (
                             <button
                                 className={styles.signUpCompleteBtn}
