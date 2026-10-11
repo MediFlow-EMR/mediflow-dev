@@ -587,12 +587,12 @@ git commit -m "chore: Remove .env files from Git"
 
 2026.10.11 배포 사이트의 가상 계정으로 촬영한 최신 PC 화면입니다. 가로형 대시보드, 날짜·근무조 전환, 병실·카테고리·작성자 다중 필터, 정렬·약품 조회를 보여줍니다. 인수인계 영상은 수기 초안 임시저장·재조회·승인·작성자 수정·버전 이력과 실제 Gemini 초안 생성·편집·원본 비교·임시저장을 포함합니다. [캡처 정보 및 파일 검증값](portfolio-docs/assets/demos/manifest.json)을 확인하세요.
 
-![이메일 로그인과 데모 체험](frontend/public/assets/login.gif?v=741473d5d451)
+![이메일 로그인과 데모 체험](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/login.gif)
 
-![PC 가로형 대시보드·날짜·근무조·병실 다중 필터](frontend/public/assets/patientdashboard.gif?v=9f182fc7427f)
+![PC 가로형 대시보드·날짜·근무조·병실 다중 필터](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/patientdashboard.gif)
 
-![간호기록 카테고리·작성자 다중 필터와 기간 달력](frontend/public/assets/nursingrecord.gif?v=3add0a565cf4)
+![간호기록 카테고리·작성자 다중 필터와 기간 달력](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/nursingrecord.gif)
 
-![오더 날짜 정렬과 약품 정보 조회](frontend/public/assets/ordertab.gif?v=239b10e590dc)
+![오더 날짜 정렬과 약품 정보 조회](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/ordertab.gif)
 
-![수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집](frontend/public/assets/aihandover.gif?v=0aa3a93cb452)
+![수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/aihandover.gif)

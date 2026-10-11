@@ -415,12 +415,12 @@ CREATE INDEX idx_vital_good ON vital_sign(
 
 2026.10.11 배포 사이트의 가상 계정으로 촬영한 최신 PC 화면입니다. 실제 촬영 범위·프레임 수·파일 검증값은 [캡처 정보](assets/demos/manifest.json), 초안 저장·재조회·승인·수정의 검증 결과는 [품질 검증 기록](10.QUALITY_AND_VALIDATION.md)을 참고하세요.
 
-![이메일 로그인과 데모 체험](assets/demos/login.gif?v=741473d5d451)
+![이메일 로그인과 데모 체험](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/login.gif)
 
-![PC 가로형 대시보드·날짜·근무조·병실 다중 필터](assets/demos/patientdashboard.gif?v=9f182fc7427f)
+![PC 가로형 대시보드·날짜·근무조·병실 다중 필터](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/patientdashboard.gif)
 
-![간호기록 카테고리·작성자 다중 필터와 기간 달력](assets/demos/nursingrecord.gif?v=3add0a565cf4)
+![간호기록 카테고리·작성자 다중 필터와 기간 달력](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/nursingrecord.gif)
 
-![오더 날짜 정렬과 약품 정보 조회](assets/demos/ordertab.gif?v=239b10e590dc)
+![오더 날짜 정렬과 약품 정보 조회](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/ordertab.gif)
 
-![수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집](assets/demos/aihandover.gif?v=0aa3a93cb452)
+![수기 초안 저장·승인·수정 이력과 실제 AI 초안 편집](https://raw.githubusercontent.com/MediFlow-EMR/mediflow-dev/644421f36b15e6dc6bb47614c52f20612ee7e661/frontend/public/assets/aihandover.gif)
