@@ -438,3 +438,13 @@ aws s3api list-object-versions \
 ```
 
 두 값이 모두 0일 때만 모든 버전 정리가 확인됩니다. 권한 오류는 빈 목록으로 간주하지 않습니다. `Verify private mail staging` 워크플로도 같은 범위를 읽기 전용으로 확인하며, `s3:ListBucketVersions` 권한이 없으면 실패합니다. 이 워크플로는 객체를 생성·덮어쓰기·삭제하거나 비밀번호를 읽지 않습니다. 과거 일회성 정리 워크플로를 이 읽기 전용 검사로 대체했습니다.
+
+
+조회식을 복사하는 과정에서 문법 오류가 나면 아래처럼 `--query` 없이 실행합니다. 출력에서 `Versions`와 `DeleteMarkers`가 없거나 둘 다 빈 배열이면 잔여 버전과 삭제 마커가 없습니다.
+
+```bash
+aws s3api list-object-versions \
+  --bucket <배포 버킷명> \
+  --prefix backend/releases/private-mail- \
+  --output json --no-cli-pager
+```
