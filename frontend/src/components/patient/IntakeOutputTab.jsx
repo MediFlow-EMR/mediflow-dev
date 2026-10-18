@@ -124,9 +124,9 @@ const IntakeOutputTab = ({ patientId, onDirtyChange }) => {
 
   // 당일 누적 계산
   const getTodayTotal = () => {
-    const today = new Date().toDateString();
+    const today = formatDateTime(new Date()).slice(0, 10);
     const todayRecords = records.filter(r => 
-      new Date(r.recordedAt).toDateString() === today
+      formatDateTime(r.recordedAt).slice(0, 10) === today
     );
 
     const intakeTotal = todayRecords.reduce((sum, r) => sum + (r.intakeTotal || 0), 0);

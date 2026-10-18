@@ -19,6 +19,8 @@ install -d -m 0755 /etc/systemd/system/mediflow.service.d
 cat > /etc/systemd/system/mediflow.service.d/00-safety.conf <<EOF
 [Service]
 Environment=SPRING_PROFILES_ACTIVE=prod
+Environment=TZ=Asia/Seoul
+Environment=DEMO_DAILY_REFRESH_ENABLED=true
 Environment=JPA_DDL_AUTO=validate
 Environment=FLYWAY_BASELINE_ON_MIGRATE=false
 EOF
@@ -26,6 +28,8 @@ install -d -m 0755 /run/systemd/system/mediflow.service.d
 cat > /run/systemd/system/mediflow.service.d/migration.conf <<EOF
 [Service]
 Environment=SPRING_PROFILES_ACTIVE=prod
+Environment=TZ=Asia/Seoul
+Environment=DEMO_DAILY_REFRESH_ENABLED=true
 Environment=JPA_DDL_AUTO=validate
 Environment=FLYWAY_BASELINE_ON_MIGRATE=${baseline_existing}
 EOF

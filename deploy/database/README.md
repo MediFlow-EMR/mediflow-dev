@@ -28,3 +28,8 @@
 초안은 작성자만 조회·수정합니다. 승인 기록 및 이력은 같은 부서에서 조회하고, 작성자만 다시 수정합니다. 승인 기록은 초안으로 되돌리거나 AI 원본·작성 구분을 바꿀 수 없습니다. 저장마다 내용 스냅샷을 동일 트랜잭션에 추가합니다. 기존 기록은 첫 수정 전에 이전 내용도 보존합니다. PUT 요청에는 조회한 `version`이 필요하며 오래된 버전은 HTTP 409입니다. 이력의 사용자·기록 ID는 물리적 FK가 없는 스냅샷 식별자입니다.
 
 공식 참고: [Flyway 기존 스키마 기준선](https://documentation.red-gate.com/fd/baselines-273973441.html), [MariaDB 지원](https://documentation.red-gate.com/flyway/reference/database-driver-reference/mariadb).
+
+
+## 20261018 데모 갱신 관리
+
+`V20261018__demo_refresh_state.sql`은 데모 계정·날짜·근무조별 완료 키를 저장하는 `demo_refresh_state` 테이블만 추가합니다. 기존 업무 테이블의 구조나 저장 내용을 변경하지 않습니다. 갱신 기능은 명시적으로 켠 공개 데모 배포에서만 실행되며 기존 임상 기록·인수인계는 유지합니다.

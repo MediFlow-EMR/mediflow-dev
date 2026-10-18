@@ -26,7 +26,8 @@ public class DemoDrugCatalog {
     private final Map<String, Product> products = new HashMap<>();
     private final boolean enabled;
     public DemoDrugCatalog(ObjectMapper mapper, Environment environment) throws IOException {
-        enabled = environment.acceptsProfiles(Profiles.of("demo", "dev"));
+        enabled = environment.acceptsProfiles(Profiles.of("demo", "dev"))
+                || environment.getProperty("app.demo.daily-refresh-enabled", Boolean.class, false);
         try (var input = new ClassPathResource("demo-drug-catalog.json").getInputStream()) {
             for (var product : mapper.readValue(input, Product[].class)) {
                 for (String code : product.codes()) {
