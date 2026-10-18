@@ -7,6 +7,8 @@ import com.mediflow.emr.exception.BusinessException;
 import com.mediflow.emr.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -108,6 +110,29 @@ class HandoverGenerationTest {
         when(gemini.generateContent(anyString())).thenReturn("**[환자-001 (60세/남)]**\n- 주요 변화: 검사 확인.");
         service.generateAiSummary(1L,99L);
         verify(gemini).generateContent(argThat(prompt -> prompt.contains("in-shift") && !prompt.contains("excluded-")));
+    }
+
+    @Test
+    void latestVitalIsSelectedEvenWhenRepositoryReturnsOldestFirst() {
+        when(vitals.findByPatientIdAndMeasuredAtBetween(eq(10L), any(), any())).thenReturn(List.of(
+                VitalSign.builder().spo2(91).measuredAt(LocalDateTime.of(2026,10,9,16,0)).build(),
+                VitalSign.builder().spo2(98).measuredAt(LocalDateTime.of(2026,10,9,22,0)).build()));
+        when(gemini.generateContent(anyString())).thenReturn("**[환자-001 (60세/남)]**\n- 주요 변화: SpO2 98% 기록.");
+        service.generateAiSummary(1L,99L);
+        verify(gemini).generateContent(argThat(prompt -> prompt.contains("SpO2 98%") && !prompt.contains("SpO2 91%")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"200,500,400,+300,섭취 초과", "0,0,300,-300,배설 초과", "100,0,100,0,섭취·배설량 동일"})
+    void fluidBalanceUsesSuppliedArithmeticAndNeutralDirectionForBothGenerationPaths(
+            int oral, int iv, int urine, String balance, String direction) {
+        when(intakeOutputs.findByPatientIdAndRecordedAtBetween(eq(10L), any(), any()))
+                .thenReturn(List.of(IntakeOutput.builder().intakeOral(oral).intakeIv(iv).outputUrine(urine).build()));
+        when(gemini.generateContent(anyString())).thenReturn("**[환자-001 (60세/남)]**\n- 주요 변화: 수분 기록 확인.");
+        service.generateAiSummary(1L,99L);
+        service.generatePatientAiSummary(1L,99L,10L);
+        verify(gemini, times(2)).generateContent(argThat(prompt -> prompt.contains("차이(섭취-배설) " + balance + "mL (" + direction + ")")
+                && prompt.contains("상태가 좋다는 의미로 해석하지 마세요")));
     }
 
 }
