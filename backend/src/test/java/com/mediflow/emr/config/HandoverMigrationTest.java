@@ -18,7 +18,7 @@ class HandoverMigrationTest {
             s.execute("INSERT INTO handover VALUES (1, 'legacy clinical content')");
             Flyway flyway = Flyway.configure().dataSource(url, username, password).baselineOnMigrate(true)
                     .baselineVersion("20261010").locations("classpath:db/migration").cleanDisabled(true).load();
-            assertEquals(2, flyway.migrate().migrationsExecuted);
+            assertEquals(3, flyway.migrate().migrationsExecuted);
             assertEquals(0, flyway.migrate().migrationsExecuted);
             try (var rows = s.executeQuery("SELECT ai_summary, final_summary, source_type, status, version FROM handover WHERE handover_id=1")) {
                 assertTrue(rows.next()); assertEquals("legacy clinical content", rows.getString(1));
@@ -28,8 +28,10 @@ class HandoverMigrationTest {
             try (var rows = s.executeQuery("SELECT failed_attempts FROM email_verification WHERE verification_id=1")) {
                 assertTrue(rows.next()); assertEquals(0, rows.getInt(1));
             }
+            s.execute("INSERT INTO demo_refresh_state VALUES ('demo:2026-10-18:DAY', CURRENT_TIMESTAMP)");
             s.execute("INSERT INTO handover_revision (handover_id, edited_by_id, edited_by_name, recorded_at, status, source_type, final_summary, record_version) VALUES (1,1,'test',CURRENT_TIMESTAMP,'APPROVED','AI','revision content',0)");
             assertEquals(0, flyway.migrate().migrationsExecuted);
+            try (var rows = s.executeQuery("SELECT COUNT(*) FROM demo_refresh_state")) { rows.next(); assertEquals(1, rows.getInt(1)); }
             try (var rows = s.executeQuery("SELECT COUNT(*) FROM handover_revision")) { rows.next(); assertEquals(1,rows.getInt(1)); }
         }
     }

@@ -19,6 +19,8 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+        name = "app.demo.daily-refresh-enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 public class ShiftScheduler {
 
@@ -28,7 +30,7 @@ public class ShiftScheduler {
      * 매일 자정(00:00)에 다음 날 근무조 생성
      * cron: 초 분 시 일 월 요일
      */
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     @Transactional
     public void createTomorrowShifts() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);

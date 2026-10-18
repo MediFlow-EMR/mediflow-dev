@@ -10,3 +10,7 @@ jwt:
   secret: ${JWT_SECRET}
   access-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
   refresh-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
+
+app:
+  demo:
+    daily-refresh-enabled: ${DEMO_DAILY_REFRESH_ENABLED:false}
