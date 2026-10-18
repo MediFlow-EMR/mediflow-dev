@@ -239,7 +239,10 @@ public class HandoverService {
             }
 
             if (!data.vitals.isEmpty()) {
-                VitalSign v = data.vitals.get(0);
+                VitalSign v = data.vitals.stream()
+                        .max(Comparator.comparing(VitalSign::getMeasuredAt,
+                                Comparator.nullsFirst(Comparator.naturalOrder())))
+                        .orElseThrow();
                 sb.append("- 바이탈: ");
                 if (v.getSystolicBp() != null) sb.append("BP ").append(v.getSystolicBp()).append("/").append(v.getDiastolicBp()).append(", ");
                 if (v.getHeartRate() != null) sb.append("HR ").append(v.getHeartRate()).append(", ");
@@ -269,9 +272,13 @@ public class HandoverService {
             }
 
             if (!data.intakeOutputs.isEmpty()) {
-                int intake = data.intakeOutputs.stream().mapToInt(IntakeOutput::getIntakeTotal).sum();
-                int output = data.intakeOutputs.stream().mapToInt(IntakeOutput::getOutputTotal).sum();
-                sb.append("- I/O: 섭취 ").append(intake).append("mL, 배설 ").append(output).append("mL\n");
+                long intake = data.intakeOutputs.stream().mapToLong(IntakeOutput::getIntakeTotal).sum();
+                long output = data.intakeOutputs.stream().mapToLong(IntakeOutput::getOutputTotal).sum();
+                long balance = intake - output;
+                String direction = balance > 0 ? "섭취 초과" : balance < 0 ? "배설 초과" : "섭취·배설량 동일";
+                sb.append("- I/O: 섭취 ").append(intake).append("mL, 배설 ").append(output)
+                        .append("mL, 차이(섭취-배설) ").append(balance > 0 ? "+" : "").append(balance)
+                        .append("mL (").append(direction).append(")\n");
             }
 
             sb.append("\n");
@@ -285,6 +292,7 @@ public class HandoverService {
         sb.append("환자당 3-5문장, 중요한 환자는 더 자세히 작성. 간결하고 명확하게.\n");
         sb.append("제공된 기록에 있는 사실만 요약하고 기록에 없는 수치, 약물, 처치, 환자명, 상태를 만들지 마세요.\n");
         sb.append("누락된 정보는 '기록 없음'으로 표시하고 '정상', '안정적', '처치 완료'로 추정하지 마세요.\n");
+        sb.append("수분 차이는 제공한 수치와 섭취 초과·배설 초과·동일로만 표현하세요. 긍정적인·부정적인 수분 균형이나 상태가 좋다는 의미로 해석하지 마세요.\n");
         sb.append("입력의 환자-001 등 가명 식별자를 그대로 사용하며 환자마다 반드시 **[식별자 (나이/성별)]** 제목을 작성하세요.");
 
         return sb.toString();
